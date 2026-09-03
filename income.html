@@ -28,7 +28,7 @@
   <div class="page-title">
     <div>
       <h1>Income</h1>
-      <p>The overview pulls your Gross/Net/Tax straight from Payslips, adds anything logged below as other income, converts everything to EUR, and compares against last year.</p>
+      <p>The overview pulls your Gross/Net/Tax straight from Payslips, converts everything to EUR, and compares against last year.</p>
     </div>
   </div>
 
@@ -53,72 +53,16 @@
         <tfoot></tfoot>
       </table>
     </div>
-    <div class="empty-state" id="overview-empty-state">No payslips or income logged yet for this year or last year.</div>
+    <div class="empty-state" id="overview-empty-state">No payslips logged yet for this year or last year.</div>
     <p class="hint" id="overview-rate-hint"></p>
   </div>
 
   <div class="card">
     <div class="card-header"><h2>Exchange rates (→ EUR)</h2></div>
-    <p class="hint">Your home currency is EUR. Set a rate for every other currency used in Payslips or logged below — used to convert the overview above. No live rate feed, you set these.</p>
+    <p class="hint">Your home currency is EUR. Set a rate for every other currency used in Payslips — used to convert the overview above. No live rate feed, you set these.</p>
     <div class="field-row" id="exchange-rate-fields"></div>
   </div>
 
-  <div class="card">
-    <div class="card-header"><h2>Add income entry</h2></div>
-    <form id="income-form">
-      <div class="field-row">
-        <div class="field">
-          <label>Country</label>
-          <input type="text" id="income-country" list="income-country-list" placeholder="e.g. Denmark" required>
-          <datalist id="income-country-list"></datalist>
-        </div>
-        <div class="field">
-          <label>Date</label>
-          <input type="date" id="income-date" required>
-        </div>
-        <div class="field">
-          <label>Category</label>
-          <select id="income-category"></select>
-        </div>
-        <div class="field">
-          <label>Currency</label>
-          <select id="income-currency"></select>
-        </div>
-        <div class="field">
-          <label>Amount</label>
-          <input type="number" id="income-amount" min="0" step="0.01" placeholder="0.00" required>
-        </div>
-      </div>
-      <div class="field">
-        <label>Description (optional)</label>
-        <input type="text" id="income-description" placeholder="e.g. March invoice, Acme Corp">
-      </div>
-      <button type="submit" class="primary">Add entry</button>
-    </form>
-  </div>
-
-  <div class="card">
-    <div class="toolbar">
-      <h2 style="margin:0;">Entries</h2>
-      <span class="spacer"></span>
-      <label style="margin:0;">Year</label>
-      <select id="income-year-filter" class="select-year"></select>
-    </div>
-    <table id="income-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Country</th>
-          <th>Category</th>
-          <th>Description</th>
-          <th class="num">Amount</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <div class="empty-state" id="income-empty-state">No income entries yet. Add one above.</div>
-  </div>
 </main>
 
 <footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere. · <span id="app-version"></span></footer>

@@ -55,19 +55,14 @@ shared settings:
 
   Since it's a single page, its header has no nav bar — the Tax Tracker /
   Income Tracker switcher under the logo is the only way to leave it.
-- **Income** (`income.html`) — an **Overview** card up top pulls Gross
-  pay, Net pay, and Tax withheld straight from **Payslips** (not
-  duplicated as manual entries), adds an "Other income" row totaling
-  whatever's logged manually below, and a "Total income" row combining
-  the two — all converted to EUR (your home currency) for the selected
+- **Income** (`income.html`) — an **Overview** card: Gross pay, Net pay,
+  and Tax withheld pulled straight from **Payslips** (nothing to log
+  here by hand), converted to EUR (your home currency) for the selected
   year, next to the same figures for the year before with a change badge
   (New/+X%/−X%). A row missing an exchange rate is flagged and excluded
   rather than silently wrong. Set each currency's rate ("1 EUR = ? DKK")
   in the **Exchange rates** card right below — only currencies actually
-  used in Payslips or logged income show up there. Below that,
-  add/remove manually-logged income entries (date, country, category,
-  currency, amount, description) — for anything that isn't on a
-  payslip — and filter them by year.
+  used in Payslips show up there.
 - **Payslips** (`payslips.html`) — **bulk upload**: pick one or more
   payslip files (image or PDF) and Google Gemini reads gross pay, net
   pay, and tax withheld off each one, saving it automatically — no

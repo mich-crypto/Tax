@@ -3,6 +3,18 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v1.13.0 — 2026-09-03
+
+- **Removed the manual "Add income entry" form** and its Entries table
+  from the Income page. Income's Overview is now purely Gross pay / Net
+  pay / Tax withheld straight from Payslips, EUR-converted and compared
+  against last year — no "Other income" row or separate manual log to
+  keep in sync.
+- `INCOME_CATEGORIES` (no longer used anywhere) removed from
+  `tax-data.js`. `Store.getIncome()`/`addIncome()`/`deleteIncome()`
+  stay in `storage.js` for backward compatibility with older exports,
+  they're just not driven by any page UI now.
+
 ## v1.12.0 — 2026-09-03
 
 - **Refund netting now handles non-EUR refunds.** It previously only

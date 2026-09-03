@@ -43,16 +43,6 @@ const COUNTRY_CURRENCY_HINTS = {
   "australia": "AUD",
 };
 
-const INCOME_CATEGORIES = [
-  "Salary",
-  "Freelance / Contract",
-  "Business",
-  "Investment",
-  "Rental",
-  "Capital Gains",
-  "Other",
-];
-
 /** Suggested counterparties for the Correspondence log (free text — pick or type your own). */
 const CORRESPONDENCE_COUNTERPARTIES = [
   "KPMG",
@@ -143,11 +133,12 @@ const TAX_YEAR_STATUS_FIELDS = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "1.12.0";
+const APP_VERSION = "1.13.0";
 const APP_VERSION_DATE = "2026-09-03";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "1.13.0", summary: "Removed the manual \"Add income entry\" form and its Entries table — Income's Overview is now purely Payslips' Gross/Net/Tax, EUR-converted and compared to last year, with no separate \"Other income\" row to maintain by hand." },
   { version: "1.12.0", summary: "Refund netting now converts non-EUR refunds (e.g. a DKK refund from Denmark) using the exchange rates set on the Income page, instead of only netting EUR ones — a currency with no rate set yet is flagged rather than silently dropped. New \"All years\" dashboard on Tax Tracker: every tax year at a glance (status, Income/Tax/Refunded/Net tax/Net tax rate) with an Open button to jump straight into one." },
   { version: "1.11.0", summary: "Tax Tracker's country summary now nets refunds against tax paid — e.g. Denmark: pay tax all year, get part back at year end. Log a \"Refund received\" payment activity and it's automatically subtracted from that country's Tax €, with new Refunded €/Net tax €/Net tax rate columns. Only EUR refunds are netted (a non-EUR one is flagged, not silently dropped)." },
   { version: "1.10.0", summary: "Payslips now handles annual holiday pay: a Type selector (Salary / Holiday pay) on bulk upload, a Type column in the monthly log, a \"includes €X holiday pay\" note on the yearly summary, and holiday pay excluded from the missing-months check (it isn't expected every month). Flows straight into Income's overview like any other payslip." },

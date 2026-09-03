@@ -1,16 +1,5 @@
 (function () {
-  const form = document.getElementById("income-form");
-  const countryInput = document.getElementById("income-country");
-  const countryListEl = document.getElementById("income-country-list");
-  const categorySelect = document.getElementById("income-category");
-  const currencySelect = document.getElementById("income-currency");
-  const dateInput = document.getElementById("income-date");
-  const yearFilter = document.getElementById("income-year-filter");
-  const tableBody = document.querySelector("#income-table tbody");
-  const emptyState = document.getElementById("income-empty-state");
-  const table = document.getElementById("income-table");
-
-  // --- Overview: EUR-converted totals by country, this year vs last ---
+  // --- Overview: Gross/Net/Tax straight from Payslips, EUR-converted, this year vs last ---
   const overviewYearSelect = document.getElementById("overview-year-select");
   const overviewTable = document.getElementById("overview-table");
   const overviewTableBody = document.querySelector("#overview-table tbody");
@@ -18,10 +7,6 @@
   const overviewEmptyState = document.getElementById("overview-empty-state");
   const overviewRateHint = document.getElementById("overview-rate-hint");
   const rateFieldsEl = document.getElementById("exchange-rate-fields");
-
-  function currencySymbolFor(code) {
-    return (CURRENCIES.find((c) => c.code === code) || {}).symbol || "";
-  }
 
   /** Converts a local-currency amount to EUR using the saved rates ("1 EUR = ? code"). Returns null if the rate is unknown. */
   function toEur(amount, currencyCode, rates) {
@@ -32,9 +17,7 @@
   }
 
   function distinctNonEurCurrencies() {
-    const fromIncome = Store.getIncome().map((e) => e.currency);
-    const fromPayslips = Store.getPayslips().map((p) => p.currency);
-    const set = new Set([...fromIncome, ...fromPayslips].filter((c) => c && c !== "EUR"));
+    const set = new Set(Store.getPayslips().map((p) => p.currency).filter((c) => c && c !== "EUR"));
     return Array.from(set).sort();
   }
 
@@ -42,7 +25,7 @@
     const currencies = distinctNonEurCurrencies();
     const rates = Store.getCurrencyRates();
     if (!currencies.length) {
-      rateFieldsEl.innerHTML = `<p class="hint" style="margin:0;">Log an entry in a non-EUR currency to set its exchange rate here.</p>`;
+      rateFieldsEl.innerHTML = `<p class="hint" style="margin:0;">Log a payslip in a non-EUR currency to set its exchange rate here.</p>`;
       return;
     }
     rateFieldsEl.innerHTML = currencies
@@ -85,19 +68,6 @@
     return totals;
   }
 
-  /** Anything logged manually below (freelance, other side income, etc.) — separate from Payslips' salary. */
-  function otherIncomeTotalForYear(year, rates) {
-    const result = { total: 0, missingRate: false };
-    Store.getIncome()
-      .filter((e) => new Date(e.date).getFullYear() === year)
-      .forEach((e) => {
-        const eur = toEur(e.amount, e.currency, rates);
-        if (eur === null) result.missingRate = true;
-        else result.total += eur;
-      });
-    return result;
-  }
-
   function formatChange(thisAmount, lastAmount) {
     if (!lastAmount) {
       return thisAmount ? `<span class="badge ok">New</span>` : `<span class="badge neutral">—</span>`;
@@ -109,9 +79,7 @@
   }
 
   function populateOverviewYearSelect() {
-    const fromIncome = Store.getIncome().map((e) => e.date);
-    const fromPayslips = Store.getPayslips().map((p) => `${p.year}-01-01`);
-    const years = collectYearsFromDates([...fromIncome, ...fromPayslips]);
+    const years = collectYearsFromDates(Store.getPayslips().map((p) => `${p.year}-01-01`));
     const previous = overviewYearSelect.value;
     overviewYearSelect.innerHTML = years.map((y) => `<option value="${y}">${y}</option>`).join("");
     overviewYearSelect.value = previous && years.some((y) => String(y) === previous)
@@ -125,11 +93,8 @@
 
     const thisPay = payslipTotalsForYear(year, rates);
     const lastPay = payslipTotalsForYear(year - 1, rates);
-    const thisOther = otherIncomeTotalForYear(year, rates);
-    const lastOther = otherIncomeTotalForYear(year - 1, rates);
 
-    const hasAnyData = Store.getPayslips().length > 0 || Store.getIncome().length > 0;
-    if (!hasAnyData) {
+    if (!Store.getPayslips().length) {
       overviewTable.style.display = "none";
       overviewEmptyState.style.display = "block";
       overviewTableBody.innerHTML = "";
@@ -141,155 +106,31 @@
     overviewEmptyState.style.display = "none";
 
     const rows = [
-      ["Gross pay (Payslips)", thisPay.gross, lastPay.gross, thisPay.missingRate || lastPay.missingRate],
-      ["Net pay (Payslips)", thisPay.net, lastPay.net, thisPay.missingRate || lastPay.missingRate],
-      ["Tax withheld (Payslips)", thisPay.tax, lastPay.tax, thisPay.missingRate || lastPay.missingRate],
-      ["Other income (logged below)", thisOther.total, lastOther.total, thisOther.missingRate || lastOther.missingRate],
+      ["Gross pay", thisPay.gross, lastPay.gross],
+      ["Net pay", thisPay.net, lastPay.net],
+      ["Tax withheld", thisPay.tax, lastPay.tax],
     ];
+    const missing = thisPay.missingRate || lastPay.missingRate;
 
     overviewTableBody.innerHTML = rows
-      .map(([label, cur, prev, missing]) => {
-        const flag = missing
-          ? ` <span class="badge warn" title="Some entries here use a currency without a set exchange rate and are excluded">⚠</span>`
-          : "";
-        return `
-          <tr>
-            <td>${label}${flag}</td>
-            <td class="num">${formatMoney(cur, "€")}</td>
-            <td class="num">${formatMoney(prev, "€")}</td>
-            <td class="num">${formatChange(cur, prev)}</td>
-          </tr>
-        `;
-      })
+      .map(([label, cur, prev]) => `
+        <tr>
+          <td>${label}</td>
+          <td class="num">${formatMoney(cur, "€")}</td>
+          <td class="num">${formatMoney(prev, "€")}</td>
+          <td class="num">${formatChange(cur, prev)}</td>
+        </tr>
+      `)
       .join("");
+    overviewTableFoot.innerHTML = "";
 
-    const totalThis = thisPay.net + thisOther.total;
-    const totalLast = lastPay.net + lastOther.total;
-    overviewTableFoot.innerHTML = `
-      <tr class="total-row">
-        <td><strong>Total income (net + other)</strong></td>
-        <td class="num"><strong>${formatMoney(totalThis, "€")}</strong></td>
-        <td class="num"><strong>${formatMoney(totalLast, "€")}</strong></td>
-        <td class="num"><strong>${formatChange(totalThis, totalLast)}</strong></td>
-      </tr>
-    `;
-
-    const anyMissing = thisPay.missingRate || lastPay.missingRate || thisOther.missingRate || lastOther.missingRate;
-    overviewRateHint.textContent = anyMissing
-      ? "⚠ Some entries use a currency without a set exchange rate and are excluded from these totals — set it below."
+    overviewRateHint.textContent = missing
+      ? "⚠ Some payslips use a currency without a set exchange rate and are excluded from these totals — set it below."
       : "";
   }
 
   overviewYearSelect.addEventListener("change", renderOverview);
 
-  function populateSelects() {
-    countryListEl.innerHTML = COMMON_COUNTRIES
-      .map((name) => `<option value="${escapeHtml(name)}">`)
-      .join("");
-    categorySelect.innerHTML = INCOME_CATEGORIES
-      .map((cat) => `<option value="${cat}">${cat}</option>`)
-      .join("");
-    currencySelect.innerHTML = CURRENCIES
-      .map((c) => `<option value="${c.code}">${c.code}</option>`)
-      .join("");
-  }
-
-  countryInput.addEventListener("change", () => {
-    const hint = COUNTRY_CURRENCY_HINTS[countryInput.value.trim().toLowerCase()];
-    if (hint && [...currencySelect.options].some((o) => o.value === hint)) {
-      currencySelect.value = hint;
-    }
-  });
-
-  function populateYearFilter() {
-    const entries = Store.getIncome();
-    const years = collectYearsFromDates(entries.map((e) => e.date));
-    const previous = yearFilter.value;
-    yearFilter.innerHTML =
-      `<option value="all">All years</option>` +
-      years.map((y) => `<option value="${y}">${y}</option>`).join("");
-    yearFilter.value = previous && [...yearFilter.options].some((o) => o.value === previous)
-      ? previous
-      : String(currentYear());
-  }
-
-  function renderTable() {
-    const yearValue = yearFilter.value;
-
-    let entries = Store.getIncome().sort((a, b) => new Date(b.date) - new Date(a.date));
-    if (yearValue !== "all") {
-      entries = entries.filter((e) => new Date(e.date).getFullYear() === Number(yearValue));
-    }
-
-    if (!entries.length) {
-      table.style.display = "none";
-      emptyState.style.display = "block";
-      return;
-    }
-    table.style.display = "";
-    emptyState.style.display = "none";
-
-    tableBody.innerHTML = entries
-      .map((e) => {
-        const symbol = currencySymbolFor(e.currency);
-        return `
-          <tr>
-            <td>${e.date}</td>
-            <td>${escapeHtml(e.country || "")}</td>
-            <td>${escapeHtml(e.category)}</td>
-            <td>${escapeHtml(e.description || "")}</td>
-            <td class="num">${formatMoney(e.amount, symbol)} ${escapeHtml(e.currency || "")}</td>
-            <td><button class="icon-btn small" data-delete="${e.id}" title="Delete">✕</button></td>
-          </tr>
-        `;
-      })
-      .join("");
-  }
-
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const amount = Number(document.getElementById("income-amount").value);
-    const country = countryInput.value.trim();
-    if (!amount || amount <= 0 || !country) return;
-
-    Store.addIncome({
-      country,
-      currency: currencySelect.value,
-      date: dateInput.value || new Date().toISOString().slice(0, 10),
-      category: categorySelect.value,
-      description: document.getElementById("income-description").value.trim(),
-      amount,
-    });
-
-    form.reset();
-    dateInput.value = new Date().toISOString().slice(0, 10);
-    currencySelect.value = "EUR";
-    populateYearFilter();
-    renderTable();
-    populateOverviewYearSelect();
-    renderRateFields();
-    renderOverview();
-  });
-
-  tableBody.addEventListener("click", (event) => {
-    const id = event.target.dataset.delete;
-    if (!id) return;
-    if (!confirm("Delete this income entry?")) return;
-    Store.deleteIncome(id);
-    populateYearFilter();
-    renderTable();
-    populateOverviewYearSelect();
-    renderRateFields();
-    renderOverview();
-  });
-
-  yearFilter.addEventListener("change", renderTable);
-
-  dateInput.value = new Date().toISOString().slice(0, 10);
-  populateSelects();
-  currencySelect.value = "EUR";
-  populateYearFilter();
-  renderTable();
   populateOverviewYearSelect();
   renderRateFields();
   renderOverview();
