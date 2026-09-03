@@ -14,13 +14,10 @@
     <button type="button" class="app-brand" id="tracker-switch-btn"><span class="mark">€</span> Income Tracker <span class="caret">▾</span></button>
     <div class="switch-menu" id="tracker-switch-menu" hidden>
       <a class="switch-item" href="index.html"><span class="mark">₮</span> Tax Tracker</a>
-      <a class="switch-item active" href="income.html"><span class="mark">€</span> Income Tracker</a>
+      <a class="switch-item active" href="payslips.html"><span class="mark">€</span> Income Tracker</a>
     </div>
   </div>
-  <nav class="app-nav">
-    <a href="income.html" data-page="income">Income</a>
-    <a href="payslips.html" data-page="payslips">Payslips</a>
-  </nav>
+  <span style="flex:1"></span>
   <a class="header-icon-btn" href="settings.html" title="Settings">⚙</a>
 </header>
 
@@ -28,63 +25,63 @@
   <div class="page-title">
     <div>
       <h1>Payslips</h1>
-      <p>Bulk upload your payslips and have AI read the figures off them. Builds your month-by-month pay and tax history, comparable across countries. Set your AI provider and API key under <a href="settings.html">Settings</a> first. <strong>Temporarily testing Claude</strong> instead of Gemini — switch back under Settings.</p>
+      <p>Upload your payslips and AI reads gross, net and tax off each one. Everything below is converted to EUR using the rates under <a href="settings.html">Settings</a>.</p>
+    </div>
+    <div class="field" style="margin:0;">
+      <label for="year-filter">Year</label>
+      <select id="year-filter" class="select-year"></select>
     </div>
   </div>
 
+  <div class="grid stat-grid" id="pay-stats"></div>
+  <p class="hint" id="pay-summary-note"></p>
+
   <div class="card">
-    <div class="card-header"><h2>Bulk upload</h2></div>
-    <p class="hint">Pick one or more files — each is analyzed with AI and saved straight away, no per-file review. Check the monthly log below afterwards and fix anything AI got wrong.</p>
-    <div class="field" style="max-width:220px;">
-      <label>Type (applied to this batch)</label>
-      <select id="bulk-type"></select>
-    </div>
-    <div class="field">
-      <label>Payslip files (image or PDF)</label>
-      <div class="actions-row">
-        <input type="file" id="bulk-files" accept="image/*,.pdf" multiple style="max-width:320px;">
-        <button type="button" id="bulk-analyze-btn" class="small primary">🪄 Analyze &amp; save all</button>
+    <div class="card-header"><h2>Add payslips</h2></div>
+    <p class="hint">Pick one or more files — each is analyzed and saved straight away. Check the log below afterwards and fix anything AI got wrong. Uploading the annual holiday pay? Switch Type first and upload it on its own.</p>
+    <div class="field-row">
+      <div class="field" style="max-width:200px;">
+        <label for="bulk-type">Type</label>
+        <select id="bulk-type"></select>
       </div>
-      <p class="hint">Uploading your annual holiday pay? Switch Type to "Holiday pay" first, then upload it separately from your monthly payslips.</p>
-      <p class="hint" id="bulk-status"></p>
+      <div class="field">
+        <label for="bulk-files">Files (image or PDF)</label>
+        <div class="actions-row">
+          <input type="file" id="bulk-files" accept="image/*,.pdf" multiple style="max-width:300px;">
+          <button type="button" id="bulk-analyze-btn" class="small primary">🪄 Analyze &amp; save</button>
+        </div>
+      </div>
     </div>
+    <p class="hint" id="bulk-status"></p>
   </div>
 
   <div class="card">
-    <div class="toolbar">
-      <h2 style="margin:0;">Yearly summary</h2>
-      <span class="spacer"></span>
-      <label style="margin:0;">Year</label>
-      <select id="payslip-year-filter" class="select-year"></select>
-    </div>
-    <div id="payslip-summary"></div>
-  </div>
-
-  <div class="card">
-    <div class="card-header"><h2>Missing months — <span id="missing-months-year"></span></h2></div>
-    <p class="hint">Months with no salary payslip logged yet for the selected year. Holiday pay doesn't count toward this — it isn't expected every month.</p>
-    <div class="actions-row" id="missing-months-list"></div>
+    <div class="card-header"><h2>Coverage — <span id="coverage-year"></span></h2></div>
+    <p class="hint">Which months have a salary payslip logged. Holiday pay doesn't count — it isn't expected every month.</p>
+    <div class="actions-row" id="coverage-list"></div>
   </div>
 
   <div class="card">
     <div class="card-header"><h2>Monthly log</h2></div>
     <div class="table-scroll">
-      <table id="payslip-table">
+      <table id="payslips-table">
         <thead>
           <tr>
             <th>Month</th><th>Type</th>
             <th class="num">Gross</th><th class="num">Net</th><th class="num">Tax</th>
+            <th class="num">Net in €</th>
             <th>Notes</th><th></th><th></th>
           </tr>
         </thead>
         <tbody></tbody>
+        <tfoot></tfoot>
       </table>
     </div>
-    <div class="empty-state" id="payslip-empty-state">No payslips logged yet for this year. Add one above.</div>
+    <div class="empty-state" id="payslips-empty-state">No payslips logged yet for this year.</div>
   </div>
 </main>
 
-<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere — except a payslip you choose to analyze, which goes straight to your selected AI provider (Google Gemini or, temporarily for testing, Anthropic Claude). · <span id="app-version"></span></footer>
+<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere — except a payslip you choose to analyze, which goes straight to your selected AI provider. · <span id="app-version"></span></footer>
 
 <script src="js/tax-data.js"></script>
 <script src="js/storage.js"></script>

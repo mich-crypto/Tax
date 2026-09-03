@@ -14,7 +14,7 @@
     <button type="button" class="app-brand" id="tracker-switch-btn"><span class="mark">⚙</span> Settings <span class="caret">▾</span></button>
     <div class="switch-menu" id="tracker-switch-menu" hidden>
       <a class="switch-item" href="index.html"><span class="mark">₮</span> Tax Tracker</a>
-      <a class="switch-item" href="income.html"><span class="mark">€</span> Income Tracker</a>
+      <a class="switch-item" href="payslips.html"><span class="mark">€</span> Income Tracker</a>
     </div>
   </div>
 </header>
@@ -23,15 +23,22 @@
   <div class="page-title">
     <div>
       <h1>Settings</h1>
-      <p>Shared across both trackers: your AI provider and API key for payslip analysis, and your data backup.</p>
+      <p>Shared across both trackers: exchange rates, the AI provider and key used to read payslips, and your data backup.</p>
     </div>
   </div>
 
   <div class="card">
+    <div class="card-header"><h2>Exchange rates (→ EUR)</h2></div>
+    <p class="hint">Everything in this app is reported in EUR. Set a rate for every other currency your payslips use — there's no live rate feed, you set these yourself.</p>
+    <div class="field-row" id="exchange-rate-fields"></div>
+    <p class="hint" id="rates-status"></p>
+  </div>
+
+  <div class="card">
     <div class="card-header"><h2>AI provider <span class="badge warn">Temporary — testing</span></h2></div>
-    <p class="hint">Payslips' AI analysis currently calls whichever provider is selected here. This is set up for a one-off quality comparison — Gemini is what ships at release. Switch back to Gemini any time by picking it below.</p>
+    <p class="hint">Payslip analysis calls whichever provider is selected here. This is set up for a one-off quality comparison — Gemini is what ships at release. Switch back to Gemini any time by picking it below.</p>
     <div class="field" style="max-width:220px;">
-      <label>Active provider</label>
+      <label for="ai-provider-select">Active provider</label>
       <select id="ai-provider-select">
         <option value="gemini">Google Gemini</option>
         <option value="claude">Anthropic Claude</option>
@@ -49,14 +56,14 @@
     </div>
     <div class="field-row">
       <div class="field">
-        <label>Gemini API key</label>
+        <label for="gemini-api-key">Gemini API key</label>
         <div class="actions-row" style="flex-wrap:nowrap;">
           <input type="password" id="gemini-api-key" placeholder="AIza…" autocomplete="off">
           <button type="button" id="toggle-key-visibility" class="small" title="Show/hide key">👁</button>
         </div>
       </div>
       <div class="field">
-        <label>Model</label>
+        <label for="gemini-model">Model</label>
         <input type="text" id="gemini-model" placeholder="gemini-2.5-flash">
       </div>
     </div>
@@ -77,14 +84,14 @@
     </div>
     <div class="field-row">
       <div class="field">
-        <label>Claude API key</label>
+        <label for="claude-api-key">Claude API key</label>
         <div class="actions-row" style="flex-wrap:nowrap;">
           <input type="password" id="claude-api-key" placeholder="sk-ant-…" autocomplete="off">
           <button type="button" id="toggle-claude-key-visibility" class="small" title="Show/hide key">👁</button>
         </div>
       </div>
       <div class="field">
-        <label>Model</label>
+        <label for="claude-model">Model</label>
         <input type="text" id="claude-model" placeholder="claude-opus-5">
       </div>
     </div>
@@ -97,7 +104,7 @@
 
   <div class="card">
     <div class="card-header"><h2>Data</h2></div>
-    <p class="hint">Everything lives in this browser's local storage. Back it up as a JSON file, restore from one, or wipe everything and start over.</p>
+    <p class="hint">Everything lives in this browser's local storage — clearing site data wipes it. Back it up as a JSON file, restore from one, or wipe everything and start over. API keys are never part of a backup.</p>
     <div class="toolbar" style="margin-bottom:0;">
       <button type="button" id="export-data-btn">Export data (JSON)</button>
       <label class="btn" style="margin:0;">

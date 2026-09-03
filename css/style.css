@@ -173,31 +173,9 @@ a:hover {
   flex-shrink: 0;
 }
 
-.app-nav {
-  display: flex;
-  gap: 4px;
-  flex: 1;
-  flex-wrap: wrap;
-}
 
-.app-nav a {
-  padding: 7px 12px;
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-size: 14px;
-  font-weight: 500;
-}
 
-.app-nav a:hover {
-  background: var(--bg-sunken);
-  text-decoration: none;
-  color: var(--text);
-}
 
-.app-nav a.active {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
 
 /* ---------- header settings icon (right-hand side, every page) ---------- */
 
@@ -562,19 +540,6 @@ footer.app-footer {
   border-bottom: 1px dotted var(--text-muted);
 }
 
-.bracket-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 10px;
-}
-
-.bracket-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 8px;
-  align-items: center;
-}
 
 .icon-btn {
   background: transparent;
@@ -591,5 +556,143 @@ footer.app-footer {
 
 @media (max-width: 640px) {
   .app-header { flex-wrap: wrap; }
-  .app-nav { order: 3; width: 100%; }
+}
+
+/* -----------------------------------------------------------
+   Headline stat tiles — the derived numbers (balance, net
+   income, effective rate) shown above every table.
+   ----------------------------------------------------------- */
+
+.stat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+/* Signed figures: a balance you're ahead on vs. one you're short on. */
+.stat-value.tone-ok { color: var(--success); }
+.stat-value.tone-danger { color: var(--danger); }
+
+.stat-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* -----------------------------------------------------------
+   Tables — wide ones scroll inside the card rather than
+   stretching the page.
+   ----------------------------------------------------------- */
+
+.table-scroll {
+  overflow-x: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+/* Secondary line under a table cell's main value, e.g. "income 2024". */
+.cell-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Inline editing straight in a table cell — borderless until focused. */
+.cell-input {
+  width: 100%;
+  min-width: 90px;
+  padding: 5px 7px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  font: inherit;
+}
+
+.cell-input:hover {
+  border-color: var(--border);
+}
+
+.cell-input:focus {
+  background: var(--bg-elevated);
+  border-color: var(--accent);
+  outline: none;
+}
+
+.cell-input.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.notes-cell {
+  max-width: 280px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+td.center, th.center { text-align: center; }
+
+/* -----------------------------------------------------------
+   Checkbox groups — year status and paperwork.
+   ----------------------------------------------------------- */
+
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.check:hover { border-color: var(--accent); }
+.check input { margin: 0; accent-color: var(--accent); }
+.check:has(input:checked) { color: var(--success); border-color: var(--success); }
+
+/* -----------------------------------------------------------
+   Misc
+   ----------------------------------------------------------- */
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.back-link:hover { color: var(--accent); }
+
+.rule {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
 }

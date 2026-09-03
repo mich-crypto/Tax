@@ -3,6 +3,58 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.0.0 — 2026-09-03
+
+Rebuilt around the model the real spreadsheet uses. The old layout summed
+per-country income to get a year's total, and reported "Net tax" with the
+sign flipped — both wrong, and both visible as soon as real figures went in.
+
+**The money model**
+
+- A tax year now has **one gross income** — the Danish payroll salary —
+  instead of a sum over its countries. The same salary is taxed in
+  Belgium, the UK and the Netherlands as well as Denmark, so adding the
+  per-country figures counted it two or three times over (€252,610 for
+  income 2022, against the real €135,157.55).
+- **Refunded from Denmark** is its own figure on the year, not an entry
+  buried in the payment ledger. Denmark withholds tax all year and pays
+  part of it back; that refund is what covers the tax owed elsewhere, so
+  it belongs next to the gross income.
+- Everything else is derived from those, in one place
+  (`taxYearTotals()` in `js/app.js`):
+  - **Tax paid** — sum of the tax on each country row
+  - **Balance** — refunded − tax paid; positive means the Danish refund
+    covers what's owed elsewhere, negative means it falls short
+  - **Net income** — gross − tax paid
+  - **Effective rate** — tax paid ÷ gross
+
+**Pages**
+
+- **Tax years** (`index.html`) is now the landing page: four headline
+  tiles (refunded from Denmark, tax paid elsewhere, balance, years still
+  open) over one row per income year — gross, refunded, tax paid,
+  balance, net income, rate and progress — with a totals row.
+- **One page per tax year** (`year.html?id=…`), replacing the tab strip:
+  the money, progress, countries, payments and correspondence, all in
+  view at once. Country rows are edited inline and each carries its own
+  Questionnaire / Return filed / Payed-returned flags and a comment.
+- **A1 certificate, S1 form and blue insurance card** are tracked per
+  year alongside the four completion checks.
+- **Income and Payslips merged** into one page (`payslips.html`). The
+  Income page's overview tiles now sit on top of the payslip log they
+  were reading from, so there's no second page restating the same
+  figures. `income.html` and `js/income.js` are gone, and the Income
+  flow diagram with them.
+- **Exchange rates moved to Settings**, since they're shared and the
+  page they lived on no longer exists.
+
+**Data**
+
+- New storage key `taxtracker_taxyears_v2`; exports carry `schema: 2`.
+  The old income and residency stores are dropped — neither had a UI
+  any more. A v1 export will not import; export from the old build
+  first if you need the raw JSON.
+
 ## v1.14.0 — 2026-09-03
 
 - **Income flow diagram**: a small Sankey-style chart under Overview —

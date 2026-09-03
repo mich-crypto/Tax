@@ -1,7 +1,7 @@
 # Multi-Country Tax Tracker
 
-A static, client-only site for tracking income, taxes, and payslips across
-multiple countries.
+A static, client-only site for tracking tax across several countries, and
+the payslips the income comes from.
 
 No build step, no server, no database — open `index.html` in a browser or
 serve the folder with any static file host. All data is kept in the
@@ -11,86 +11,100 @@ choose to analyze with AI — see below).
 Every page's footer shows the current version (hover it for a few recent
 highlights) — full history in [CHANGELOG.md](CHANGELOG.md).
 
+## The model
+
+The whole app hangs off one idea, so it's worth stating plainly:
+
+**A tax year has one gross income.** That's the salary you actually
+earned — a single Danish payroll figure. It is *not* the sum of the
+country rows: the same salary is taxable in Belgium, the UK and the
+Netherlands as well as Denmark, so adding those up counts it two or three
+times over.
+
+**Denmark withholds tax all year and refunds part of it back.** That
+refund is the year's other headline figure, and it's what pays the tax
+owed everywhere else. Everything else is derived from those two numbers
+plus the tax on each country row — see `taxYearTotals()` in `js/app.js`:
+
+| Figure | How it's derived |
+| --- | --- |
+| Tax paid | sum of `taxEur` across the year's country rows |
+| Balance | refunded − tax paid — positive means the Danish refund covers what you owe elsewhere, negative means it falls short |
+| Net income | gross − tax paid |
+| Effective rate | tax paid ÷ gross |
+
+Nothing derived is ever stored, so the numbers can't drift out of sync
+with what they're computed from.
+
 ## Two trackers plus Settings, all from the header
 
 The site is split into two small apps, switchable from the dropdown under
-the logo in the header, with a gear icon on the right of every page for
-shared settings:
+the logo in the header, with a gear icon on the right for shared settings:
 
-- **Tax Tracker** — a single page (`index.html`).
-- **Income Tracker** — Income, Payslips.
+- **Tax Tracker** — `index.html` (all years) and `year.html` (one year).
+- **Income Tracker** — `payslips.html`.
 - **Settings** (`settings.html`) — reached via the ⚙ icon, not the app
   switcher, since it isn't part of either tracker.
 
 ## Pages
 
-- **Tax Tracker** (`index.html`) — an **All years** dashboard sits above
-  the year picker: every tax year at a glance (completion status,
-  Income €, Tax €, Refunded €, Net tax €, Net tax rate) with an **Open**
-  button per row, updating live as you edit anything below. Pick (or
-  create) a tax year — one record per income-year/tax-year pair, e.g.
-  "income 2025 / tax year 2026" — then switch between three tabs, all
-  scoped to that year:
-  - **Overview** — a 4-item completion checklist (year completed,
-    questionnaires done, returns filed, paid & returned), the per-country
-    income/tax summary table with totals, and a payment-activity ledger
-    (action, date, amount, currency, country). The summary table nets
-    "Refund received" activities against each country's Tax € — for a
-    country that withholds tax all year and refunds part of it back
-    (Denmark, for one), Refunded €/Net tax €/Net tax rate reflect what
-    you actually end up paying. A refund logged in a currency other than
-    EUR (e.g. DKK) converts using the exchange rate set on the **Income**
-    page — if that currency has no rate set yet, it's flagged rather
-    than silently dropped.
-  - **Tax information** — **one tab per country** you've paid tax in,
-    each holding just that country's income and tax figures (in EUR).
-    Add a country with the "+ Add" control — free text, so you're never
-    blocked waiting on a managed country list.
-  - **Correspondence** — a log of communication with accountants/advisors
-    (e.g. KPMG) and tax authorities for this tax year: date, counterparty,
-    channel (call/email/letter/meeting), category (question, document
-    request, tax return filed, refund notice, assessment...), subject,
-    country, notes, an optional amount (e.g. a confirmed refund), a
-    follow-up date, and an open/resolved status.
-
-  Since it's a single page, its header has no nav bar — the Tax Tracker /
-  Income Tracker switcher under the logo is the only way to leave it.
-- **Income** (`income.html`) — an **Overview** card: Gross pay, Net pay,
-  and Tax withheld pulled straight from **Payslips** (nothing to log
-  here by hand), converted to EUR (your home currency) for the selected
-  year, next to the same figures for the year before with a change badge
-  (New/+X%/−X%). A row missing an exchange rate is flagged and excluded
-  rather than silently wrong. Below that, an **Income flow** diagram —
-  gross pay splitting into Net pay and Tax withheld, then Tax withheld
-  splitting into Refunded and Net tax (pulled from the matching Tax
-  Tracker year) — a visual for the "pay tax all year, get part back"
-  pattern. Set each currency's rate ("1 EUR = ? DKK") in the **Exchange
-  rates** card right below — only currencies actually used in Payslips
-  show up there.
-- **Payslips** (`payslips.html`) — **bulk upload**: pick one or more
-  payslip files (image or PDF) and AI reads gross pay, net pay, and tax
-  withheld off each one, saving it automatically — no per-file review,
-  so check the monthly log afterwards and fix anything AI got wrong
-  (works fine for a single file too, so there's no separate one-at-a-time
-  form). No Country/Employer fields — that's assumed to be the same
-  every time, so it isn't tracked. A **Type** selector (Salary / Holiday
-  pay) applies to each batch — upload the once-a-year holiday pay
-  ("feriepenge") payout separately from monthly salary payslips and it's
-  tagged and shown distinctly in the log, with a note on the yearly
-  summary for how much of the year's total was holiday pay. A **missing
-  months** strip shows which months of the selected year have no salary
-  payslip logged yet (holiday pay doesn't count toward that, since it
-  isn't expected every month). Needs an API key for whichever AI
-  provider is active, set once under Settings.
-- **Settings** (`settings.html`) — the API key/model for the active AI
-  provider used by Payslips, and Export/Import/Wipe for all your data.
-  Shared across both trackers, so it lives outside either one. **AI
-  provider** picks Google Gemini or (temporarily, for testing —
-  see below) Anthropic Claude.
+- **Tax years** (`index.html`) — the landing page. Four headline tiles
+  across every year on record (refunded from Denmark, tax paid
+  elsewhere, balance, years still open) over one row per income year:
+  gross income, refunded from DK, tax paid, balance, net income,
+  effective rate and a progress badge, with a totals row underneath. Add
+  a year by entering its income year and tax year — one record per
+  income-year/tax-year pair, e.g. "income 2025 / tax year 2026".
+- **One tax year** (`year.html?id=…`) — everything about a single year on
+  one page, no tabs:
+  - **The money** — the two figures you enter (gross income, refunded
+    from Denmark), with tax paid / balance / net income / effective rate
+    derived live beside them.
+  - **Progress** — the four completion checks (year completed,
+    questionnaires done, returns prepared & filed, tax payed & returned)
+    plus the year's social-security and insurance paperwork: A1
+    certificate, S1 form, blue insurance card.
+  - **Countries** — one editable row per country you were tax liable in:
+    the income taxable there, the tax actually paid, its own
+    Questionnaire / Return filed / Payed-returned flags, and a free-text
+    comment. Edited inline; the footer totals the tax paid, which is the
+    figure the whole year hangs off. Country names are free text with
+    suggestions — never blocked waiting on a managed list.
+  - **Payments & refunds** — a dated ledger of what actually moved
+    (action, date, amount, currency, country). Deliberately separate
+    from the totals above, which are the year's final position rather
+    than a running balance.
+  - **Correspondence** — a log of communication with accountants
+    (e.g. KPMG) and tax authorities for this year: date, counterparty,
+    channel, category, subject, country, notes, an optional follow-up
+    date, and an open/resolved toggle. The open count sits in the
+    section header.
+- **Payslips** (`payslips.html`) — the Income Tracker, a single page.
+  Gross pay, net pay and tax withheld for the selected year in EUR,
+  pulled from the payslips themselves and compared against the year
+  before with a change badge. **Bulk upload**: pick one or more payslip
+  files (image or PDF) and AI reads the figures off each one, saving it
+  automatically — no per-file review, so check the monthly log
+  afterwards and fix anything AI got wrong (works fine for a single file
+  too, so there's no separate one-at-a-time form). No Country/Employer
+  fields — that's the same every time, so it isn't tracked. A **Type**
+  selector (Salary / Holiday pay) applies to each batch: upload the
+  once-a-year holiday pay ("feriepenge") payout separately and it's
+  tagged and shown distinctly, with a note on how much of the year's
+  total it was. A **Coverage** strip shows which months of the year have
+  no salary payslip logged yet (holiday pay doesn't count — it isn't
+  expected every month). Needs an API key for whichever AI provider is
+  active, set once under Settings.
+- **Settings** (`settings.html`) — exchange rates, the AI provider and
+  its API key/model, and Export/Import/Wipe. Shared across both
+  trackers, so it lives outside either one. **Exchange rates** are set
+  by hand ("1 EUR = ? DKK") — there's no live rate feed; a payslip in a
+  currency with no rate set is flagged and excluded from the EUR figures
+  rather than silently counted as zero.
 
 ### Temporary: Claude vs. Gemini for payslip analysis
 
-Payslips' AI analysis can currently call **either** Google Gemini
+Payslip analysis can currently call **either** Google Gemini
 (`js/gemini.js`) or Anthropic Claude (`js/claude-vision.js`), switchable
 under Settings → **AI provider**. This exists for a one-off quality
 comparison and currently defaults to Claude. **Gemini is what ships at
@@ -106,37 +120,42 @@ the `anthropic-dangerous-direct-browser-access` header (Anthropic's own
 opt-in for client-side calling) — same security model as Gemini: the key
 lives only in `localStorage`, excluded from Export/Import.
 
-Countries and residency-day tracking are free-text fields, not managed
-lists — type any country name (with suggestions) wherever one is needed.
-There is no dedicated Countries or Residency page.
-
-## Data & calculations
+## Data
 
 - `js/storage.js` is the only place that touches `localStorage`, and the
-  only place `exportAll()`/`importAll()`/`wipeAll()` are defined (wired up
-  from Settings). Correspondence lives inside each tax year record,
-  alongside its countries and payment activities — not a separate
-  top-level store.
+  only place `exportAll()`/`importAll()`/`wipeAll()` are defined (wired
+  up from Settings). Countries, payments and correspondence all live
+  inside their tax-year record — there are no separate top-level stores
+  for them.
+- Tax years are stored under `taxtracker_taxyears_v2` and exports carry
+  `schema: 2`. A v1 export will not import into this build.
 - `js/tax-data.js` holds shared reference data: suggested country names,
   a country → likely-currency hint map (convenience only, not a managed
-  list), currencies, and the Correspondence/Tax Years constants.
-- `js/gemini.js` calls the Gemini API directly from the browser to analyze
-  an uploaded payslip (the shipped provider — see the Claude section above
-  for the temporary alternative in `js/claude-vision.js`). Your API key (from
+  list), currencies, and the payslip/status/correspondence constants.
+- `js/gemini.js` calls the Gemini API directly from the browser to
+  analyze an uploaded payslip (the shipped provider — see the Claude
+  section above for the temporary alternative). Your API key (from
   [aistudio.google.com/apikey](https://aistudio.google.com/apikey)) is
-  entered under Settings and saved only in `localStorage`, under a
-  key that `Store.exportAll()`/`importAll()` deliberately never touch —
-  it can never end up inside an export/backup JSON file. The payslip file
-  itself is sent straight to Google for analysis and is not stored by this
-  app; only the figures AI extracts are kept. Images are downscaled
+  entered under Settings and saved only in `localStorage`, under a key
+  that `Store.exportAll()`/`importAll()` deliberately never touch — it
+  can never end up inside an export/backup JSON file. The payslip file
+  itself is sent straight to the provider and is not stored by this app;
+  only the figures AI extracts are kept. Images are downscaled
   client-side to at most 1280px on their long edge before upload — a
   straight-from-the-phone photo is easily 3000px+ on a side, and vision
   APIs generally cost more the higher the resolution, for no gain in
   legibility on a printed document. PDFs pass through unresized. Model
   defaults to `gemini-2.5-flash`, which is free of charge in Google AI
-  Studio's standard tier as of this writing — check current limits/rates
-  at [ai.google.dev/gemini-api/docs/pricing](https://ai.google.dev/gemini-api/docs/pricing),
+  Studio's standard tier as of this writing — check current limits and
+  rates at [ai.google.dev/gemini-api/docs/pricing](https://ai.google.dev/gemini-api/docs/pricing),
   since this changes over time.
+
+## Script load order
+
+Every page loads, in this order: `js/tax-data.js` (constants) →
+`js/storage.js` (the `Store`) → `js/app.js` (shared helpers and the money
+model) → any AI scripts → that page's own script. Nothing is a module and
+nothing is bundled, so the order is what wires it together.
 
 ## Disclaimer
 

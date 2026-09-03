@@ -43,42 +43,6 @@ const COUNTRY_CURRENCY_HINTS = {
   "australia": "AUD",
 };
 
-/** Suggested counterparties for the Correspondence log (free text — pick or type your own). */
-const CORRESPONDENCE_COUNTERPARTIES = [
-  "KPMG",
-  "PwC",
-  "EY",
-  "Deloitte",
-  "Accountant",
-  "IRS (US)",
-  "HMRC (UK)",
-  "Bundeszentralamt für Steuern (DE)",
-  "CRA (Canada)",
-  "ATO (Australia)",
-  "DGFiP (France)",
-];
-
-const CORRESPONDENCE_CHANNELS = [
-  "Email",
-  "Phone call",
-  "Video call",
-  "Letter",
-  "In-person meeting",
-  "Online portal message",
-];
-
-const CORRESPONDENCE_STATUSES = ["Open", "Resolved"];
-
-/** What kind of update a correspondence entry represents — lets you log outcomes, not just channels. */
-const CORRESPONDENCE_CATEGORIES = [
-  "Question / inquiry",
-  "Document request",
-  "Tax return filed",
-  "Refund notice",
-  "Assessment / bill",
-  "General update",
-];
-
 /** Currencies offered in amount fields across Tax Years, Payslips, and Correspondence. */
 const CURRENCIES = [
   { code: "DKK", symbol: "kr" },
@@ -104,9 +68,8 @@ const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
 
 /**
  * TEMPORARY (testing only — see js/claude-vision.js): default Claude model
- * for payslip analysis, editable per-browser in Settings. This app will
- * revert to Gemini before release; the whole Claude path is a one-flip
- * "AI provider" toggle away from being removed.
+ * for payslip analysis, editable per-browser in Settings. This app ships on
+ * Gemini; the whole Claude path is one "AI provider" toggle away from removal.
  */
 const CLAUDE_DEFAULT_MODEL = "claude-opus-5";
 
@@ -115,24 +78,70 @@ const PAYSLIP_MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-/** Payslip entry types — "Salary" is the default recurring monthly one; "Holiday pay" is the once-a-year extra payout. */
+/** Payslip entry types — "Salary" is the recurring monthly one; "Holiday pay" is the once-a-year payout. */
 const PAYSLIP_TYPES = ["Salary", "Holiday pay"];
 
-/** Suggested actions for the Tax Years payment-activity ledger (free text — pick or type your own). */
-const TAX_YEAR_ACTIONS = [
+/** Suggested actions for a tax year's payment ledger (free text — pick or type your own). */
+const PAYMENT_ACTIONS = [
   "Tax payed",
   "Refund received",
+  "Advance payment",
   "Assessment received",
   "Document submitted",
-  "Advance payment",
 ];
 
-/** The four status checks tracked per tax year, in display order. */
+/** The four year-level completion checks, in display order. */
 const TAX_YEAR_STATUS_FIELDS = [
-  { key: "yearCompleted", label: "Tax year completed?" },
-  { key: "questionnairesDone", label: "Tax questionnaires done?" },
-  { key: "returnsFiled", label: "Tax returns prepared and filed?" },
-  { key: "paidAndReturned", label: "Tax payed and returned?" },
+  { key: "yearCompleted", label: "Tax year completed" },
+  { key: "questionnairesDone", label: "Questionnaires done" },
+  { key: "returnsFiled", label: "Returns prepared & filed" },
+  { key: "paidAndReturned", label: "Tax payed & returned" },
+];
+
+/** Per-country progress, tracked separately for every country in a tax year. */
+const COUNTRY_STATUS_FIELDS = [
+  { key: "questionnaireDone", label: "Questionnaire", short: "Q" },
+  { key: "returnFiled", label: "Return filed", short: "Filed" },
+  { key: "paidReturned", label: "Payed / returned", short: "Payed" },
+];
+
+/** Social-security and insurance paperwork tracked per year alongside the tax return. */
+const TAX_YEAR_FORM_FIELDS = [
+  { key: "a1", label: "A1 certificate" },
+  { key: "s1", label: "S1 form" },
+  { key: "blueCard", label: "Blue insurance card" },
+];
+
+/** Suggested counterparties for the Correspondence log (free text — pick or type your own). */
+const CORRESPONDENCE_COUNTERPARTIES = [
+  "KPMG",
+  "Vestas HR",
+  "SKAT (DK)",
+  "FPS Finance (BE)",
+  "HMRC (UK)",
+  "Belastingdienst (NL)",
+  "Accountant",
+];
+
+const CORRESPONDENCE_CHANNELS = [
+  "Email",
+  "Phone call",
+  "Video call",
+  "Letter",
+  "In-person meeting",
+  "Online portal message",
+];
+
+const CORRESPONDENCE_STATUSES = ["Open", "Resolved"];
+
+/** What kind of update a correspondence entry represents — lets you log outcomes, not just channels. */
+const CORRESPONDENCE_CATEGORIES = [
+  "Question / inquiry",
+  "Document request",
+  "Tax return filed",
+  "Refund notice",
+  "Assessment / bill",
+  "General update",
 ];
 
 /**
@@ -141,26 +150,10 @@ const TAX_YEAR_STATUS_FIELDS = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "1.14.0";
+const APP_VERSION = "2.0.0";
 const APP_VERSION_DATE = "2026-09-03";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
-  { version: "1.14.0", summary: "Income gained a flow diagram: gross pay splitting into net pay and tax withheld, then tax withheld splitting into refunded and net tax — a visual for the Denmark-style \"pay all year, get part back\" pattern. TEMPORARY: Payslips' AI analysis can now call Anthropic Claude instead of Gemini, for a one-off quality comparison — switch providers under Settings. Ships back on Gemini at release." },
-  { version: "1.13.0", summary: "Removed the manual \"Add income entry\" form and its Entries table — Income's Overview is now purely Payslips' Gross/Net/Tax, EUR-converted and compared to last year, with no separate \"Other income\" row to maintain by hand." },
-  { version: "1.12.0", summary: "Refund netting now converts non-EUR refunds (e.g. a DKK refund from Denmark) using the exchange rates set on the Income page, instead of only netting EUR ones — a currency with no rate set yet is flagged rather than silently dropped. New \"All years\" dashboard on Tax Tracker: every tax year at a glance (status, Income/Tax/Refunded/Net tax/Net tax rate) with an Open button to jump straight into one." },
-  { version: "1.11.0", summary: "Tax Tracker's country summary now nets refunds against tax paid — e.g. Denmark: pay tax all year, get part back at year end. Log a \"Refund received\" payment activity and it's automatically subtracted from that country's Tax €, with new Refunded €/Net tax €/Net tax rate columns. Only EUR refunds are netted (a non-EUR one is flagged, not silently dropped)." },
-  { version: "1.10.0", summary: "Payslips now handles annual holiday pay: a Type selector (Salary / Holiday pay) on bulk upload, a Type column in the monthly log, a \"includes €X holiday pay\" note on the yearly summary, and holiday pay excluded from the missing-months check (it isn't expected every month). Flows straight into Income's overview like any other payslip." },
-  { version: "1.9.0", summary: "Income's Overview now pulls Gross/Net/Tax straight from Payslips (the actual source of truth) instead of duplicating that as manual entries. Manually logged entries below fold in as \"Other income\", and a Total income row combines Payslips' net pay with them — all EUR-converted, all compared against last year." },
-  { version: "1.8.1", summary: "Payslips: removed Country and Employer — same employer every time, so tracking them was pure noise. Bulk upload no longer asks for them, the monthly log has no Country/Employer columns, and \"Yearly summary by country\" is just \"Yearly summary\" (one set of totals, no grouping)." },
-  { version: "1.8.0", summary: "Income gained an Overview: per-country totals converted to EUR, compared against last year (New/+X%/−X%). You set the exchange rate for each non-EUR currency you log (\"1 EUR = ? DKK\"), saved and included in backups. Rows missing a rate are flagged and excluded from totals rather than silently wrong." },
-  { version: "1.7.0", summary: "New Settings page (reached via a gear icon, not the tracker switcher) holds the Gemini API key and Data export/import/wipe — both used to live on Payslips and Tax Tracker respectively. Removed the Currency converter from Tax Tracker's Overview. Payslips' single-file \"Add a payslip\" form is gone — bulk upload (which also works for one file) is now the only way in. The header's Tax Tracker / Income Tracker switcher is a real button with a working dropdown." },
-  { version: "1.6.0", summary: "Tax Tracker merged into a single year-scoped page: pick a year, then switch between Overview, Tax information (per-country entry), and Correspondence — all three now live inside that one tax-year record instead of separate nav pages. The old flat correspondence log and its lightweight follow-up log are gone; correspondence is per tax year now." },
-  { version: "1.5.0", summary: "Split into Tax Tracker / Income Tracker with a header switcher. Removed Residency and Countries (and the bracket-based estimate they powered) — countries are free text everywhere now. Dashboard rebuilt to summarize Tax Years data; Data export/import/wipe moved there. Tax Years restructured into an Overview tab + one tab per country. Payslips gained bulk upload and a missing-months tracker." },
-  { version: "1.4.1", summary: "Payslip AI extraction tuned against a real multi-page European payslip: ignores YTD boxes and daily time-sheet pages, handles comma-decimal numbers, auto-fills Year/Month/Country from the result." },
-  { version: "1.4.0", summary: "Tax Years rebuilt: income/tax-year pairs, status checklist, EUR→DKK converter, per-country table, payment activities, follow-up log." },
-  { version: "1.3.0", summary: "Payslip AI analysis on Gemini (free tier), with client-side image downscaling to keep it cheap." },
-  { version: "1.2.0", summary: "Added Payslips (AI-analyzed uploads), Tax Years (v1), and Correspondence categories/amounts." },
-  { version: "1.1.0", summary: "Added Correspondence: a log of communication with accountants and tax authorities." },
-  { version: "1.0.0", summary: "Initial release: Dashboard, Income, Residency, Countries." },
+  { version: "2.0.0", summary: "Rebuilt around the real spreadsheet model. A tax year now has ONE gross income (the Danish salary) instead of summing per-country income — which double-counted the same salary taxed in several places — plus \"Refunded from Denmark\" as its own figure. Balance (refunded − tax paid), Net income and effective rate are derived from those, matching the spreadsheet's own numbers exactly. Countries carry their own Questionnaire/Filed/Payed flags and a comment. Income and Payslips merged into one page." },
 ];

@@ -8,8 +8,18 @@ function formatMoney(amount, symbol) {
   })}`;
 }
 
+/** Money with an explicit +/- sign — for balances, where direction is the point. */
+function formatSigned(amount, symbol) {
+  const n = Number(amount) || 0;
+  const sign = n > 0 ? "+" : n < 0 ? "−" : "";
+  return `${sign}${symbol}${Math.abs(n).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
 function formatPercent(fraction) {
-  return `${(fraction * 100).toFixed(1)}%`;
+  return `${((Number(fraction) || 0) * 100).toFixed(1)}%`;
 }
 
 function escapeHtml(str) {
@@ -22,27 +32,57 @@ function currentYear() {
   return new Date().getFullYear();
 }
 
-/** Days spanned by a start/end date pair, inclusive of both ends. */
-function daysBetweenInclusive(startDate, endDate) {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const msPerDay = 24 * 60 * 60 * 1000;
-  const diff = Math.round((end - start) / msPerDay) + 1;
-  return diff > 0 ? diff : 0;
+/**
+ * The whole money model for one tax year, in one place.
+ *
+ *   gross     one salary for the year (Danish payroll) — NOT the sum of the
+ *             country rows, since the same salary is taxed in several places
+ *   taxPaid   sum of tax actually paid, across every country
+ *   refunded  what Denmark paid back
+ *   balance   refunded − taxPaid → positive = ahead, negative = short
+ *   netIncome gross − taxPaid
+ *   rate      taxPaid / gross
+ */
+function taxYearTotals(record) {
+  const gross = Number(record.grossIncomeEur) || 0;
+  const refunded = Number(record.refundedFromDkEur) || 0;
+  const taxPaid = (record.countries || []).reduce((sum, c) => sum + (Number(c.taxEur) || 0), 0);
+  return {
+    gross,
+    refunded,
+    taxPaid,
+    balance: refunded - taxPaid,
+    netIncome: gross - taxPaid,
+    rate: gross ? taxPaid / gross : 0,
+  };
 }
 
-/** Days of [startDate, endDate] (inclusive) that fall within calendar `year`. */
-function daysInYearOverlap(startDate, endDate, year) {
-  const yearStart = new Date(year, 0, 1);
-  const yearEnd = new Date(year, 11, 31);
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+/** How many of the four completion checks are ticked. */
+function statusProgress(record) {
+  const done = TAX_YEAR_STATUS_FIELDS.filter((f) => record.status && record.status[f.key]).length;
+  return { done, total: TAX_YEAR_STATUS_FIELDS.length };
+}
 
-  const overlapStart = start > yearStart ? start : yearStart;
-  const overlapEnd = end < yearEnd ? end : yearEnd;
+function yearLabel(record) {
+  return `Income ${record.incomeYear} → Tax ${record.taxYear}`;
+}
 
-  if (overlapStart > overlapEnd) return 0;
-  return daysBetweenInclusive(overlapStart, overlapEnd);
+/** Converts a local-currency amount to EUR using the saved rates ("1 EUR = ? code"). Null if the rate is unknown. */
+function toEur(amount, currencyCode, rates) {
+  if (!currencyCode || currencyCode === "EUR") return Number(amount) || 0;
+  const rate = Number(rates[currencyCode]);
+  if (!rate) return null;
+  return (Number(amount) || 0) / rate;
+}
+
+/** Builds a list of years covering any data present, plus the current year. */
+function collectYearsFromDates(dates) {
+  const years = new Set([currentYear()]);
+  dates.forEach((d) => {
+    const y = new Date(d).getFullYear();
+    if (!Number.isNaN(y)) years.add(y);
+  });
+  return Array.from(years).sort((a, b) => b - a);
 }
 
 /** Fills in the footer's version span, with recent changes as a hover tooltip. */
@@ -55,48 +95,24 @@ function renderVersionFooter() {
   }
 }
 
-/** Highlights the current page's link in the shared nav. */
-function markActiveNav() {
-  const page = document.body.dataset.page;
-  document.querySelectorAll(".app-nav a").forEach((link) => {
-    if (link.dataset.page === page) link.classList.add("active");
-  });
-}
 
-/** Wires up the header's Tax Tracker / Income Tracker switcher dropdown, present on every page. */
+/** Header dropdown: click the brand to switch between Tax Tracker and Income Tracker. */
 function wireTrackerSwitcher() {
   const btn = document.getElementById("tracker-switch-btn");
   const menu = document.getElementById("tracker-switch-menu");
   if (!btn || !menu) return;
-
   btn.addEventListener("click", (event) => {
     event.stopPropagation();
     menu.hidden = !menu.hidden;
   });
-
   document.addEventListener("click", (event) => {
-    if (!menu.hidden && event.target !== btn && !menu.contains(event.target) && !btn.contains(event.target)) {
+    if (!menu.hidden && !menu.contains(event.target) && !btn.contains(event.target)) {
       menu.hidden = true;
     }
   });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") menu.hidden = true;
-  });
-}
-
-/** Builds a <select> of years covering any data present, plus the current year. */
-function collectYearsFromDates(dates) {
-  const years = new Set([currentYear()]);
-  dates.forEach((d) => {
-    const y = new Date(d).getFullYear();
-    if (!Number.isNaN(y)) years.add(y);
-  });
-  return Array.from(years).sort((a, b) => b - a);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  markActiveNav();
-  renderVersionFooter();
   wireTrackerSwitcher();
+  renderVersionFooter();
 });

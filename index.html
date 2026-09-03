@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tax Tracker — Multi-Country Tax Tracker</title>
+<title>Tax years — Multi-Country Tax Tracker</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext y=%2224%27 font-size=%2224%27%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body data-page="tax-tracker">
+<body data-page="years">
 
 <header class="app-header">
   <div class="brand-switcher">
     <button type="button" class="app-brand" id="tracker-switch-btn"><span class="mark">₮</span> Tax Tracker <span class="caret">▾</span></button>
     <div class="switch-menu" id="tracker-switch-menu" hidden>
       <a class="switch-item active" href="index.html"><span class="mark">₮</span> Tax Tracker</a>
-      <a class="switch-item" href="income.html"><span class="mark">€</span> Income Tracker</a>
+      <a class="switch-item" href="payslips.html"><span class="mark">€</span> Income Tracker</a>
     </div>
   </div>
   <span style="flex:1"></span>
@@ -24,26 +24,35 @@
 <main class="app-main">
   <div class="page-title">
     <div>
-      <h1>Tax Tracker</h1>
-      <p>Pick a tax year, then switch between its Overview, your tax figures per country, and correspondence — everything here is scoped to that one year.</p>
+      <h1>Tax years</h1>
+      <p>One row per income year. <strong>Balance</strong> is what Denmark refunded minus the tax you paid elsewhere — positive means you're ahead, negative means you're short.</p>
     </div>
   </div>
 
+  <div class="grid stat-grid" id="headline-stats"></div>
+
   <div class="card">
-    <div class="card-header"><h2>All years</h2></div>
-    <p class="hint">Every tax year at a glance — click "Open" to switch into it below.</p>
+    <div class="toolbar">
+      <h2 style="margin:0;">All years</h2>
+      <span class="spacer"></span>
+      <label style="margin:0;">Income year</label>
+      <input type="number" id="new-income-year" min="2000" max="2100" style="max-width:96px;">
+      <label style="margin:0;">Tax year</label>
+      <input type="number" id="new-tax-year" min="2000" max="2100" style="max-width:96px;">
+      <button type="button" id="add-year-btn" class="primary small">+ Add year</button>
+    </div>
     <div class="table-scroll">
-      <table id="all-years-table">
+      <table id="years-table">
         <thead>
           <tr>
-            <th>Income year</th>
-            <th>Tax year</th>
-            <th>Status</th>
-            <th class="num">Income €</th>
-            <th class="num">Tax €</th>
-            <th class="num">Refunded €</th>
-            <th class="num">Net tax €</th>
-            <th class="num">Net tax rate</th>
+            <th>Year</th>
+            <th class="num">Gross income</th>
+            <th class="num">Refunded from DK</th>
+            <th class="num">Tax paid</th>
+            <th class="num">Balance</th>
+            <th class="num">Net income</th>
+            <th class="num">Rate</th>
+            <th>Progress</th>
             <th></th>
           </tr>
         </thead>
@@ -51,205 +60,7 @@
         <tfoot></tfoot>
       </table>
     </div>
-    <div class="empty-state" id="all-years-empty-state">No tax years yet. Create one below to get started.</div>
-  </div>
-
-  <div class="card">
-    <div class="toolbar">
-      <label style="margin:0;">Existing years</label>
-      <select id="tax-year-select" class="select-year"></select>
-      <span class="spacer"></span>
-      <label style="margin:0;">Income year</label>
-      <input type="number" id="new-income-year" min="2000" max="2100" style="max-width:100px;">
-      <label style="margin:0;">Tax year</label>
-      <input type="number" id="new-tax-year" min="2000" max="2100" style="max-width:100px;">
-      <button type="button" id="open-year-btn" class="primary small">Open / Create</button>
-      <button type="button" id="delete-year-btn" class="danger-outline small">Delete this record</button>
-    </div>
-  </div>
-
-  <datalist id="tax-year-country-list"></datalist>
-
-  <div id="tax-year-body" hidden>
-    <div class="card">
-      <nav class="subtab-strip" id="section-subtabs">
-        <button type="button" class="subtab-btn active" data-section="overview">Overview</button>
-        <button type="button" class="subtab-btn" data-section="tax-info">Tax information</button>
-        <button type="button" class="subtab-btn" data-section="correspondence">Correspondence</button>
-      </nav>
-    </div>
-
-    <!-- ============ OVERVIEW ============ -->
-    <div data-section="overview" id="overview-section">
-      <div class="card">
-        <div class="card-header"><h2>Tax completion status</h2></div>
-        <div id="status-fields"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-header"><h2>Income &amp; tax by country</h2></div>
-        <p class="hint">Tax € is what's withheld/paid over the year. Log a "Refund received" payment activity below when part of it comes back — it's netted out here automatically. A refund in another currency (e.g. DKK) converts using the exchange rate set on the <a href="income.html">Income</a> page; if none is set yet, it's flagged instead of dropped.</p>
-        <div class="table-scroll">
-          <table id="country-table">
-            <thead>
-              <tr>
-                <th>Country</th>
-                <th class="num">Income €</th>
-                <th class="num">Tax €</th>
-                <th class="num">Refunded €</th>
-                <th class="num">Net tax €</th>
-                <th class="num">Net tax rate</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-            <tfoot></tfoot>
-          </table>
-        </div>
-        <div class="empty-state" id="country-empty-state">No countries added yet. Add one on the "Tax information" tab.</div>
-      </div>
-
-      <div class="card">
-        <div class="card-header"><h2>Tax payment activities</h2></div>
-        <form id="activity-form">
-          <div class="field-row">
-            <div class="field">
-              <label>Action</label>
-              <input type="text" id="activity-action" list="tax-year-action-list" placeholder="e.g. Tax payed" required>
-              <datalist id="tax-year-action-list"></datalist>
-            </div>
-            <div class="field">
-              <label>Date</label>
-              <input type="date" id="activity-date">
-            </div>
-            <div class="field">
-              <label>Amount</label>
-              <input type="number" id="activity-amount" min="0" step="0.01" placeholder="0.00">
-            </div>
-            <div class="field">
-              <label>Currency</label>
-              <select id="activity-currency"></select>
-            </div>
-            <div class="field">
-              <label>Country</label>
-              <input type="text" id="activity-country" list="tax-year-country-list" placeholder="e.g. Denmark">
-            </div>
-          </div>
-          <button type="submit" class="primary">Add activity</button>
-        </form>
-
-        <div class="table-scroll" style="margin-top:16px;">
-          <table id="activity-table">
-            <thead>
-              <tr><th>Action</th><th>Date</th><th class="num">Amount</th><th>Country</th><th></th></tr>
-            </thead>
-            <tbody></tbody>
-            <tfoot></tfoot>
-          </table>
-        </div>
-        <div class="empty-state" id="activity-empty-state">No payment activities logged yet.</div>
-      </div>
-    </div>
-
-    <!-- ============ TAX INFORMATION ============ -->
-    <div data-section="tax-info" id="tax-info-section" hidden>
-      <div class="card">
-        <div class="toolbar" style="margin-bottom:0;">
-          <nav class="subtab-strip" id="country-subtabs"></nav>
-          <span class="spacer"></span>
-          <input type="text" id="new-country-input" list="tax-year-country-list" placeholder="Add a country…" style="max-width:180px;">
-          <button type="button" id="add-country-btn" class="small">+ Add</button>
-        </div>
-      </div>
-      <div id="country-panels"></div>
-      <div class="empty-state" id="tax-info-empty-state">No countries added yet for this tax year. Use "+ Add" above for each country you paid tax in.</div>
-    </div>
-
-    <!-- ============ CORRESPONDENCE ============ -->
-    <div data-section="correspondence" id="correspondence-section" hidden>
-      <div class="card">
-        <div class="card-header"><h2>Log a communication</h2></div>
-        <form id="correspondence-form">
-          <div class="field-row">
-            <div class="field">
-              <label>Date</label>
-              <input type="date" id="correspondence-date" required>
-            </div>
-            <div class="field">
-              <label>Counterparty</label>
-              <input type="text" id="correspondence-counterparty" list="correspondence-counterparty-list" placeholder="e.g. KPMG, IRS, HMRC" required>
-              <datalist id="correspondence-counterparty-list"></datalist>
-            </div>
-            <div class="field">
-              <label>Channel</label>
-              <select id="correspondence-channel"></select>
-            </div>
-            <div class="field">
-              <label>Category</label>
-              <select id="correspondence-category"></select>
-            </div>
-            <div class="field">
-              <label>Follow-up due (optional)</label>
-              <input type="date" id="correspondence-followup">
-            </div>
-          </div>
-          <div class="field">
-            <label>Subject</label>
-            <input type="text" id="correspondence-subject" placeholder="e.g. 2024 residency questionnaire">
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label>Country</label>
-              <input type="text" id="correspondence-country" list="tax-year-country-list" placeholder="e.g. Denmark">
-            </div>
-            <div class="field">
-              <label>Amount (optional — e.g. a refund or bill amount)</label>
-              <input type="number" id="correspondence-amount" min="0" step="0.01" placeholder="0.00">
-            </div>
-            <div class="field">
-              <label>Currency</label>
-              <select id="correspondence-currency"></select>
-            </div>
-          </div>
-          <div class="field">
-            <label>Notes</label>
-            <textarea id="correspondence-notes" rows="3" placeholder="What was discussed, what was requested, next steps..."></textarea>
-          </div>
-          <button type="submit" class="primary">Add entry</button>
-        </form>
-      </div>
-
-      <div class="card">
-        <div class="toolbar">
-          <h2 style="margin:0;">Log</h2>
-          <span class="badge warn" style="margin:0;"><span id="correspondence-open-count">0</span> open</span>
-          <span class="spacer"></span>
-          <label style="margin:0;">Status</label>
-          <select id="correspondence-status-filter" class="select-year"></select>
-          <input type="search" id="correspondence-search" placeholder="Search subject, counterparty, notes…" style="max-width:220px;">
-        </div>
-        <div class="table-scroll">
-          <table id="correspondence-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Counterparty</th>
-                <th>Channel</th>
-                <th>Category</th>
-                <th>Subject</th>
-                <th>Country</th>
-                <th>Notes</th>
-                <th class="num">Amount</th>
-                <th>Follow-up</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div class="empty-state" id="correspondence-empty-state">No communications logged yet. Add one above.</div>
-      </div>
-    </div>
+    <div class="empty-state" id="years-empty-state">No tax years yet. Add one above — or restore a backup under <a href="settings.html">Settings</a>.</div>
   </div>
 </main>
 
@@ -258,6 +69,6 @@
 <script src="js/tax-data.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/app.js"></script>
-<script src="js/tax-tracker.js"></script>
+<script src="js/years.js"></script>
 </body>
 </html>

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tax year — Multi-Country Tax Tracker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext y=%2224%27 font-size=%2224%27%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="year">
+
+<header class="app-header">
+  <div class="brand-switcher">
+    <button type="button" class="app-brand" id="tracker-switch-btn"><span class="mark">₮</span> Tax Tracker <span class="caret">▾</span></button>
+    <div class="switch-menu" id="tracker-switch-menu" hidden>
+      <a class="switch-item active" href="index.html"><span class="mark">₮</span> Tax Tracker</a>
+      <a class="switch-item" href="payslips.html"><span class="mark">€</span> Income Tracker</a>
+    </div>
+  </div>
+  <span style="flex:1"></span>
+  <a class="header-icon-btn" href="settings.html" title="Settings">⚙</a>
+</header>
+
+<main class="app-main">
+  <a class="back-link" href="index.html">← All tax years</a>
+
+  <div id="year-missing" class="empty-state" hidden>That tax year doesn't exist. <a href="index.html">Back to all years</a>.</div>
+
+  <div id="year-body" hidden>
+    <div class="page-title">
+      <div>
+        <h1 id="year-heading"></h1>
+        <p id="year-subheading"></p>
+      </div>
+      <button type="button" id="delete-year-btn" class="danger-outline small">Delete this year</button>
+    </div>
+
+    <!-- ============ THE MONEY ============ -->
+    <div class="card">
+      <div class="card-header"><h2>The money</h2></div>
+      <p class="hint">Gross income is the one salary you earned that year (your Danish payroll) — not a per-country total. The same salary gets taxed in several countries, so adding those up would count it twice.</p>
+      <div class="field-row">
+        <div class="field">
+          <label for="gross-income">Gross income for the year (EUR)</label>
+          <input type="number" id="gross-income" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label for="refunded-dk">Refunded from Denmark (EUR)</label>
+          <input type="number" id="refunded-dk" min="0" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="grid stat-grid" id="money-stats"></div>
+    </div>
+
+    <!-- ============ PROGRESS ============ -->
+    <div class="card">
+      <div class="card-header"><h2>Progress</h2></div>
+      <div class="check-grid" id="status-checks"></div>
+      <hr class="rule">
+      <p class="hint" style="margin-top:0;">Social security &amp; insurance paperwork for this year.</p>
+      <div class="check-grid" id="forms-checks"></div>
+    </div>
+
+    <!-- ============ COUNTRIES ============ -->
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0;">Countries</h2>
+        <span class="spacer"></span>
+        <input type="text" id="new-country" list="country-list" placeholder="Add a country…" style="max-width:180px;">
+        <datalist id="country-list"></datalist>
+        <button type="button" id="add-country-btn" class="small">+ Add</button>
+      </div>
+      <p class="hint">Income is the slice of your salary taxable in that country; Tax is what was actually paid there. Denmark's refund lives up top, not here.</p>
+      <div class="table-scroll">
+        <table id="countries-table">
+          <thead>
+            <tr>
+              <th>Country</th>
+              <th class="num">Income €</th>
+              <th class="num">Tax paid €</th>
+              <th>Questionnaire</th>
+              <th>Return filed</th>
+              <th>Payed / returned</th>
+              <th>Comment</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+      <div class="empty-state" id="countries-empty-state">No countries yet. Add the ones you were tax liable in that year.</div>
+    </div>
+
+    <!-- ============ PAYMENTS ============ -->
+    <div class="card">
+      <div class="card-header"><h2>Payments &amp; refunds</h2></div>
+      <p class="hint">A dated log of what actually moved — separate from the totals above, which are the year's final position.</p>
+      <form id="payment-form">
+        <div class="field-row">
+          <div class="field">
+            <label>Action</label>
+            <input type="text" id="payment-action" list="payment-action-list" placeholder="e.g. Tax payed" required>
+            <datalist id="payment-action-list"></datalist>
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="payment-date">
+          </div>
+          <div class="field">
+            <label>Amount</label>
+            <input type="number" id="payment-amount" min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div class="field">
+            <label>Currency</label>
+            <select id="payment-currency"></select>
+          </div>
+          <div class="field">
+            <label>Country</label>
+            <input type="text" id="payment-country" list="country-list" placeholder="e.g. Belgium">
+          </div>
+        </div>
+        <button type="submit" class="primary small">Add payment</button>
+      </form>
+      <div class="table-scroll" style="margin-top:16px;">
+        <table id="payments-table">
+          <thead><tr><th>Action</th><th>Date</th><th class="num">Amount</th><th>Country</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="payments-empty-state">Nothing logged yet.</div>
+    </div>
+
+    <!-- ============ CORRESPONDENCE ============ -->
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0;">Correspondence</h2>
+        <span class="badge warn" style="margin:0;"><span id="open-count">0</span> open</span>
+        <span class="spacer"></span>
+        <button type="button" id="toggle-corr-form" class="small">+ Log a message</button>
+      </div>
+      <form id="correspondence-form" hidden>
+        <div class="field-row">
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="corr-date">
+          </div>
+          <div class="field">
+            <label>Counterparty</label>
+            <input type="text" id="corr-counterparty" list="counterparty-list" placeholder="e.g. KPMG" required>
+            <datalist id="counterparty-list"></datalist>
+          </div>
+          <div class="field">
+            <label>Channel</label>
+            <select id="corr-channel"></select>
+          </div>
+          <div class="field">
+            <label>Category</label>
+            <select id="corr-category"></select>
+          </div>
+          <div class="field">
+            <label>Country</label>
+            <input type="text" id="corr-country" list="country-list" placeholder="e.g. Denmark">
+          </div>
+        </div>
+        <div class="field">
+          <label>Subject</label>
+          <input type="text" id="corr-subject" placeholder="e.g. 2023 residency questionnaire">
+        </div>
+        <div class="field">
+          <label>Notes</label>
+          <textarea id="corr-notes" rows="2" placeholder="What was said, what happens next…"></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Follow-up due (optional)</label>
+            <input type="date" id="corr-followup">
+          </div>
+        </div>
+        <button type="submit" class="primary small">Add entry</button>
+      </form>
+      <div class="table-scroll" style="margin-top:12px;">
+        <table id="correspondence-table">
+          <thead>
+            <tr><th>Date</th><th>Counterparty</th><th>Category</th><th>Subject</th><th>Country</th><th>Notes</th><th>Follow-up</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="correspondence-empty-state">Nothing logged yet.</div>
+    </div>
+  </div>
+</main>
+
+<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere. · <span id="app-version"></span></footer>
+
+<script src="js/tax-data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+<script src="js/year.js"></script>
+</body>
+</html>
