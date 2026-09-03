@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   countries: "taxtracker_countries_v1",
   income: "taxtracker_income_v1",
   residency: "taxtracker_residency_v1",
+  correspondence: "taxtracker_correspondence_v1",
 };
 
 function readJSON(key, fallback) {
@@ -95,12 +96,40 @@ const Store = {
     this.saveResidency(entries);
   },
 
+  getCorrespondence() {
+    return readJSON(STORAGE_KEYS.correspondence, []);
+  },
+
+  saveCorrespondence(entries) {
+    writeJSON(STORAGE_KEYS.correspondence, entries);
+  },
+
+  addCorrespondence(entry) {
+    const entries = this.getCorrespondence();
+    entries.push({ id: uid(), ...entry });
+    this.saveCorrespondence(entries);
+  },
+
+  updateCorrespondence(id, changes) {
+    const entries = this.getCorrespondence();
+    const entry = entries.find((e) => e.id === id);
+    if (!entry) return;
+    Object.assign(entry, changes);
+    this.saveCorrespondence(entries);
+  },
+
+  deleteCorrespondence(id) {
+    const entries = this.getCorrespondence().filter((e) => e.id !== id);
+    this.saveCorrespondence(entries);
+  },
+
   exportAll() {
     return {
       exportedAt: new Date().toISOString(),
       countries: this.getCountries(),
       income: this.getIncome(),
       residency: this.getResidency(),
+      correspondence: this.getCorrespondence(),
     };
   },
 
@@ -108,11 +137,13 @@ const Store = {
     if (data.countries) this.saveCountries(data.countries);
     if (data.income) this.saveIncome(data.income);
     if (data.residency) this.saveResidency(data.residency);
+    if (data.correspondence) this.saveCorrespondence(data.correspondence);
   },
 
   wipeAll() {
     localStorage.removeItem(STORAGE_KEYS.countries);
     localStorage.removeItem(STORAGE_KEYS.income);
     localStorage.removeItem(STORAGE_KEYS.residency);
+    localStorage.removeItem(STORAGE_KEYS.correspondence);
   },
 };

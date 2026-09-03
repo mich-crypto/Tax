@@ -116,3 +116,29 @@ const INCOME_CATEGORIES = [
   "Capital Gains",
   "Other",
 ];
+
+/** Suggested counterparties for the Correspondence log (free text — pick or type your own). */
+const CORRESPONDENCE_COUNTERPARTIES = [
+  "KPMG",
+  "PwC",
+  "EY",
+  "Deloitte",
+  "Accountant",
+  "IRS (US)",
+  "HMRC (UK)",
+  "Bundeszentralamt für Steuern (DE)",
+  "CRA (Canada)",
+  "ATO (Australia)",
+  "DGFiP (France)",
+];
+
+const CORRESPONDENCE_CHANNELS = [
+  "Email",
+  "Phone call",
+  "Video call",
+  "Letter",
+  "In-person meeting",
+  "Online portal message",
+];
+
+const CORRESPONDENCE_STATUSES = ["Open", "Resolved"];

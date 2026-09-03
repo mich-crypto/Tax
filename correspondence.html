@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Correspondence — Multi-Country Tax Tracker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext y=%2224%27 font-size=%2224%27%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="correspondence">
+
+<header class="app-header">
+  <div class="app-brand"><span class="mark">₮</span> Tax Tracker</div>
+  <nav class="app-nav">
+    <a href="index.html" data-page="dashboard">Dashboard</a>
+    <a href="income.html" data-page="income">Income</a>
+    <a href="residency.html" data-page="residency">Residency</a>
+    <a href="correspondence.html" data-page="correspondence">Correspondence</a>
+    <a href="countries.html" data-page="countries">Countries</a>
+  </nav>
+</header>
+
+<main class="app-main">
+  <div class="page-title">
+    <div>
+      <h1>Correspondence</h1>
+      <p>A log of your communication with accountants (e.g. KPMG) and tax authorities — calls, emails, letters, and meetings — so nothing falls through the cracks.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Log a communication</h2></div>
+    <form id="correspondence-form">
+      <div class="field-row">
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="correspondence-date" required>
+        </div>
+        <div class="field">
+          <label>Counterparty</label>
+          <input type="text" id="correspondence-counterparty" list="correspondence-counterparty-list" placeholder="e.g. KPMG, IRS, HMRC" required>
+          <datalist id="correspondence-counterparty-list"></datalist>
+        </div>
+        <div class="field">
+          <label>Channel</label>
+          <select id="correspondence-channel"></select>
+        </div>
+        <div class="field">
+          <label>Follow-up due (optional)</label>
+          <input type="date" id="correspondence-followup">
+        </div>
+      </div>
+      <div class="field">
+        <label>Subject</label>
+        <input type="text" id="correspondence-subject" placeholder="e.g. 2024 residency questionnaire">
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="correspondence-notes" rows="3" placeholder="What was discussed, what was requested, next steps..."></textarea>
+      </div>
+      <button type="submit" class="primary">Add entry</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <h2 style="margin:0;">Log</h2>
+      <span class="badge warn" style="margin:0;"><span id="correspondence-open-count">0</span> open</span>
+      <span class="spacer"></span>
+      <label style="margin:0;">Status</label>
+      <select id="correspondence-status-filter" class="select-year"></select>
+      <input type="search" id="correspondence-search" placeholder="Search subject, counterparty, notes…" style="max-width:220px;">
+    </div>
+    <table id="correspondence-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Counterparty</th>
+          <th>Channel</th>
+          <th>Subject</th>
+          <th>Notes</th>
+          <th>Follow-up</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="empty-state" id="correspondence-empty-state">No communications logged yet. Add one above.</div>
+  </div>
+</main>
+
+<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere.</footer>
+
+<script src="js/tax-data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/tax-calc.js"></script>
+<script src="js/app.js"></script>
+<script src="js/correspondence.js"></script>
+</body>
+</html>

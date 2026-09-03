@@ -17,6 +17,10 @@ browser's `localStorage`; nothing is sent anywhere.
 - **Residency** (`residency.html`) — log date ranges spent in each country
   and see running day totals against a configurable threshold (defaults to
   183 days, the day count commonly used for tax-residency tests).
+- **Correspondence** (`correspondence.html`) — a log of communication with
+  accountants/advisors (e.g. KPMG) and tax authorities: date, counterparty,
+  channel (call/email/letter/meeting), subject, notes, an optional
+  follow-up date, and an open/resolved status.
 - **Countries** (`countries.html`) — add, edit, or delete countries: name,
   currency, residency threshold, and progressive tax brackets. Also export
   all data to a JSON file, import it back, or wipe everything.
