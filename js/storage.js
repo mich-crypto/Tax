@@ -77,9 +77,9 @@ const Store = {
   },
 
   // ---------- Tax years (mirrors the income-year/tax-year spreadsheet workflow:
-  // a status checklist, a EUR->DKK reference rate, per-country income/tax,
-  // a payment-activity ledger, and a correspondence log — all scoped to one
-  // income-year/tax-year pair, e.g. "income 2025 / tax year 2026") ----------
+  // a status checklist, per-country income/tax, a payment-activity ledger, and
+  // a correspondence log — all scoped to one income-year/tax-year pair, e.g.
+  // "income 2025 / tax year 2026") ----------
 
   getTaxYears() {
     return readJSON(STORAGE_KEYS.taxYears, []);
@@ -111,7 +111,6 @@ const Store = {
         id: uid(),
         incomeYear,
         taxYear,
-        fxRateDkkPerEur: null,
         status: {
           yearCompleted: false,
           questionnairesDone: false,

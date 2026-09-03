@@ -59,22 +59,6 @@
     });
   }
 
-  // ---------- Overview: FX converter ----------
-
-  const fxRateInput = document.getElementById("fx-rate");
-  const fxAmountEurInput = document.getElementById("fx-amount-eur");
-  const fxAmountDkkInput = document.getElementById("fx-amount-dkk");
-
-  function updateFxConverter() {
-    const rate = Number(fxRateInput.value);
-    const amount = Number(fxAmountEurInput.value);
-    if (!rate || !amount) {
-      fxAmountDkkInput.value = "";
-      return;
-    }
-    fxAmountDkkInput.value = formatMoney(amount * rate, "kr");
-  }
-
   // ---------- Overview: per-country summary table ----------
 
   const countryTableBody = document.querySelector("#country-table tbody");
@@ -84,7 +68,6 @@
 
   function renderCountrySummaryTable(record) {
     const rows = record.countries;
-    const rate = Number(record.fxRateDkkPerEur) || 0;
 
     if (!rows.length) {
       countryTable.style.display = "none";
@@ -108,9 +91,7 @@
           <tr>
             <td>${escapeHtml(r.country)}</td>
             <td class="num">${formatMoney(incomeEur, "€")}</td>
-            <td class="num">${rate ? formatMoney(incomeEur * rate, "kr") : "—"}</td>
             <td class="num">${formatMoney(taxEur, "€")}</td>
-            <td class="num">${rate ? formatMoney(taxEur * rate, "kr") : "—"}</td>
             <td class="num">${incomeEur ? taxRate.toFixed(1) + "%" : "—"}</td>
           </tr>
         `;
@@ -122,9 +103,7 @@
       <tr class="total-row">
         <td><strong>Total</strong></td>
         <td class="num"><strong>${formatMoney(totalIncome, "€")}</strong></td>
-        <td class="num"><strong>${rate ? formatMoney(totalIncome * rate, "kr") : "—"}</strong></td>
         <td class="num"><strong>${formatMoney(totalTax, "€")}</strong></td>
-        <td class="num"><strong>${rate ? formatMoney(totalTax * rate, "kr") : "—"}</strong></td>
         <td class="num"><strong>${totalIncome ? overallRate.toFixed(1) + "%" : "—"}</strong></td>
       </tr>
     `;
@@ -508,9 +487,6 @@
     showSection("overview");
 
     renderStatusFields(record);
-    fxRateInput.value = record.fxRateDkkPerEur || "";
-    fxAmountEurInput.value = "";
-    fxAmountDkkInput.value = "";
     renderCountrySummaryTable(record);
     renderActivityTable(record);
 
@@ -553,14 +529,6 @@
     openYear(years.length ? yearSelect.value : null);
   });
 
-  fxRateInput.addEventListener("change", () => {
-    if (!currentId) return;
-    Store.updateTaxYearMeta(currentId, { fxRateDkkPerEur: Number(fxRateInput.value) || null });
-    renderCountrySummaryTable(Store.getTaxYearById(currentId));
-    updateFxConverter();
-  });
-  fxAmountEurInput.addEventListener("input", updateFxConverter);
-
   // Defaults for a first-time "new" entry: last calendar year's income, filed this year.
   newIncomeYearInput.value = currentYear() - 1;
   newTaxYearInput.value = currentYear();
@@ -570,51 +538,4 @@
   populateYearSelect();
   const years = Store.getTaxYears();
   openYear(years.length ? yearSelect.value : null);
-
-  // --- Data export / import / wipe ---
-  const exportBtn = document.getElementById("export-data-btn");
-  const importInput = document.getElementById("import-data-input");
-  const wipeBtn = document.getElementById("wipe-data-btn");
-
-  exportBtn.addEventListener("click", () => {
-    const data = Store.exportAll();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `tax-tracker-export-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  });
-
-  importInput.addEventListener("change", () => {
-    const file = importInput.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const data = JSON.parse(reader.result);
-        Store.importAll(data);
-        populateYearSelect();
-        const years = Store.getTaxYears();
-        openYear(years.length ? yearSelect.value : null);
-        alert("Import complete.");
-      } catch (e) {
-        alert("That file doesn't look like a valid export (invalid JSON).");
-      }
-      importInput.value = "";
-    };
-    reader.readAsText(file);
-  });
-
-  wipeBtn.addEventListener("click", () => {
-    if (!confirm("This deletes ALL data (income, residency, tax years, correspondence, payslips) stored in this browser. This cannot be undone. Continue?")) {
-      return;
-    }
-    Store.wipeAll();
-    populateYearSelect();
-    openYear(null);
-  });
 })();

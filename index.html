@@ -17,6 +17,8 @@
       <a class="switch-item" href="income.html"><span class="mark">€</span> Income Tracker</a>
     </div>
   </div>
+  <span style="flex:1"></span>
+  <a class="header-icon-btn" href="settings.html" title="Settings">⚙</a>
 </header>
 
 <main class="app-main">
@@ -54,30 +56,9 @@
 
     <!-- ============ OVERVIEW ============ -->
     <div data-section="overview" id="overview-section">
-      <div class="grid" style="grid-template-columns: 1fr 1fr; align-items:start;">
-        <div class="card">
-          <div class="card-header"><h2>Tax completion status</h2></div>
-          <div id="status-fields"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-header"><h2>Currency converter</h2></div>
-          <div class="field">
-            <label>1 EUR = ? DKK (reference rate for this tax year)</label>
-            <input type="number" id="fx-rate" min="0" step="0.0001" placeholder="e.g. 7.46">
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label>Amount (EUR)</label>
-              <input type="number" id="fx-amount-eur" min="0" step="0.01" placeholder="0.00">
-            </div>
-            <div class="field">
-              <label>≈ DKK</label>
-              <input type="text" id="fx-amount-dkk" disabled>
-            </div>
-          </div>
-          <p class="hint">Used to show a DKK-equivalent alongside € figures below. No live exchange rate — you set it.</p>
-        </div>
+      <div class="card">
+        <div class="card-header"><h2>Tax completion status</h2></div>
+        <div id="status-fields"></div>
       </div>
 
       <div class="card">
@@ -88,9 +69,7 @@
               <tr>
                 <th>Country</th>
                 <th class="num">Income €</th>
-                <th class="num">Income DKK</th>
                 <th class="num">Tax €</th>
-                <th class="num">Tax DKK</th>
                 <th class="num">Tax rate</th>
               </tr>
             </thead>
@@ -242,19 +221,6 @@
         </div>
         <div class="empty-state" id="correspondence-empty-state">No communications logged yet. Add one above.</div>
       </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-header"><h2>Data</h2></div>
-    <p class="hint">Everything lives in this browser's local storage. Back it up as a JSON file, restore from one, or wipe everything and start over.</p>
-    <div class="toolbar" style="margin-bottom:0;">
-      <button type="button" id="export-data-btn">Export data (JSON)</button>
-      <label class="btn" style="margin:0;">
-        Import data
-        <input type="file" id="import-data-input" accept="application/json" style="display:none;">
-      </label>
-      <button type="button" id="wipe-data-btn" class="danger-outline">Wipe all data</button>
     </div>
   </div>
 </main>

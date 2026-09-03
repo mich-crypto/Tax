@@ -199,6 +199,26 @@ a:hover {
   color: var(--accent);
 }
 
+/* ---------- header settings icon (right-hand side, every page) ---------- */
+
+.header-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.header-icon-btn:hover {
+  background: var(--bg-sunken);
+  color: var(--text);
+  text-decoration: none;
+}
+
 /* ---------- in-page sub-tabs (e.g. Tax Years' Overview/country switcher) ---------- */
 
 .subtab-strip {

@@ -140,11 +140,12 @@ const TAX_YEAR_STATUS_FIELDS = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "1.6.0";
+const APP_VERSION = "1.7.0";
 const APP_VERSION_DATE = "2026-09-03";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "1.7.0", summary: "New Settings page (reached via a gear icon, not the tracker switcher) holds the Gemini API key and Data export/import/wipe — both used to live on Payslips and Tax Tracker respectively. Removed the Currency converter from Tax Tracker's Overview. Payslips' single-file \"Add a payslip\" form is gone — bulk upload (which also works for one file) is now the only way in. The header's Tax Tracker / Income Tracker switcher is a real button with a working dropdown." },
   { version: "1.6.0", summary: "Tax Tracker merged into a single year-scoped page: pick a year, then switch between Overview, Tax information (per-country entry), and Correspondence — all three now live inside that one tax-year record instead of separate nav pages. The old flat correspondence log and its lightweight follow-up log are gone; correspondence is per tax year now." },
   { version: "1.5.0", summary: "Split into Tax Tracker / Income Tracker with a header switcher. Removed Residency and Countries (and the bracket-based estimate they powered) — countries are free text everywhere now. Dashboard rebuilt to summarize Tax Years data; Data export/import/wipe moved there. Tax Years restructured into an Overview tab + one tab per country. Payslips gained bulk upload and a missing-months tracker." },
   { version: "1.4.1", summary: "Payslip AI extraction tuned against a real multi-page European payslip: ignores YTD boxes and daily time-sheet pages, handles comma-decimal numbers, auto-fills Year/Month/Country from the result." },

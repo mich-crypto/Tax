@@ -3,6 +3,25 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v1.7.0 — 2026-09-03
+
+- **New Settings page** (`settings.html`), reached via a ⚙ icon on the
+  right of every page's header — separate from the Tax Tracker / Income
+  Tracker switcher, since it isn't part of either tracker:
+  - The Gemini API key and model, moved off the Payslips page.
+  - Export/Import/Wipe, moved off Tax Tracker.
+- **Removed the Currency converter** from Tax Tracker's Overview tab,
+  along with the DKK columns it fed in the per-country summary table —
+  the summary table is EUR-only now.
+- **Payslips: removed the single-file "Add a payslip" form.** Bulk
+  upload (which already worked fine with just one file selected) is now
+  the only way to add a payslip — always AI-analyzed and auto-saved, no
+  manual-entry-only path.
+- **Header switcher is now a real interactive button** with a working
+  dropdown (it was previously a clickable button on the live site, but
+  the Artifact preview's own header — built separately from the real
+  page markup — was still a static, non-interactive label; fixed).
+
 ## v1.6.0 — 2026-09-03
 
 - **Tax Tracker merged into one page.** Dashboard, Tax Years, and
