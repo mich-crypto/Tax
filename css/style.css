@@ -438,6 +438,12 @@ footer.app-footer {
   font-size: 12px;
 }
 
+#app-version {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  cursor: help;
+  border-bottom: 1px dotted var(--text-muted);
+}
+
 .bracket-list {
   display: flex;
   flex-direction: column;

@@ -7,6 +7,9 @@ No build step, no server, no database — open `index.html` in a browser or
 serve the folder with any static file host. All data is kept in the
 browser's `localStorage`; nothing is sent anywhere.
 
+Every page's footer shows the current version (hover it for a few recent
+highlights) — full history in [CHANGELOG.md](CHANGELOG.md).
+
 ## Pages
 
 - **Dashboard** (`index.html`) — per-country summary for a selected tax

@@ -45,6 +45,16 @@ function daysInYearOverlap(startDate, endDate, year) {
   return daysBetweenInclusive(overlapStart, overlapEnd);
 }
 
+/** Fills in the footer's version span, with recent changes as a hover tooltip. */
+function renderVersionFooter() {
+  const el = document.getElementById("app-version");
+  if (!el || typeof APP_VERSION === "undefined") return;
+  el.textContent = `v${APP_VERSION} (${APP_VERSION_DATE})`;
+  if (typeof APP_CHANGELOG !== "undefined") {
+    el.title = APP_CHANGELOG.map((e) => `v${e.version} — ${e.summary}`).join("\n");
+  }
+}
+
 /** Highlights the current page's link in the shared nav. */
 function markActiveNav() {
   const page = document.body.dataset.page;
@@ -63,4 +73,7 @@ function collectYearsFromDates(dates) {
   return Array.from(years).sort((a, b) => b - a);
 }
 
-document.addEventListener("DOMContentLoaded", markActiveNav);
+document.addEventListener("DOMContentLoaded", () => {
+  markActiveNav();
+  renderVersionFooter();
+});

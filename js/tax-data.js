@@ -208,3 +208,21 @@ const TAX_YEAR_STATUS_FIELDS = [
   { key: "returnsFiled", label: "Tax returns prepared and filed?" },
   { key: "paidAndReturned", label: "Tax payed and returned?" },
 ];
+
+/**
+ * Shown in every page's footer so it's obvious which build is live —
+ * useful since this is a static site with no build step of its own to
+ * stamp a version automatically. Bump both on any user-visible change;
+ * full history lives in CHANGELOG.md at the repo root.
+ */
+const APP_VERSION = "1.4.0";
+const APP_VERSION_DATE = "2026-09-03";
+
+/** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
+const APP_CHANGELOG = [
+  { version: "1.4.0", summary: "Tax Years rebuilt: income/tax-year pairs, status checklist, EUR→DKK converter, per-country table, payment activities, follow-up log." },
+  { version: "1.3.0", summary: "Payslip AI analysis on Gemini (free tier), with client-side image downscaling to keep it cheap." },
+  { version: "1.2.0", summary: "Added Payslips (AI-analyzed uploads), Tax Years (v1), and Correspondence categories/amounts." },
+  { version: "1.1.0", summary: "Added Correspondence: a log of communication with accountants and tax authorities." },
+  { version: "1.0.0", summary: "Initial release: Dashboard, Income, Residency, Countries." },
+];
