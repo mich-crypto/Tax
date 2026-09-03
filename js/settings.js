@@ -1,4 +1,11 @@
 (function () {
+  // --- TEMPORARY: AI provider toggle (testing only — see js/claude-vision.js) ---
+  const providerSelect = document.getElementById("ai-provider-select");
+  providerSelect.value = Store.getAIProvider();
+  providerSelect.addEventListener("change", () => {
+    Store.saveAIProvider(providerSelect.value);
+  });
+
   // --- Gemini settings ---
   const apiKeyInput = document.getElementById("gemini-api-key");
   const modelInput = document.getElementById("gemini-model");
@@ -34,6 +41,42 @@
   });
 
   loadGeminiSettingsIntoForm();
+
+  // --- TEMPORARY: Claude settings (testing only — see js/claude-vision.js) ---
+  const claudeApiKeyInput = document.getElementById("claude-api-key");
+  const claudeModelInput = document.getElementById("claude-model");
+  const toggleClaudeKeyBtn = document.getElementById("toggle-claude-key-visibility");
+  const saveClaudeSettingsBtn = document.getElementById("save-claude-settings");
+  const clearClaudeKeyBtn = document.getElementById("clear-claude-key");
+  const claudeSettingsStatus = document.getElementById("claude-settings-status");
+
+  function loadClaudeSettingsIntoForm() {
+    const settings = Store.getClaudeSettings();
+    claudeApiKeyInput.value = settings.apiKey || "";
+    claudeModelInput.value = settings.model || CLAUDE_DEFAULT_MODEL;
+  }
+
+  toggleClaudeKeyBtn.addEventListener("click", () => {
+    claudeApiKeyInput.type = claudeApiKeyInput.type === "password" ? "text" : "password";
+  });
+
+  saveClaudeSettingsBtn.addEventListener("click", () => {
+    Store.saveClaudeSettings({
+      apiKey: claudeApiKeyInput.value.trim(),
+      model: claudeModelInput.value.trim() || CLAUDE_DEFAULT_MODEL,
+    });
+    claudeSettingsStatus.textContent = "Saved.";
+    setTimeout(() => { claudeSettingsStatus.textContent = ""; }, 2500);
+  });
+
+  clearClaudeKeyBtn.addEventListener("click", () => {
+    Store.clearClaudeApiKey();
+    claudeApiKeyInput.value = "";
+    claudeSettingsStatus.textContent = "API key cleared.";
+    setTimeout(() => { claudeSettingsStatus.textContent = ""; }, 2500);
+  });
+
+  loadClaudeSettingsIntoForm();
 
   // --- Data export / import / wipe ---
   const exportBtn = document.getElementById("export-data-btn");

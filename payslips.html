@@ -28,7 +28,7 @@
   <div class="page-title">
     <div>
       <h1>Payslips</h1>
-      <p>Bulk upload your payslips and have AI (Google Gemini) read the figures off them. Builds your month-by-month pay and tax history, comparable across countries. Set your Gemini API key under <a href="settings.html">Settings</a> first.</p>
+      <p>Bulk upload your payslips and have AI read the figures off them. Builds your month-by-month pay and tax history, comparable across countries. Set your AI provider and API key under <a href="settings.html">Settings</a> first. <strong>Temporarily testing Claude</strong> instead of Gemini — switch back under Settings.</p>
     </div>
   </div>
 
@@ -84,12 +84,13 @@
   </div>
 </main>
 
-<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere — except a payslip you choose to analyze, which goes straight to Google's Gemini API. · <span id="app-version"></span></footer>
+<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere — except a payslip you choose to analyze, which goes straight to your selected AI provider (Google Gemini or, temporarily for testing, Anthropic Claude). · <span id="app-version"></span></footer>
 
 <script src="js/tax-data.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/app.js"></script>
 <script src="js/gemini.js"></script>
+<script src="js/claude-vision.js"></script>
 <script src="js/payslips.js"></script>
 </body>
 </html>

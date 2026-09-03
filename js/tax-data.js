@@ -102,6 +102,14 @@ const CURRENCIES = [
  */
 const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
 
+/**
+ * TEMPORARY (testing only — see js/claude-vision.js): default Claude model
+ * for payslip analysis, editable per-browser in Settings. This app will
+ * revert to Gemini before release; the whole Claude path is a one-flip
+ * "AI provider" toggle away from being removed.
+ */
+const CLAUDE_DEFAULT_MODEL = "claude-opus-5";
+
 const PAYSLIP_MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -133,11 +141,12 @@ const TAX_YEAR_STATUS_FIELDS = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "1.13.0";
+const APP_VERSION = "1.14.0";
 const APP_VERSION_DATE = "2026-09-03";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "1.14.0", summary: "Income gained a flow diagram: gross pay splitting into net pay and tax withheld, then tax withheld splitting into refunded and net tax — a visual for the Denmark-style \"pay all year, get part back\" pattern. TEMPORARY: Payslips' AI analysis can now call Anthropic Claude instead of Gemini, for a one-off quality comparison — switch providers under Settings. Ships back on Gemini at release." },
   { version: "1.13.0", summary: "Removed the manual \"Add income entry\" form and its Entries table — Income's Overview is now purely Payslips' Gross/Net/Tax, EUR-converted and compared to last year, with no separate \"Other income\" row to maintain by hand." },
   { version: "1.12.0", summary: "Refund netting now converts non-EUR refunds (e.g. a DKK refund from Denmark) using the exchange rates set on the Income page, instead of only netting EUR ones — a currency with no rate set yet is flagged rather than silently dropped. New \"All years\" dashboard on Tax Tracker: every tax year at a glance (status, Income/Tax/Refunded/Net tax/Net tax rate) with an Open button to jump straight into one." },
   { version: "1.11.0", summary: "Tax Tracker's country summary now nets refunds against tax paid — e.g. Denmark: pay tax all year, get part back at year end. Log a \"Refund received\" payment activity and it's automatically subtracted from that country's Tax €, with new Refunded €/Net tax €/Net tax rate columns. Only EUR refunds are netted (a non-EUR one is flagged, not silently dropped)." },

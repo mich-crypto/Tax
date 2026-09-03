@@ -3,6 +3,24 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v1.14.0 — 2026-09-03
+
+- **Income flow diagram**: a small Sankey-style chart under Overview —
+  gross pay splits into Net pay (kept) and Tax withheld, and Tax
+  withheld itself splits into Refunded and Net tax (what actually
+  stays with the tax authority). Pulls Gross/Net/Tax from Payslips and
+  Refunded from the matching Tax Tracker year (same income year),
+  same EUR conversion and missing-rate handling as the Overview table.
+  No refund yet? It just shows Tax withheld flowing straight to Net tax.
+- **TEMPORARY, testing only — reverts before release:** Payslips' AI
+  analysis can now call Anthropic Claude instead of Google Gemini, to
+  compare extraction quality. New **AI provider** selector under
+  Settings (Gemini / Claude), plus a Claude API key/model card mirroring
+  Gemini's. Currently defaults to Claude. To ship: switch the selector
+  back to Gemini (or remove the whole provider-toggle layer —
+  `js/claude-vision.js`, the Claude Store methods, and the provider
+  selector — before release, since Gemini is the shipped provider).
+
 ## v1.13.0 — 2026-09-03
 
 - **Removed the manual "Add income entry" form** and its Entries table

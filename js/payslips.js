@@ -22,6 +22,27 @@
     return COUNTRY_CURRENCY_HINTS[(countryName || "").trim().toLowerCase()] || "";
   }
 
+  // TEMPORARY: Payslips' AI analysis can call either Gemini or Claude,
+  // switchable under Settings — this app will revert to Gemini before
+  // release. Returns { name, run(file) } for whichever is selected.
+  function activeAIProvider() {
+    const provider = Store.getAIProvider();
+    if (provider === "claude") {
+      const settings = Store.getClaudeSettings();
+      return {
+        name: "Claude",
+        apiKey: settings.apiKey,
+        run: (file) => analyzePayslipWithClaude({ apiKey: settings.apiKey, model: settings.model || CLAUDE_DEFAULT_MODEL, file }),
+      };
+    }
+    const settings = Store.getGeminiSettings();
+    return {
+      name: "Gemini",
+      apiKey: settings.apiKey,
+      run: (file) => analyzePayslipWithGemini({ apiKey: settings.apiKey, model: settings.model || GEMINI_DEFAULT_MODEL, file }),
+    };
+  }
+
   function populateYearFilter() {
     const entries = Store.getPayslips();
     const years = collectYearsFromDates(entries.map((e) => `${e.year}-01-01`));
@@ -131,9 +152,9 @@
       bulkStatus.textContent = "Choose one or more payslip files first.";
       return;
     }
-    const settings = Store.getGeminiSettings();
-    if (!settings.apiKey) {
-      bulkStatus.textContent = "Add and save a Gemini API key under Settings first.";
+    const provider = activeAIProvider();
+    if (!provider.apiKey) {
+      bulkStatus.textContent = `Add and save a ${provider.name} API key under Settings first.`;
       return;
     }
 
@@ -143,13 +164,9 @@
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      bulkStatus.textContent = `Analyzing ${i + 1} / ${files.length}: ${file.name}…`;
+      bulkStatus.textContent = `Analyzing ${i + 1} / ${files.length} with ${provider.name}: ${file.name}…`;
       try {
-        const result = await analyzePayslipWithGemini({
-          apiKey: settings.apiKey,
-          model: settings.model || GEMINI_DEFAULT_MODEL,
-          file,
-        });
+        const result = await provider.run(file);
 
         // Country/employer aren't tracked as fields (same employer every time) —
         // AI-extracted country is still used transiently as a currency hint.

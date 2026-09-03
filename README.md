@@ -60,27 +60,51 @@ shared settings:
   here by hand), converted to EUR (your home currency) for the selected
   year, next to the same figures for the year before with a change badge
   (New/+X%/−X%). A row missing an exchange rate is flagged and excluded
-  rather than silently wrong. Set each currency's rate ("1 EUR = ? DKK")
-  in the **Exchange rates** card right below — only currencies actually
-  used in Payslips show up there.
+  rather than silently wrong. Below that, an **Income flow** diagram —
+  gross pay splitting into Net pay and Tax withheld, then Tax withheld
+  splitting into Refunded and Net tax (pulled from the matching Tax
+  Tracker year) — a visual for the "pay tax all year, get part back"
+  pattern. Set each currency's rate ("1 EUR = ? DKK") in the **Exchange
+  rates** card right below — only currencies actually used in Payslips
+  show up there.
 - **Payslips** (`payslips.html`) — **bulk upload**: pick one or more
-  payslip files (image or PDF) and Google Gemini reads gross pay, net
-  pay, and tax withheld off each one, saving it automatically — no
-  per-file review, so check the monthly log afterwards and fix anything
-  AI got wrong (works fine for a single file too, so there's no separate
-  one-at-a-time form). No Country/Employer fields — that's assumed to be
-  the same every time, so it isn't tracked. A **Type** selector (Salary /
-  Holiday pay) applies to each batch — upload the once-a-year holiday
-  pay ("feriepenge") payout separately from monthly salary payslips and
-  it's tagged and shown distinctly in the log, with a note on the yearly
+  payslip files (image or PDF) and AI reads gross pay, net pay, and tax
+  withheld off each one, saving it automatically — no per-file review,
+  so check the monthly log afterwards and fix anything AI got wrong
+  (works fine for a single file too, so there's no separate one-at-a-time
+  form). No Country/Employer fields — that's assumed to be the same
+  every time, so it isn't tracked. A **Type** selector (Salary / Holiday
+  pay) applies to each batch — upload the once-a-year holiday pay
+  ("feriepenge") payout separately from monthly salary payslips and it's
+  tagged and shown distinctly in the log, with a note on the yearly
   summary for how much of the year's total was holiday pay. A **missing
   months** strip shows which months of the selected year have no salary
   payslip logged yet (holiday pay doesn't count toward that, since it
-  isn't expected every month). Needs a Gemini API key, set once under
-  Settings.
-- **Settings** (`settings.html`) — the Gemini API key/model used by
-  Payslips, and Export/Import/Wipe for all your data. Shared across both
-  trackers, so it lives outside either one.
+  isn't expected every month). Needs an API key for whichever AI
+  provider is active, set once under Settings.
+- **Settings** (`settings.html`) — the API key/model for the active AI
+  provider used by Payslips, and Export/Import/Wipe for all your data.
+  Shared across both trackers, so it lives outside either one. **AI
+  provider** picks Google Gemini or (temporarily, for testing —
+  see below) Anthropic Claude.
+
+### Temporary: Claude vs. Gemini for payslip analysis
+
+Payslips' AI analysis can currently call **either** Google Gemini
+(`js/gemini.js`) or Anthropic Claude (`js/claude-vision.js`), switchable
+under Settings → **AI provider**. This exists for a one-off quality
+comparison and currently defaults to Claude. **Gemini is what ships at
+release** — before then, either switch the selector back to Gemini, or
+remove the Claude path entirely (`js/claude-vision.js`, its `<script>` tag
+on `payslips.html`, the Claude Settings card, `Store.getClaudeSettings()`/
+`saveClaudeSettings()`/`clearClaudeApiKey()`, `Store.getAIProvider()`/
+`saveAIProvider()`, and `CLAUDE_DEFAULT_MODEL`). Both integrations share
+the same extraction prompt (`GEMINI_EXTRACTION_PROMPT`) and downscaling
+helper so results are directly comparable. Claude calls
+`https://api.anthropic.com/v1/messages` directly from the browser with
+the `anthropic-dangerous-direct-browser-access` header (Anthropic's own
+opt-in for client-side calling) — same security model as Gemini: the key
+lives only in `localStorage`, excluded from Export/Import.
 
 Countries and residency-day tracking are free-text fields, not managed
 lists — type any country name (with suggestions) wherever one is needed.
@@ -97,7 +121,8 @@ There is no dedicated Countries or Residency page.
   a country → likely-currency hint map (convenience only, not a managed
   list), currencies, and the Correspondence/Tax Years constants.
 - `js/gemini.js` calls the Gemini API directly from the browser to analyze
-  an uploaded payslip. Your API key (from
+  an uploaded payslip (the shipped provider — see the Claude section above
+  for the temporary alternative in `js/claude-vision.js`). Your API key (from
   [aistudio.google.com/apikey](https://aistudio.google.com/apikey)) is
   entered under Settings and saved only in `localStorage`, under a
   key that `Store.exportAll()`/`importAll()` deliberately never touch —

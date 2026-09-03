@@ -11,8 +11,15 @@ const STORAGE_KEYS = {
   payslips: "taxtracker_payslips_v1",
   currencyRates: "taxtracker_currency_rates_v1",
   // Deliberately separate from the rest: never touched by exportAll/importAll,
-  // so a Gemini API key can never end up inside a shared/exported JSON backup.
+  // so an API key can never end up inside a shared/exported JSON backup.
   geminiSettings: "taxtracker_gemini_settings_v1",
+  // TEMPORARY (testing only — see js/claude-vision.js): Claude API settings,
+  // same exclusion as geminiSettings.
+  claudeSettings: "taxtracker_claude_settings_v1",
+  // TEMPORARY (testing only): which provider Payslips' AI analysis calls —
+  // "gemini" or "claude". Also excluded from export/import so a backup never
+  // freezes in whichever provider happened to be selected for testing.
+  aiProvider: "taxtracker_ai_provider_v1",
 };
 
 function readJSON(key, fallback) {
@@ -252,6 +259,34 @@ const Store = {
     this.saveGeminiSettings(settings);
   },
 
+  // ---------- TEMPORARY: Claude API settings (testing only — see
+  // js/claude-vision.js; never exported/imported/backed up, same as Gemini's) ----------
+
+  getClaudeSettings() {
+    return readJSON(STORAGE_KEYS.claudeSettings, { apiKey: "", model: CLAUDE_DEFAULT_MODEL });
+  },
+
+  saveClaudeSettings(settings) {
+    writeJSON(STORAGE_KEYS.claudeSettings, settings);
+  },
+
+  clearClaudeApiKey() {
+    const settings = this.getClaudeSettings();
+    settings.apiKey = "";
+    this.saveClaudeSettings(settings);
+  },
+
+  // TEMPORARY: which AI provider Payslips uses — "gemini" or "claude".
+  // Defaults to "claude" for now, per the current test; switch back to
+  // "gemini" (or delete this whole provider-toggle layer) before release.
+  getAIProvider() {
+    return readJSON(STORAGE_KEYS.aiProvider, "claude");
+  },
+
+  saveAIProvider(provider) {
+    writeJSON(STORAGE_KEYS.aiProvider, provider);
+  },
+
   exportAll() {
     return {
       exportedAt: new Date().toISOString(),
@@ -278,5 +313,7 @@ const Store = {
     localStorage.removeItem(STORAGE_KEYS.payslips);
     localStorage.removeItem(STORAGE_KEYS.geminiSettings);
     localStorage.removeItem(STORAGE_KEYS.currencyRates);
+    localStorage.removeItem(STORAGE_KEYS.claudeSettings);
+    localStorage.removeItem(STORAGE_KEYS.aiProvider);
   },
 };

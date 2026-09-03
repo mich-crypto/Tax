@@ -23,7 +23,19 @@
   <div class="page-title">
     <div>
       <h1>Settings</h1>
-      <p>Shared across both trackers: your Gemini API key for payslip AI analysis, and your data backup.</p>
+      <p>Shared across both trackers: your AI provider and API key for payslip analysis, and your data backup.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>AI provider <span class="badge warn">Temporary — testing</span></h2></div>
+    <p class="hint">Payslips' AI analysis currently calls whichever provider is selected here. This is set up for a one-off quality comparison — Gemini is what ships at release. Switch back to Gemini any time by picking it below.</p>
+    <div class="field" style="max-width:220px;">
+      <label>Active provider</label>
+      <select id="ai-provider-select">
+        <option value="gemini">Google Gemini</option>
+        <option value="claude">Anthropic Claude</option>
+      </select>
     </div>
   </div>
 
@@ -52,6 +64,34 @@
       <button type="button" id="save-gemini-settings" class="primary small">Save settings</button>
       <button type="button" id="clear-gemini-key" class="danger-outline small">Clear saved key</button>
       <span class="hint" id="gemini-settings-status"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>AI settings (Anthropic Claude) <span class="badge warn">Temporary — testing</span></h2></div>
+    <div class="disclaimer">
+      ⚠️ <span>Your API key is saved only in this browser's local storage — it is <strong>never</strong> included in
+      Export/Import backups, and requests go straight from your browser to Anthropic (this site has no server of its
+      own). Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com/settings/keys</a>
+      — separate, pay-as-you-go API billing, not a claude.ai subscription — and treat it like a password.</span>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Claude API key</label>
+        <div class="actions-row" style="flex-wrap:nowrap;">
+          <input type="password" id="claude-api-key" placeholder="sk-ant-…" autocomplete="off">
+          <button type="button" id="toggle-claude-key-visibility" class="small" title="Show/hide key">👁</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Model</label>
+        <input type="text" id="claude-model" placeholder="claude-opus-5">
+      </div>
+    </div>
+    <div class="actions-row">
+      <button type="button" id="save-claude-settings" class="primary small">Save settings</button>
+      <button type="button" id="clear-claude-key" class="danger-outline small">Clear saved key</button>
+      <span class="hint" id="claude-settings-status"></span>
     </div>
   </div>
 
