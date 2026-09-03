@@ -12,7 +12,13 @@
  *     password: anyone with it can spend your Gemini quota.
  */
 
-const GEMINI_EXTRACTION_PROMPT = `You are extracting structured data from a payslip (also called a loenseddel, payslip, or salary statement). Read the attached document carefully and respond with ONLY a JSON object — no markdown fences, no commentary — matching exactly this shape:
+const GEMINI_EXTRACTION_PROMPT = `You are extracting figures from a payslip (also called a loenseddel/lønseddel, payslip, or salary statement) for THIS PAY PERIOD ONLY.
+
+Two things trip this up on real payslips — read carefully before answering:
+1. Most payslips also print an "Accumulated Year-to-date" / "YTD" box with running totals since the start of the year, often repeated on every page. IGNORE that box completely — every number you extract must be for the single pay period stated at the top of the document (its own date range or month), never a year-to-date figure.
+2. Some payslips (e.g. shift workers, offshore/rotational work) attach a multi-page daily time/attendance breakdown after the payslip itself. Ignore those detail pages — use only the payslip's own labeled summary/total lines.
+
+Read the attached document carefully and respond with ONLY a JSON object — no markdown fences, no commentary — matching exactly this shape:
 
 {
   "employer": string or null,
@@ -27,13 +33,18 @@ const GEMINI_EXTRACTION_PROMPT = `You are extracting structured data from a pays
   "notes": string or null
 }
 
-Rules:
-- "currency" should be a 3-letter ISO code (e.g. DKK, USD, EUR) if you can determine it.
-- Dates use YYYY-MM-DD format.
-- Numbers must be plain numbers with no currency symbols, letters, or thousands separators.
-- "otherDeductions" covers things like pension contributions that aren't tax.
-- "notes" can mention anything else useful (bonuses, one-off items, anything unclear).
-- If a field cannot be determined from the document, use null for it. Never guess.`;
+Field-by-field rules:
+- "employer": the paying company's name.
+- "country": the country whose payroll/tax rules produced this document — infer it from the terminology used (e.g. "AM-bidrag"/"A-tax"/"ATP" and CPR numbers mean Denmark), not from the employee's home address, which may be in a different country.
+- "currency": a 3-letter ISO code (e.g. DKK, USD, EUR) if determinable.
+- "payPeriodStart" / "payPeriodEnd": this pay period's own date range (YYYY-MM-DD) — not the document's print/issue date.
+- "grossPay": this period's total gross pay before deductions — prefer a line explicitly labeled "gross pay" (or local equivalent) over any other subtotal.
+- "netPay": the amount actually paid out this period — prefer a line showing the bank transfer/payout amount ("transferred to account", "net pay", "udbetalt") over any other subtotal.
+- "taxWithheld": all compulsory statutory tax/contribution deductions this period — income tax plus any labor-market or social-security contribution withheld at source (e.g. Denmark's "A-tax" plus "AM-bidrag"/labor market contribution, summed together). Do not include voluntary items here.
+- "otherDeductions": voluntary or non-tax deductions this period only (pension, health/dental insurance, savings schemes) — never a YTD figure.
+- "notes": anything else worth a human's attention — bonuses, overtime, allowances, sick pay, or a field you had to choose between two candidate numbers for.
+- Numbers are plain numbers only — no currency symbols, letters, or thousands separators. Many European payslips (Danish ones included) print numbers with a period as the thousands separator and a comma as the decimal point — a figure printed "39.371,08" is 39371.08 in your answer, not 39371 or 3937108.
+- If a field truly cannot be determined, use null. Never guess a number you didn't actually find on the document.`;
 
 /** Reads a File/Blob and resolves to its base64-encoded content (no data: URL prefix). */
 function fileToBase64(file) {

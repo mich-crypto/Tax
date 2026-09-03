@@ -3,6 +3,23 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v1.4.1 — 2026-09-03
+
+- Tuned the Gemini payslip-extraction prompt against a real multi-page
+  European payslip (Danish "lønseddel" with an accumulated year-to-date
+  box repeated on every page, plus attached daily time-statement pages):
+  - Explicitly ignores year-to-date boxes and time-sheet/attendance
+    pages — extracts this pay period's figures only.
+  - Correctly reads comma-decimal, period-thousands number formats
+    (e.g. "39.371,08" → 39371.08).
+  - Clarifies "tax withheld" as combined statutory tax + labor-market/
+    social contribution, distinct from voluntary deductions.
+- Payslips page now auto-fills Year, Month (from the extracted pay
+  period's end date), and Country (matched from the extracted country
+  name) after AI analysis — previously only currency/gross/net/tax/
+  employer/notes were filled in, leaving three fields for you to set
+  by hand every time.
+
 ## v1.4.0 — 2026-09-03
 
 - **Tax Years rebuilt** around an income-year/tax-year pair (e.g. "income

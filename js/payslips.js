@@ -101,6 +101,12 @@
         file,
       });
 
+      if (result.country) {
+        const match = Store.getCountries().find(
+          (c) => c.name.toLowerCase() === result.country.toLowerCase()
+        );
+        if (match) countrySelect.value = match.id;
+      }
       if (result.currency && [...currencySelect.options].some((o) => o.value === result.currency)) {
         currencySelect.value = result.currency;
       }
@@ -108,6 +114,14 @@
       if (typeof result.netPay === "number") netInput.value = result.netPay;
       if (typeof result.taxWithheld === "number") taxInput.value = result.taxWithheld;
       if (result.employer && !employerInput.value) employerInput.value = result.employer;
+
+      // Prefer the period's end date (e.g. a mid-month-to-mid-month period is
+      // usually filed under the month it ends in) to set Year/Month for you.
+      const periodDate = new Date(result.payPeriodEnd || result.payPeriodStart);
+      if (!Number.isNaN(periodDate.getTime())) {
+        yearInput.value = periodDate.getFullYear();
+        monthSelect.value = periodDate.getMonth() + 1;
+      }
 
       const noteBits = [];
       if (result.notes) noteBits.push(result.notes);

@@ -215,11 +215,12 @@ const TAX_YEAR_STATUS_FIELDS = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "1.4.0";
+const APP_VERSION = "1.4.1";
 const APP_VERSION_DATE = "2026-09-03";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "1.4.1", summary: "Payslip AI extraction tuned against a real multi-page European payslip: ignores YTD boxes and daily time-sheet pages, handles comma-decimal numbers, auto-fills Year/Month/Country from the result." },
   { version: "1.4.0", summary: "Tax Years rebuilt: income/tax-year pairs, status checklist, EUR→DKK converter, per-country table, payment activities, follow-up log." },
   { version: "1.3.0", summary: "Payslip AI analysis on Gemini (free tier), with client-side image downscaling to keep it cheap." },
   { version: "1.2.0", summary: "Added Payslips (AI-analyzed uploads), Tax Years (v1), and Correspondence categories/amounts." },
