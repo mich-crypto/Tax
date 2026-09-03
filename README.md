@@ -15,9 +15,9 @@ browser's `localStorage`; nothing is sent anywhere.
 - **Income** (`income.html`) — add/remove income entries (date, country,
   category, amount, description) and filter them by year.
 - **Payslips** (`payslips.html`) — upload a monthly payslip (image or PDF)
-  and have Claude read gross pay, net pay, and tax withheld off it (bring
-  your own API key — see below), or type the figures in by hand. Builds a
-  month-by-month history per country with a yearly summary.
+  and have Google Gemini read gross pay, net pay, and tax withheld off it
+  (bring your own API key — see below), or type the figures in by hand.
+  Builds a month-by-month history per country with a yearly summary.
 - **Tax Years** (`tax-years.html`) — pick a tax year and record what you
   actually declared: income, tax paid, and tax refunded in Denmark, plus a
   running list of tax payments made abroad (funded by that refund). Meant
@@ -48,31 +48,22 @@ browser's `localStorage`; nothing is sent anywhere.
 - `js/tax-calc.js` applies those brackets progressively (marginal-rate
   calculation) to estimate tax and effective rate on logged income.
 - `js/storage.js` is the only place that touches `localStorage`.
-- `js/claude-vision.js` calls the Claude API
-  (`https://api.anthropic.com/v1/messages`) directly from the browser to
-  analyze an uploaded payslip, using vision for images and native PDF
-  support for PDFs. Your API key (from
-  [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys))
-  is entered on the Payslips page and saved only in `localStorage`, under
-  a key that `Store.exportAll()`/`importAll()` deliberately never touch —
+- `js/gemini.js` calls the Gemini API directly from the browser to analyze
+  an uploaded payslip. Your API key (from
+  [aistudio.google.com/apikey](https://aistudio.google.com/apikey)) is
+  entered on the Payslips page and saved only in `localStorage`, under a
+  key that `Store.exportAll()`/`importAll()` deliberately never touch —
   it can never end up inside an export/backup JSON file. The payslip file
-  itself is sent straight to Anthropic for analysis and is not stored by
-  this app; only the figures you review and save afterward are kept.
-  Requests set the `anthropic-dangerous-direct-browser-access` header
-  (the same opt-in the official SDK's `dangerouslyAllowBrowser` flag
-  sets) since the API otherwise blocks browser-origin calls — that name
-  is a real warning: anyone with access to this browser's storage can
-  read the key, so set a spend limit on it if your account supports one.
-  Two things keep this cheap by default: the model defaults to
-  `claude-haiku-4-5` rather than a frontier model (reading fixed fields off
-  a clear document doesn't need one, and you review every extraction
-  against the payslip before saving, which catches what a cheaper model
-  gets wrong — change the Model field on the Payslips page if you'd
-  rather use `claude-opus-5`), and every image is downscaled client-side
-  to at most 1280px on its long edge before upload, since Claude bills
-  vision input by pixel area — a straight-from-the-phone photo can be
-  several times that resolution for no gain in legibility. PDFs pass
-  through unresized (Anthropic handles PDF rendering server-side).
+  itself is sent straight to Google for analysis and is not stored by this
+  app; only the figures you review and save afterward are kept. Images are
+  downscaled client-side to at most 1280px on their long edge before
+  upload — a straight-from-the-phone photo is easily 3000px+ on a side,
+  and vision APIs generally cost more the higher the resolution, for no
+  gain in legibility on a printed document. PDFs pass through unresized.
+  Model defaults to `gemini-2.5-flash`, which is free of charge in Google
+  AI Studio's standard tier as of this writing — check current
+  limits/rates at [ai.google.dev/gemini-api/docs/pricing](https://ai.google.dev/gemini-api/docs/pricing),
+  since this changes over time.
 
 ## Disclaimer
 

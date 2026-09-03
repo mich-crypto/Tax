@@ -179,15 +179,13 @@ const CURRENCIES = [
 ];
 
 /**
- * Default Claude model used for payslip analysis — editable per-browser in
- * Payslip settings. Haiku 4.5 is deliberately the default here: reading a
- * fixed set of numbers off a clear, well-formatted document doesn't need
- * frontier reasoning, and every extraction is reviewed against the payslip
- * before you save it, which catches what a cheaper model gets wrong. That
- * review step is what makes the cheaper default a reasonable tradeoff —
- * switch this to claude-opus-5 if you'd rather have the stronger model.
+ * Default Gemini model used for payslip analysis — editable per-browser in
+ * Payslip settings. Gemini 2.5 Flash is free of charge in Google AI
+ * Studio's standard tier (as of this writing) and more than capable of
+ * reading fixed fields off a clear document — check
+ * ai.google.dev/gemini-api/docs/pricing for current limits/rates.
  */
-const CLAUDE_DEFAULT_MODEL = "claude-haiku-4-5";
+const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
 
 const PAYSLIP_MONTHS = [
   "January", "February", "March", "April", "May", "June",

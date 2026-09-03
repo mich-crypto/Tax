@@ -26,37 +26,35 @@
   <div class="page-title">
     <div>
       <h1>Payslips</h1>
-      <p>Upload a monthly payslip and have Claude read the figures off it, or enter them by hand. Builds your month-by-month pay and tax history, comparable across countries.</p>
+      <p>Upload a monthly payslip and have AI (Google Gemini) read the figures off it, or enter them by hand. Builds your month-by-month pay and tax history, comparable across countries.</p>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-header"><h2>AI settings (Claude)</h2></div>
+    <div class="card-header"><h2>AI settings (Google Gemini)</h2></div>
     <div class="disclaimer">
       ⚠️ <span>Your API key is saved only in this browser's local storage — it is <strong>never</strong> included in
-      Export/Import backups, and requests go straight from your browser to Anthropic (this site has no server of its
-      own). This requires sending the key with a direct-browser-access header Anthropic's API otherwise blocks —
-      anyone with access to this browser's storage can read it, so set a spend limit on the key if you can. Get one
-      at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com/settings/keys</a>
+      Export/Import backups, and requests go straight from your browser to Google (this site has no server of its
+      own). Get a key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>
       and treat it like a password.</span>
     </div>
     <div class="field-row">
       <div class="field">
-        <label>Claude API key</label>
+        <label>Gemini API key</label>
         <div class="actions-row" style="flex-wrap:nowrap;">
-          <input type="password" id="claude-api-key" placeholder="sk-ant-…" autocomplete="off">
+          <input type="password" id="gemini-api-key" placeholder="AIza…" autocomplete="off">
           <button type="button" id="toggle-key-visibility" class="small" title="Show/hide key">👁</button>
         </div>
       </div>
       <div class="field">
         <label>Model</label>
-        <input type="text" id="claude-model" placeholder="claude-haiku-4-5">
+        <input type="text" id="gemini-model" placeholder="gemini-2.5-flash">
       </div>
     </div>
     <div class="actions-row">
-      <button type="button" id="save-claude-settings" class="primary small">Save settings</button>
-      <button type="button" id="clear-claude-key" class="danger-outline small">Clear saved key</button>
-      <span class="hint" id="claude-settings-status"></span>
+      <button type="button" id="save-gemini-settings" class="primary small">Save settings</button>
+      <button type="button" id="clear-gemini-key" class="danger-outline small">Clear saved key</button>
+      <span class="hint" id="gemini-settings-status"></span>
     </div>
   </div>
 
@@ -146,13 +144,13 @@
   </div>
 </main>
 
-<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere — except a payslip you choose to analyze, which goes straight to Anthropic's Claude API.</footer>
+<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere — except a payslip you choose to analyze, which goes straight to Google's Gemini API.</footer>
 
 <script src="js/tax-data.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/tax-calc.js"></script>
 <script src="js/app.js"></script>
-<script src="js/claude-vision.js"></script>
+<script src="js/gemini.js"></script>
 <script src="js/payslips.js"></script>
 </body>
 </html>
