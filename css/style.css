@@ -84,6 +84,10 @@ a:hover {
   border-bottom: 1px solid var(--border);
 }
 
+.brand-switcher {
+  position: relative;
+}
+
 .app-brand {
   display: flex;
   align-items: center;
@@ -92,6 +96,16 @@ a:hover {
   font-size: 16px;
   color: var(--text);
   white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+}
+
+.app-brand:hover {
+  background: var(--bg-sunken);
 }
 
 .app-brand .mark {
@@ -104,6 +118,59 @@ a:hover {
   background: var(--accent);
   color: var(--accent-text);
   font-size: 15px;
+}
+
+.app-brand .caret {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-left: -2px;
+}
+
+.switch-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 6px;
+  z-index: 20;
+}
+
+.switch-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.switch-item:hover {
+  background: var(--bg-sunken);
+  text-decoration: none;
+}
+
+.switch-item.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.switch-item .mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 13px;
+  flex-shrink: 0;
 }
 
 .app-nav {
@@ -128,6 +195,57 @@ a:hover {
 }
 
 .app-nav a.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ---------- header settings icon (right-hand side, every page) ---------- */
+
+.header-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.header-icon-btn:hover {
+  background: var(--bg-sunken);
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* ---------- in-page sub-tabs (e.g. Tax Years' Overview/country switcher) ---------- */
+
+.subtab-strip {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.subtab-btn {
+  cursor: pointer;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.subtab-btn:hover {
+  background: var(--bg-sunken);
+  color: var(--text);
+}
+
+.subtab-btn.active {
   background: var(--accent-soft);
   color: var(--accent);
 }
@@ -391,6 +509,12 @@ tbody tr:hover {
   background: var(--bg-sunken);
 }
 
+tfoot .total-row td {
+  border-bottom: none;
+  border-top: 2px solid var(--border);
+  background: var(--bg-sunken);
+}
+
 td.num, th.num {
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -430,6 +554,12 @@ footer.app-footer {
   padding: 24px;
   color: var(--text-muted);
   font-size: 12px;
+}
+
+#app-version {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  cursor: help;
+  border-bottom: 1px dotted var(--text-muted);
 }
 
 .bracket-list {

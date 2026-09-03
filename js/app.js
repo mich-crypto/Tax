@@ -45,11 +45,43 @@ function daysInYearOverlap(startDate, endDate, year) {
   return daysBetweenInclusive(overlapStart, overlapEnd);
 }
 
+/** Fills in the footer's version span, with recent changes as a hover tooltip. */
+function renderVersionFooter() {
+  const el = document.getElementById("app-version");
+  if (!el || typeof APP_VERSION === "undefined") return;
+  el.textContent = `v${APP_VERSION} (${APP_VERSION_DATE})`;
+  if (typeof APP_CHANGELOG !== "undefined") {
+    el.title = APP_CHANGELOG.map((e) => `v${e.version} — ${e.summary}`).join("\n");
+  }
+}
+
 /** Highlights the current page's link in the shared nav. */
 function markActiveNav() {
   const page = document.body.dataset.page;
   document.querySelectorAll(".app-nav a").forEach((link) => {
     if (link.dataset.page === page) link.classList.add("active");
+  });
+}
+
+/** Wires up the header's Tax Tracker / Income Tracker switcher dropdown, present on every page. */
+function wireTrackerSwitcher() {
+  const btn = document.getElementById("tracker-switch-btn");
+  const menu = document.getElementById("tracker-switch-menu");
+  if (!btn || !menu) return;
+
+  btn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    menu.hidden = !menu.hidden;
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!menu.hidden && event.target !== btn && !menu.contains(event.target) && !btn.contains(event.target)) {
+      menu.hidden = true;
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") menu.hidden = true;
   });
 }
 
@@ -63,4 +95,8 @@ function collectYearsFromDates(dates) {
   return Array.from(years).sort((a, b) => b - a);
 }
 
-document.addEventListener("DOMContentLoaded", markActiveNav);
+document.addEventListener("DOMContentLoaded", () => {
+  markActiveNav();
+  renderVersionFooter();
+  wireTrackerSwitcher();
+});

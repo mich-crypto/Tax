@@ -10,120 +10,60 @@
 <body data-page="payslips">
 
 <header class="app-header">
-  <div class="app-brand"><span class="mark">₮</span> Tax Tracker</div>
+  <div class="brand-switcher">
+    <button type="button" class="app-brand" id="tracker-switch-btn"><span class="mark">€</span> Income Tracker <span class="caret">▾</span></button>
+    <div class="switch-menu" id="tracker-switch-menu" hidden>
+      <a class="switch-item" href="index.html"><span class="mark">₮</span> Tax Tracker</a>
+      <a class="switch-item active" href="income.html"><span class="mark">€</span> Income Tracker</a>
+    </div>
+  </div>
   <nav class="app-nav">
-    <a href="index.html" data-page="dashboard">Dashboard</a>
     <a href="income.html" data-page="income">Income</a>
     <a href="payslips.html" data-page="payslips">Payslips</a>
-    <a href="tax-years.html" data-page="tax-years">Tax Years</a>
-    <a href="residency.html" data-page="residency">Residency</a>
-    <a href="correspondence.html" data-page="correspondence">Correspondence</a>
-    <a href="countries.html" data-page="countries">Countries</a>
   </nav>
+  <a class="header-icon-btn" href="settings.html" title="Settings">⚙</a>
 </header>
 
 <main class="app-main">
   <div class="page-title">
     <div>
       <h1>Payslips</h1>
-      <p>Upload a monthly payslip and have AI (Google Gemini) read the figures off it, or enter them by hand. Builds your month-by-month pay and tax history, comparable across countries.</p>
+      <p>Bulk upload your payslips and have AI (Google Gemini) read the figures off them. Builds your month-by-month pay and tax history, comparable across countries. Set your Gemini API key under <a href="settings.html">Settings</a> first.</p>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-header"><h2>AI settings (Google Gemini)</h2></div>
-    <div class="disclaimer">
-      ⚠️ <span>Your API key is saved only in this browser's local storage — it is <strong>never</strong> included in
-      Export/Import backups, and requests go straight from your browser to Google (this site has no server of its
-      own). Get a key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>
-      and treat it like a password.</span>
+    <div class="card-header"><h2>Bulk upload</h2></div>
+    <p class="hint">Pick one or more files — each is analyzed with AI and saved straight away, no per-file review. Check the monthly log below afterwards and fix anything AI got wrong.</p>
+    <div class="field" style="max-width:220px;">
+      <label>Type (applied to this batch)</label>
+      <select id="bulk-type"></select>
     </div>
-    <div class="field-row">
-      <div class="field">
-        <label>Gemini API key</label>
-        <div class="actions-row" style="flex-wrap:nowrap;">
-          <input type="password" id="gemini-api-key" placeholder="AIza…" autocomplete="off">
-          <button type="button" id="toggle-key-visibility" class="small" title="Show/hide key">👁</button>
-        </div>
+    <div class="field">
+      <label>Payslip files (image or PDF)</label>
+      <div class="actions-row">
+        <input type="file" id="bulk-files" accept="image/*,.pdf" multiple style="max-width:320px;">
+        <button type="button" id="bulk-analyze-btn" class="small primary">🪄 Analyze &amp; save all</button>
       </div>
-      <div class="field">
-        <label>Model</label>
-        <input type="text" id="gemini-model" placeholder="gemini-2.5-flash">
-      </div>
+      <p class="hint">Uploading your annual holiday pay? Switch Type to "Holiday pay" first, then upload it separately from your monthly payslips.</p>
+      <p class="hint" id="bulk-status"></p>
     </div>
-    <div class="actions-row">
-      <button type="button" id="save-gemini-settings" class="primary small">Save settings</button>
-      <button type="button" id="clear-gemini-key" class="danger-outline small">Clear saved key</button>
-      <span class="hint" id="gemini-settings-status"></span>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-header"><h2>Add a payslip</h2></div>
-    <form id="payslip-form">
-      <div class="field-row">
-        <div class="field">
-          <label>Year</label>
-          <input type="number" id="payslip-year" min="2000" max="2100" required>
-        </div>
-        <div class="field">
-          <label>Month</label>
-          <select id="payslip-month"></select>
-        </div>
-        <div class="field">
-          <label>Country</label>
-          <select id="payslip-country"></select>
-        </div>
-        <div class="field">
-          <label>Employer (optional)</label>
-          <input type="text" id="payslip-employer" placeholder="e.g. Acme Inc.">
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Payslip file (image or PDF) — analyzed on your device, not stored</label>
-        <div class="actions-row">
-          <input type="file" id="payslip-file" accept="image/*,.pdf" style="max-width:320px;">
-          <button type="button" id="analyze-payslip-btn" class="small">🪄 Analyze with AI</button>
-        </div>
-        <p class="hint" id="analyze-status"></p>
-      </div>
-
-      <div class="field-row">
-        <div class="field">
-          <label>Currency</label>
-          <select id="payslip-currency"></select>
-        </div>
-        <div class="field">
-          <label>Gross pay</label>
-          <input type="number" id="payslip-gross" min="0" step="0.01" placeholder="0.00">
-        </div>
-        <div class="field">
-          <label>Net pay</label>
-          <input type="number" id="payslip-net" min="0" step="0.01" placeholder="0.00">
-        </div>
-        <div class="field">
-          <label>Tax withheld</label>
-          <input type="number" id="payslip-tax" min="0" step="0.01" placeholder="0.00">
-        </div>
-      </div>
-      <div class="field">
-        <label>Notes</label>
-        <textarea id="payslip-notes" rows="2" placeholder="Pension contributions, bonuses, anything AI flagged..."></textarea>
-      </div>
-      <input type="hidden" id="payslip-analyzed-flag" value="0">
-      <button type="submit" class="primary">Save payslip</button>
-    </form>
   </div>
 
   <div class="card">
     <div class="toolbar">
-      <h2 style="margin:0;">Yearly summary by country</h2>
+      <h2 style="margin:0;">Yearly summary</h2>
       <span class="spacer"></span>
       <label style="margin:0;">Year</label>
       <select id="payslip-year-filter" class="select-year"></select>
     </div>
-    <div class="grid cols-auto" id="payslip-summary-grid"></div>
+    <div id="payslip-summary"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Missing months — <span id="missing-months-year"></span></h2></div>
+    <p class="hint">Months with no salary payslip logged yet for the selected year. Holiday pay doesn't count toward this — it isn't expected every month.</p>
+    <div class="actions-row" id="missing-months-list"></div>
   </div>
 
   <div class="card">
@@ -132,7 +72,7 @@
       <table id="payslip-table">
         <thead>
           <tr>
-            <th>Month</th><th>Country</th><th>Employer</th>
+            <th>Month</th><th>Type</th>
             <th class="num">Gross</th><th class="num">Net</th><th class="num">Tax</th>
             <th>Notes</th><th></th><th></th>
           </tr>
@@ -144,11 +84,10 @@
   </div>
 </main>
 
-<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere — except a payslip you choose to analyze, which goes straight to Google's Gemini API.</footer>
+<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere — except a payslip you choose to analyze, which goes straight to Google's Gemini API. · <span id="app-version"></span></footer>
 
 <script src="js/tax-data.js"></script>
 <script src="js/storage.js"></script>
-<script src="js/tax-calc.js"></script>
 <script src="js/app.js"></script>
 <script src="js/gemini.js"></script>
 <script src="js/payslips.js"></script>
