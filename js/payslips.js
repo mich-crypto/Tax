@@ -1,16 +1,16 @@
 (function () {
-  // --- Gemini settings ---
-  const apiKeyInput = document.getElementById("gemini-api-key");
-  const modelInput = document.getElementById("gemini-model");
+  // --- Claude settings ---
+  const apiKeyInput = document.getElementById("claude-api-key");
+  const modelInput = document.getElementById("claude-model");
   const toggleKeyBtn = document.getElementById("toggle-key-visibility");
-  const saveSettingsBtn = document.getElementById("save-gemini-settings");
-  const clearKeyBtn = document.getElementById("clear-gemini-key");
-  const settingsStatus = document.getElementById("gemini-settings-status");
+  const saveSettingsBtn = document.getElementById("save-claude-settings");
+  const clearKeyBtn = document.getElementById("clear-claude-key");
+  const settingsStatus = document.getElementById("claude-settings-status");
 
-  function loadGeminiSettingsIntoForm() {
-    const settings = Store.getGeminiSettings();
+  function loadClaudeSettingsIntoForm() {
+    const settings = Store.getClaudeSettings();
     apiKeyInput.value = settings.apiKey || "";
-    modelInput.value = settings.model || GEMINI_DEFAULT_MODEL;
+    modelInput.value = settings.model || CLAUDE_DEFAULT_MODEL;
   }
 
   toggleKeyBtn.addEventListener("click", () => {
@@ -18,16 +18,16 @@
   });
 
   saveSettingsBtn.addEventListener("click", () => {
-    Store.saveGeminiSettings({
+    Store.saveClaudeSettings({
       apiKey: apiKeyInput.value.trim(),
-      model: modelInput.value.trim() || GEMINI_DEFAULT_MODEL,
+      model: modelInput.value.trim() || CLAUDE_DEFAULT_MODEL,
     });
     settingsStatus.textContent = "Saved.";
     setTimeout(() => { settingsStatus.textContent = ""; }, 2500);
   });
 
   clearKeyBtn.addEventListener("click", () => {
-    Store.clearGeminiApiKey();
+    Store.clearClaudeApiKey();
     apiKeyInput.value = "";
     settingsStatus.textContent = "API key cleared.";
     setTimeout(() => { settingsStatus.textContent = ""; }, 2500);
@@ -85,19 +85,19 @@
       analyzeStatus.textContent = "Choose a payslip file first.";
       return;
     }
-    const settings = Store.getGeminiSettings();
+    const settings = Store.getClaudeSettings();
     if (!settings.apiKey) {
-      analyzeStatus.textContent = "Add and save a Gemini API key above first.";
+      analyzeStatus.textContent = "Add and save a Claude API key above first.";
       return;
     }
 
     analyzeBtn.disabled = true;
-    analyzeStatus.textContent = "Analyzing with Gemini…";
+    analyzeStatus.textContent = "Analyzing with Claude…";
 
     try {
-      const result = await analyzePayslipWithGemini({
+      const result = await analyzePayslipWithClaude({
         apiKey: settings.apiKey,
-        model: settings.model || GEMINI_DEFAULT_MODEL,
+        model: settings.model || CLAUDE_DEFAULT_MODEL,
         file,
       });
 
@@ -262,7 +262,7 @@
 
   yearFilter.addEventListener("change", renderTable);
 
-  loadGeminiSettingsIntoForm();
+  loadClaudeSettingsIntoForm();
   populateStaticSelects();
   yearInput.value = currentYear();
   monthSelect.value = new Date().getMonth() + 1;

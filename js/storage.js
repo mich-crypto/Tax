@@ -12,8 +12,8 @@ const STORAGE_KEYS = {
   taxYears: "taxtracker_taxyears_v1",
   payslips: "taxtracker_payslips_v1",
   // Deliberately separate from the rest: never touched by exportAll/importAll,
-  // so a Gemini API key can never end up inside a shared/exported JSON backup.
-  geminiSettings: "taxtracker_gemini_settings_v1",
+  // so a Claude API key can never end up inside a shared/exported JSON backup.
+  claudeSettings: "taxtracker_claude_settings_v1",
 };
 
 function readJSON(key, fallback) {
@@ -202,20 +202,20 @@ const Store = {
     this.savePayslips(entries);
   },
 
-  // ---------- Gemini API settings (never exported/imported/backed up) ----------
+  // ---------- Claude API settings (never exported/imported/backed up) ----------
 
-  getGeminiSettings() {
-    return readJSON(STORAGE_KEYS.geminiSettings, { apiKey: "", model: GEMINI_DEFAULT_MODEL });
+  getClaudeSettings() {
+    return readJSON(STORAGE_KEYS.claudeSettings, { apiKey: "", model: CLAUDE_DEFAULT_MODEL });
   },
 
-  saveGeminiSettings(settings) {
-    writeJSON(STORAGE_KEYS.geminiSettings, settings);
+  saveClaudeSettings(settings) {
+    writeJSON(STORAGE_KEYS.claudeSettings, settings);
   },
 
-  clearGeminiApiKey() {
-    const settings = this.getGeminiSettings();
+  clearClaudeApiKey() {
+    const settings = this.getClaudeSettings();
     settings.apiKey = "";
-    this.saveGeminiSettings(settings);
+    this.saveClaudeSettings(settings);
   },
 
   exportAll() {
@@ -246,6 +246,6 @@ const Store = {
     localStorage.removeItem(STORAGE_KEYS.correspondence);
     localStorage.removeItem(STORAGE_KEYS.taxYears);
     localStorage.removeItem(STORAGE_KEYS.payslips);
-    localStorage.removeItem(STORAGE_KEYS.geminiSettings);
+    localStorage.removeItem(STORAGE_KEYS.claudeSettings);
   },
 };

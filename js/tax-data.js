@@ -178,8 +178,8 @@ const CURRENCIES = [
   { code: "CHF", symbol: "Fr" },
 ];
 
-/** Default Gemini model used for payslip analysis — editable per-browser in Payslip settings. */
-const GEMINI_DEFAULT_MODEL = "gemini-2.0-flash";
+/** Default Claude model used for payslip analysis — editable per-browser in Payslip settings. */
+const CLAUDE_DEFAULT_MODEL = "claude-opus-5";
 
 const PAYSLIP_MONTHS = [
   "January", "February", "March", "April", "May", "June",
