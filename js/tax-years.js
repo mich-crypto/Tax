@@ -1,197 +1,377 @@
 (function () {
   const yearSelect = document.getElementById("tax-year-select");
-  const addYearBtn = document.getElementById("add-year-btn");
+  const newIncomeYearInput = document.getElementById("new-income-year");
+  const newTaxYearInput = document.getElementById("new-tax-year");
+  const openYearBtn = document.getElementById("open-year-btn");
   const deleteYearBtn = document.getElementById("delete-year-btn");
   const alsoTrackedHint = document.getElementById("also-tracked-hint");
+  const bodyEl = document.getElementById("tax-year-body");
 
-  const denmarkForm = document.getElementById("denmark-form");
-  const dkIncomeInput = document.getElementById("dk-income");
-  const dkTaxPaidInput = document.getElementById("dk-tax-paid");
-  const dkTaxRefundInput = document.getElementById("dk-tax-refund");
-  const dkNotesInput = document.getElementById("dk-notes");
+  const statusFieldsEl = document.getElementById("status-fields");
 
-  const abroadForm = document.getElementById("abroad-form");
-  const abroadCountryInput = document.getElementById("abroad-country");
-  const abroadCountryList = document.getElementById("abroad-country-list");
-  const abroadAmountInput = document.getElementById("abroad-amount");
-  const abroadCurrencySelect = document.getElementById("abroad-currency");
-  const abroadDateInput = document.getElementById("abroad-date");
-  const abroadNotesInput = document.getElementById("abroad-notes");
-  const abroadTableBody = document.querySelector("#abroad-table tbody");
-  const abroadTable = document.getElementById("abroad-table");
-  const abroadEmptyState = document.getElementById("abroad-empty-state");
+  const fxRateInput = document.getElementById("fx-rate");
+  const fxAmountEurInput = document.getElementById("fx-amount-eur");
+  const fxAmountDkkInput = document.getElementById("fx-amount-dkk");
 
-  const summaryEl = document.getElementById("tax-year-summary");
+  const countryList = document.getElementById("tax-year-country-list");
+  const countryRowForm = document.getElementById("country-row-form");
+  const rowCountryInput = document.getElementById("row-country");
+  const rowDaysInput = document.getElementById("row-days");
+  const rowIncomeInput = document.getElementById("row-income");
+  const rowTaxInput = document.getElementById("row-tax");
+  const countryTableBody = document.querySelector("#country-table tbody");
+  const countryTableFoot = document.querySelector("#country-table tfoot");
+  const countryTable = document.getElementById("country-table");
+  const countryEmptyState = document.getElementById("country-empty-state");
 
-  function currentSelectedYear() {
-    return Number(yearSelect.value);
+  const actionList = document.getElementById("tax-year-action-list");
+  const activityForm = document.getElementById("activity-form");
+  const activityActionInput = document.getElementById("activity-action");
+  const activityDateInput = document.getElementById("activity-date");
+  const activityAmountInput = document.getElementById("activity-amount");
+  const activityCurrencySelect = document.getElementById("activity-currency");
+  const activityCountryInput = document.getElementById("activity-country");
+  const activityTableBody = document.querySelector("#activity-table tbody");
+  const activityTableFoot = document.querySelector("#activity-table tfoot");
+  const activityTable = document.getElementById("activity-table");
+  const activityEmptyState = document.getElementById("activity-empty-state");
+
+  const followUpForm = document.getElementById("followup-form");
+  const followUpTopicInput = document.getElementById("followup-topic");
+  const followUpDateInput = document.getElementById("followup-date");
+  const followUpCountryInput = document.getElementById("followup-country");
+  const followUpTableBody = document.querySelector("#followup-table tbody");
+  const followUpTable = document.getElementById("followup-table");
+  const followUpEmptyState = document.getElementById("followup-empty-state");
+
+  let currentId = null;
+
+  function currencySymbolFor(code) {
+    return (CURRENCIES.find((c) => c.code === code) || {}).symbol || "";
   }
 
   function populateStaticLists() {
-    abroadCountryList.innerHTML = Store.getCountries()
+    countryList.innerHTML = Store.getCountries()
       .map((c) => `<option value="${escapeHtml(c.name)}">`)
       .join("");
-    abroadCurrencySelect.innerHTML = CURRENCIES
+    actionList.innerHTML = TAX_YEAR_ACTIONS
+      .map((a) => `<option value="${escapeHtml(a)}">`)
+      .join("");
+    activityCurrencySelect.innerHTML = CURRENCIES
       .map((c) => `<option value="${c.code}">${c.code}</option>`)
       .join("");
   }
 
-  function populateYearSelect(selectYear) {
-    const existingYears = Store.getTaxYears().map((y) => y.year);
-    const years = new Set([...existingYears, currentYear()]);
-    if (selectYear) years.add(selectYear);
-    const sorted = Array.from(years).sort((a, b) => b - a);
-    const previous = selectYear || Number(yearSelect.value) || currentYear();
-    yearSelect.innerHTML = sorted.map((y) => `<option value="${y}">${y}</option>`).join("");
-    yearSelect.value = sorted.includes(previous) ? previous : sorted[0];
+  function yearLabel(record) {
+    return `Income ${record.incomeYear} → Tax ${record.taxYear}`;
   }
 
-  function renderAlsoTracked(year) {
-    const incomeCount = Store.getIncome().filter((e) => new Date(e.date).getFullYear() === year).length;
+  function populateYearSelect(selectId) {
+    const years = Store.sortTaxYears(Store.getTaxYears().slice());
+    const previous = selectId || yearSelect.value;
+    yearSelect.innerHTML = years.length
+      ? years.map((y) => `<option value="${y.id}">${yearLabel(y)}</option>`).join("")
+      : `<option value="">No tax years yet</option>`;
+    if (previous && years.some((y) => y.id === previous)) {
+      yearSelect.value = previous;
+    } else if (years.length) {
+      yearSelect.value = years[0].id;
+    }
+  }
+
+  function renderAlsoTracked(incomeYear) {
+    const incomeCount = Store.getIncome().filter((e) => new Date(e.date).getFullYear() === incomeYear).length;
     const residencyDays = Store.getResidency().reduce(
-      (sum, r) => sum + daysInYearOverlap(r.startDate, r.endDate, year), 0
+      (sum, r) => sum + daysInYearOverlap(r.startDate, r.endDate, incomeYear), 0
     );
-    alsoTrackedHint.innerHTML = `Also tracked for ${year}: <a href="income.html">${incomeCount} income entr${incomeCount === 1 ? "y" : "ies"}</a> · <a href="residency.html">${residencyDays} residency day${residencyDays === 1 ? "" : "s"}</a> logged elsewhere in the tracker.`;
+    alsoTrackedHint.innerHTML = `For income year ${incomeYear}, also tracked elsewhere: <a href="income.html">${incomeCount} income entr${incomeCount === 1 ? "y" : "ies"}</a> · <a href="residency.html">${residencyDays} residency day${residencyDays === 1 ? "" : "s"}</a>.`;
   }
 
-  function loadDenmarkForm(year) {
-    const record = Store.getTaxYear(year);
-    dkIncomeInput.value = record ? record.denmarkIncome || "" : "";
-    dkTaxPaidInput.value = record ? record.denmarkTaxPaid || "" : "";
-    dkTaxRefundInput.value = record ? record.denmarkTaxRefund || "" : "";
-    dkNotesInput.value = record ? record.notes || "" : "";
+  function renderStatusFields(record) {
+    statusFieldsEl.innerHTML = TAX_YEAR_STATUS_FIELDS.map((f) => `
+      <div class="field">
+        <label>${escapeHtml(f.label)}</label>
+        <select data-status-key="${f.key}">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+      </div>
+    `).join("");
+    TAX_YEAR_STATUS_FIELDS.forEach((f) => {
+      statusFieldsEl.querySelector(`[data-status-key="${f.key}"]`).value = record.status[f.key] ? "yes" : "no";
+    });
+    statusFieldsEl.querySelectorAll("select").forEach((select) => {
+      select.addEventListener("change", () => {
+        const record = Store.getTaxYearById(currentId);
+        if (!record) return;
+        record.status[select.dataset.statusKey] = select.value === "yes";
+        Store.saveTaxYearRecord(record);
+      });
+    });
   }
 
-  function renderAbroadTable(year) {
-    const record = Store.getTaxYear(year);
-    const payments = (record ? record.abroadPayments : []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-
-    if (!payments.length) {
-      abroadTable.style.display = "none";
-      abroadEmptyState.style.display = "block";
+  function updateFxConverter() {
+    const rate = Number(fxRateInput.value);
+    const amount = Number(fxAmountEurInput.value);
+    if (!rate || !amount) {
+      fxAmountDkkInput.value = "";
       return;
     }
-    abroadTable.style.display = "";
-    abroadEmptyState.style.display = "none";
+    fxAmountDkkInput.value = formatMoney(amount * rate, "kr");
+  }
 
-    const symbolFor = (code) => (CURRENCIES.find((c) => c.code === code) || {}).symbol || "";
+  function renderCountryTable(record) {
+    const rows = record.countries;
+    const rate = Number(record.fxRateDkkPerEur) || 0;
 
-    abroadTableBody.innerHTML = payments
-      .map((p) => `
+    if (!rows.length) {
+      countryTable.style.display = "none";
+      countryEmptyState.style.display = "block";
+      countryTableBody.innerHTML = "";
+      countryTableFoot.innerHTML = "";
+      return;
+    }
+    countryTable.style.display = "";
+    countryEmptyState.style.display = "none";
+
+    const totalDays = rows.reduce((s, r) => s + Number(r.days || 0), 0);
+    const totalIncome = rows.reduce((s, r) => s + Number(r.incomeEur || 0), 0);
+    const totalTax = rows.reduce((s, r) => s + Number(r.taxEur || 0), 0);
+
+    countryTableBody.innerHTML = rows
+      .map((r) => {
+        const days = Number(r.days || 0);
+        const incomeEur = Number(r.incomeEur || 0);
+        const taxEur = Number(r.taxEur || 0);
+        const pctDays = totalDays ? (days / totalDays) * 100 : 0;
+        const taxRate = incomeEur ? (taxEur / incomeEur) * 100 : 0;
+        return `
+          <tr>
+            <td>${escapeHtml(r.country)}</td>
+            <td class="num">${days}</td>
+            <td class="num">${pctDays.toFixed(1)}%</td>
+            <td class="num">${formatMoney(incomeEur, "€")}</td>
+            <td class="num">${rate ? formatMoney(incomeEur * rate, "kr") : "—"}</td>
+            <td class="num">${formatMoney(taxEur, "€")}</td>
+            <td class="num">${rate ? formatMoney(taxEur * rate, "kr") : "—"}</td>
+            <td class="num">${incomeEur ? taxRate.toFixed(1) + "%" : "—"}</td>
+            <td><button class="icon-btn small" data-delete-row="${r.id}" title="Delete">✕</button></td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    const overallRate = totalIncome ? (totalTax / totalIncome) * 100 : 0;
+    countryTableFoot.innerHTML = `
+      <tr class="total-row">
+        <td><strong>Total</strong></td>
+        <td class="num"><strong>${totalDays}</strong></td>
+        <td class="num"><strong>100%</strong></td>
+        <td class="num"><strong>${formatMoney(totalIncome, "€")}</strong></td>
+        <td class="num"><strong>${rate ? formatMoney(totalIncome * rate, "kr") : "—"}</strong></td>
+        <td class="num"><strong>${formatMoney(totalTax, "€")}</strong></td>
+        <td class="num"><strong>${rate ? formatMoney(totalTax * rate, "kr") : "—"}</strong></td>
+        <td class="num"><strong>${totalIncome ? overallRate.toFixed(1) + "%" : "—"}</strong></td>
+        <td></td>
+      </tr>
+    `;
+  }
+
+  function renderActivityTable(record) {
+    const rows = record.activities.slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    if (!rows.length) {
+      activityTable.style.display = "none";
+      activityEmptyState.style.display = "block";
+      activityTableBody.innerHTML = "";
+      activityTableFoot.innerHTML = "";
+      return;
+    }
+    activityTable.style.display = "";
+    activityEmptyState.style.display = "none";
+
+    activityTableBody.innerHTML = rows
+      .map((a) => `
         <tr>
-          <td>${p.date || "—"}</td>
-          <td>${escapeHtml(p.country)}</td>
-          <td class="num">${formatMoney(p.amount, symbolFor(p.currency))} ${escapeHtml(p.currency || "")}</td>
-          <td>${escapeHtml(p.notes || "")}</td>
-          <td><button class="icon-btn small" data-delete="${p.id}" title="Delete">✕</button></td>
+          <td>${escapeHtml(a.action)}</td>
+          <td>${a.date || "—"}</td>
+          <td class="num">${formatMoney(a.amount, currencySymbolFor(a.currency))} ${escapeHtml(a.currency || "")}</td>
+          <td>${escapeHtml(a.country || "")}</td>
+          <td><button class="icon-btn small" data-delete-activity="${a.id}" title="Delete">✕</button></td>
+        </tr>
+      `)
+      .join("");
+
+    const byCurrency = {};
+    rows.forEach((a) => { byCurrency[a.currency] = (byCurrency[a.currency] || 0) + Number(a.amount || 0); });
+    const totalsText = Object.entries(byCurrency)
+      .map(([code, total]) => formatMoney(total, currencySymbolFor(code)) + " " + code)
+      .join(" · ");
+    activityTableFoot.innerHTML = `
+      <tr class="total-row">
+        <td><strong>Total</strong></td><td></td>
+        <td class="num"><strong>${totalsText}</strong></td>
+        <td></td><td></td>
+      </tr>
+    `;
+  }
+
+  function renderFollowUpTable(record) {
+    const rows = record.followUps.slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    if (!rows.length) {
+      followUpTable.style.display = "none";
+      followUpEmptyState.style.display = "block";
+      followUpTableBody.innerHTML = "";
+      return;
+    }
+    followUpTable.style.display = "";
+    followUpEmptyState.style.display = "none";
+
+    followUpTableBody.innerHTML = rows
+      .map((f) => `
+        <tr>
+          <td>${escapeHtml(f.topic)}</td>
+          <td>${f.date || "—"}</td>
+          <td>${escapeHtml(f.country || "")}</td>
+          <td><button class="icon-btn small" data-delete-followup="${f.id}" title="Delete">✕</button></td>
         </tr>
       `)
       .join("");
   }
 
-  function renderSummary(year) {
-    const record = Store.getTaxYear(year);
-    const symbolFor = (code) => (CURRENCIES.find((c) => c.code === code) || {}).symbol || "";
-
-    const dkIncome = record ? record.denmarkIncome || 0 : 0;
-    const dkTaxPaid = record ? record.denmarkTaxPaid || 0 : 0;
-    const dkTaxRefund = record ? record.denmarkTaxRefund || 0 : 0;
-
-    const byCurrency = {};
-    (record ? record.abroadPayments : []).forEach((p) => {
-      byCurrency[p.currency] = (byCurrency[p.currency] || 0) + Number(p.amount || 0);
-    });
-    const abroadTotalDkk = byCurrency.DKK || 0;
-
-    const abroadLines = Object.keys(byCurrency).length
-      ? Object.entries(byCurrency)
-          .map(([code, total]) => `<div class="stat-row"><span>Paid abroad — ${escapeHtml(code)}</span><strong>${formatMoney(total, symbolFor(code))}</strong></div>`)
-          .join("")
-      : `<div class="stat-row"><span>Paid abroad</span><strong>${formatMoney(0, "kr")}</strong></div>`;
-
-    summaryEl.innerHTML = `
-      <div class="stat-row"><span>Income from Denmark</span><strong>${formatMoney(dkIncome, "kr")}</strong></div>
-      <div class="stat-row"><span>Tax paid in Denmark</span><strong>${formatMoney(dkTaxPaid, "kr")}</strong></div>
-      <div class="stat-row"><span>Tax refunded from Denmark</span><strong>${formatMoney(dkTaxRefund, "kr")}</strong></div>
-      ${abroadLines}
-      ${abroadTotalDkk ? `<div class="stat-row"><span>Danish refund left after DKK payments abroad</span><strong>${formatMoney(dkTaxRefund - abroadTotalDkk, "kr")}</strong></div>` : ""}
-      <p class="hint">Amounts in different currencies aren't converted or summed together — no exchange rate is applied. Compare the lines above to see roughly how the Danish refund covers what you paid abroad.</p>
-    `;
-  }
-
-  function loadYear(year) {
-    renderAlsoTracked(year);
-    loadDenmarkForm(year);
-    renderAbroadTable(year);
-    renderSummary(year);
-  }
-
-  yearSelect.addEventListener("change", () => loadYear(currentSelectedYear()));
-
-  addYearBtn.addEventListener("click", () => {
-    const input = prompt("Which tax year? (e.g. 2025)", String(currentYear() + 1));
-    if (!input) return;
-    const year = Number(input);
-    if (!Number.isInteger(year) || year < 2000 || year > 2100) {
-      alert("Enter a valid 4-digit year.");
+  function openYear(id) {
+    const record = Store.getTaxYearById(id);
+    if (!record) {
+      bodyEl.hidden = true;
+      alsoTrackedHint.textContent = "";
+      currentId = null;
       return;
     }
-    populateYearSelect(year);
-    loadYear(year);
+    currentId = id;
+    bodyEl.hidden = false;
+    yearSelect.value = id;
+
+    renderAlsoTracked(record.incomeYear);
+    renderStatusFields(record);
+    fxRateInput.value = record.fxRateDkkPerEur || "";
+    fxAmountEurInput.value = "";
+    fxAmountDkkInput.value = "";
+    renderCountryTable(record);
+    renderActivityTable(record);
+    renderFollowUpTable(record);
+  }
+
+  openYearBtn.addEventListener("click", () => {
+    const incomeYear = Number(newIncomeYearInput.value);
+    const taxYear = Number(newTaxYearInput.value);
+    if (!Number.isInteger(incomeYear) || !Number.isInteger(taxYear)) {
+      alert("Enter both an income year and a tax year.");
+      return;
+    }
+    const record = Store.ensureTaxYear(incomeYear, taxYear);
+    populateYearSelect(record.id);
+    openYear(record.id);
   });
+
+  yearSelect.addEventListener("change", () => openYear(yearSelect.value));
 
   deleteYearBtn.addEventListener("click", () => {
-    const year = currentSelectedYear();
-    if (!confirm(`Delete all Tax Year data for ${year} (Denmark figures and abroad payments)? This can't be undone.`)) return;
-    Store.deleteTaxYear(year);
+    if (!currentId) return;
+    const record = Store.getTaxYearById(currentId);
+    if (!record) return;
+    if (!confirm(`Delete the entire record for ${yearLabel(record)}? This removes its status, country rows, activities, and follow-ups. This can't be undone.`)) {
+      return;
+    }
+    Store.deleteTaxYearRecord(currentId);
     populateYearSelect();
-    loadYear(currentSelectedYear());
+    const years = Store.getTaxYears();
+    openYear(years.length ? yearSelect.value : null);
   });
 
-  denmarkForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const year = currentSelectedYear();
-    Store.upsertTaxYear(year, {
-      denmarkIncome: Number(dkIncomeInput.value) || 0,
-      denmarkTaxPaid: Number(dkTaxPaidInput.value) || 0,
-      denmarkTaxRefund: Number(dkTaxRefundInput.value) || 0,
-      notes: dkNotesInput.value.trim(),
-    });
-    populateYearSelect(year);
-    renderSummary(year);
+  fxRateInput.addEventListener("change", () => {
+    if (!currentId) return;
+    Store.updateTaxYearMeta(currentId, { fxRateDkkPerEur: Number(fxRateInput.value) || null });
+    renderCountryTable(Store.getTaxYearById(currentId));
+    updateFxConverter();
   });
+  fxAmountEurInput.addEventListener("input", updateFxConverter);
 
-  abroadForm.addEventListener("submit", (event) => {
+  countryRowForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    const year = currentSelectedYear();
-    const country = abroadCountryInput.value.trim();
+    if (!currentId) return;
+    const country = rowCountryInput.value.trim();
     if (!country) return;
-
-    Store.addAbroadPayment(year, {
+    Store.addCountryRow(currentId, {
       country,
-      amount: Number(abroadAmountInput.value) || 0,
-      currency: abroadCurrencySelect.value,
-      date: abroadDateInput.value || "",
-      notes: abroadNotesInput.value.trim(),
+      days: Number(rowDaysInput.value) || 0,
+      incomeEur: Number(rowIncomeInput.value) || 0,
+      taxEur: Number(rowTaxInput.value) || 0,
     });
-
-    abroadForm.reset();
-    abroadCurrencySelect.value = "USD";
-    renderAbroadTable(year);
-    renderSummary(year);
+    countryRowForm.reset();
+    renderCountryTable(Store.getTaxYearById(currentId));
   });
 
-  abroadTableBody.addEventListener("click", (event) => {
-    const id = event.target.dataset.delete;
-    if (!id) return;
-    if (!confirm("Delete this abroad payment?")) return;
-    Store.deleteAbroadPayment(currentSelectedYear(), id);
-    renderAbroadTable(currentSelectedYear());
-    renderSummary(currentSelectedYear());
+  countryTableBody.addEventListener("click", (event) => {
+    const rowId = event.target.dataset.deleteRow;
+    if (!rowId || !currentId) return;
+    if (!confirm("Delete this country row?")) return;
+    Store.deleteCountryRow(currentId, rowId);
+    renderCountryTable(Store.getTaxYearById(currentId));
   });
+
+  activityForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!currentId) return;
+    const action = activityActionInput.value.trim();
+    if (!action) return;
+    Store.addTaxYearActivity(currentId, {
+      action,
+      date: activityDateInput.value || "",
+      amount: Number(activityAmountInput.value) || 0,
+      currency: activityCurrencySelect.value,
+      country: activityCountryInput.value.trim(),
+    });
+    activityForm.reset();
+    activityCurrencySelect.value = "EUR";
+    renderActivityTable(Store.getTaxYearById(currentId));
+  });
+
+  activityTableBody.addEventListener("click", (event) => {
+    const activityId = event.target.dataset.deleteActivity;
+    if (!activityId || !currentId) return;
+    if (!confirm("Delete this activity?")) return;
+    Store.deleteTaxYearActivity(currentId, activityId);
+    renderActivityTable(Store.getTaxYearById(currentId));
+  });
+
+  followUpForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!currentId) return;
+    const topic = followUpTopicInput.value.trim();
+    if (!topic) return;
+    Store.addTaxYearFollowUp(currentId, {
+      topic,
+      date: followUpDateInput.value || "",
+      country: followUpCountryInput.value.trim(),
+    });
+    followUpForm.reset();
+    renderFollowUpTable(Store.getTaxYearById(currentId));
+  });
+
+  followUpTableBody.addEventListener("click", (event) => {
+    const followUpId = event.target.dataset.deleteFollowup;
+    if (!followUpId || !currentId) return;
+    if (!confirm("Delete this follow up?")) return;
+    Store.deleteTaxYearFollowUp(currentId, followUpId);
+    renderFollowUpTable(Store.getTaxYearById(currentId));
+  });
+
+  // Defaults for a first-time "new" entry: last calendar year's income, filed this year.
+  newIncomeYearInput.value = currentYear() - 1;
+  newTaxYearInput.value = currentYear();
 
   populateStaticLists();
+  activityCurrencySelect.value = "EUR";
   populateYearSelect();
-  abroadCurrencySelect.value = "USD";
-  loadYear(currentSelectedYear());
+  const years = Store.getTaxYears();
+  openYear(years.length ? yearSelect.value : null);
 })();

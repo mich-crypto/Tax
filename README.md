@@ -18,10 +18,15 @@ browser's `localStorage`; nothing is sent anywhere.
   and have Google Gemini read gross pay, net pay, and tax withheld off it
   (bring your own API key — see below), or type the figures in by hand.
   Builds a month-by-month history per country with a yearly summary.
-- **Tax Years** (`tax-years.html`) — pick a tax year and record what you
-  actually declared: income, tax paid, and tax refunded in Denmark, plus a
-  running list of tax payments made abroad (funded by that refund). Meant
-  for actual filed/paid amounts, distinct from the Dashboard's automatic
+- **Tax Years** (`tax-years.html`) — one record per income-year/tax-year
+  pair (e.g. "income 2025 / tax year 2026"), modeled directly on a
+  spreadsheet workflow: a 4-item completion checklist (year completed,
+  questionnaires done, returns filed, paid & returned), a EUR→DKK
+  reference rate with a small converter, a per-country table (days
+  worked, income, tax — in € with a computed DKK column, tax rate, and %
+  of total days, plus a totals row), a payment-activity ledger (action,
+  date, amount, country), and a free-form follow-up log. Meant for actual
+  filed/paid amounts, distinct from the Dashboard's automatic
   bracket-based estimates.
 - **Residency** (`residency.html`) — log date ranges spent in each country
   and see running day totals against a configurable threshold (defaults to

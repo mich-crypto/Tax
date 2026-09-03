@@ -191,3 +191,20 @@ const PAYSLIP_MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+
+/** Suggested actions for the Tax Years payment-activity ledger (free text — pick or type your own). */
+const TAX_YEAR_ACTIONS = [
+  "Tax payed",
+  "Refund received",
+  "Assessment received",
+  "Document submitted",
+  "Advance payment",
+];
+
+/** The four status checks tracked per tax year, in display order. */
+const TAX_YEAR_STATUS_FIELDS = [
+  { key: "yearCompleted", label: "Tax year completed?" },
+  { key: "questionnairesDone", label: "Tax questionnaires done?" },
+  { key: "returnsFiled", label: "Tax returns prepared and filed?" },
+  { key: "paidAndReturned", label: "Tax payed and returned?" },
+];

@@ -128,7 +128,10 @@ const Store = {
     this.saveCorrespondence(entries);
   },
 
-  // ---------- Tax years (per-year Denmark refund vs. abroad payments) ----------
+  // ---------- Tax years (mirrors the income-year/tax-year spreadsheet workflow:
+  // a status checklist, a EUR->DKK reference rate, per-country income/tax/days,
+  // a payment-activity ledger, and a follow-up log — all scoped to one
+  // income-year/tax-year pair, e.g. "income 2025 / tax year 2026") ----------
 
   getTaxYears() {
     return readJSON(STORAGE_KEYS.taxYears, []);
@@ -138,47 +141,109 @@ const Store = {
     writeJSON(STORAGE_KEYS.taxYears, years);
   },
 
-  getTaxYear(year) {
-    return this.getTaxYears().find((y) => y.year === year) || null;
+  getTaxYearById(id) {
+    return this.getTaxYears().find((y) => y.id === id) || null;
   },
 
-  /** Finds the record for `year`, creating a blank one if it doesn't exist yet, and merges `fields` into it. */
-  upsertTaxYear(year, fields) {
+  findTaxYear(incomeYear, taxYear) {
+    return this.getTaxYears().find((y) => y.incomeYear === incomeYear && y.taxYear === taxYear) || null;
+  },
+
+  sortTaxYears(years) {
+    years.sort((a, b) => b.taxYear - a.taxYear || b.incomeYear - a.incomeYear);
+    return years;
+  },
+
+  /** Finds the record for this income-year/tax-year pair, creating a blank one if it doesn't exist yet. */
+  ensureTaxYear(incomeYear, taxYear) {
     const years = this.getTaxYears();
-    let record = years.find((y) => y.year === year);
+    let record = years.find((y) => y.incomeYear === incomeYear && y.taxYear === taxYear);
     if (!record) {
       record = {
         id: uid(),
-        year,
-        denmarkIncome: 0,
-        denmarkTaxPaid: 0,
-        denmarkTaxRefund: 0,
-        notes: "",
-        abroadPayments: [],
+        incomeYear,
+        taxYear,
+        fxRateDkkPerEur: null,
+        status: {
+          yearCompleted: false,
+          questionnairesDone: false,
+          returnsFiled: false,
+          paidAndReturned: false,
+        },
+        countries: [],
+        activities: [],
+        followUps: [],
       };
       years.push(record);
+      this.saveTaxYears(this.sortTaxYears(years));
     }
-    Object.assign(record, fields);
-    years.sort((a, b) => b.year - a.year);
-    this.saveTaxYears(years);
     return record;
   },
 
-  deleteTaxYear(year) {
-    this.saveTaxYears(this.getTaxYears().filter((y) => y.year !== year));
+  saveTaxYearRecord(record) {
+    this.saveTaxYears(this.getTaxYears().map((y) => (y.id === record.id ? record : y)));
   },
 
-  addAbroadPayment(year, payment) {
-    const record = this.upsertTaxYear(year, {});
-    record.abroadPayments.push({ id: uid(), ...payment });
-    this.saveTaxYears(this.getTaxYears().map((y) => (y.year === year ? record : y)));
+  deleteTaxYearRecord(id) {
+    this.saveTaxYears(this.getTaxYears().filter((y) => y.id !== id));
   },
 
-  deleteAbroadPayment(year, paymentId) {
-    const record = this.getTaxYear(year);
+  updateTaxYearMeta(id, fields) {
+    const record = this.getTaxYearById(id);
     if (!record) return;
-    record.abroadPayments = record.abroadPayments.filter((p) => p.id !== paymentId);
-    this.saveTaxYears(this.getTaxYears().map((y) => (y.year === year ? record : y)));
+    Object.assign(record, fields);
+    this.saveTaxYearRecord(record);
+  },
+
+  addCountryRow(taxYearId, row) {
+    const record = this.getTaxYearById(taxYearId);
+    if (!record) return;
+    record.countries.push({ id: uid(), ...row });
+    this.saveTaxYearRecord(record);
+  },
+
+  updateCountryRow(taxYearId, rowId, changes) {
+    const record = this.getTaxYearById(taxYearId);
+    if (!record) return;
+    const row = record.countries.find((c) => c.id === rowId);
+    if (!row) return;
+    Object.assign(row, changes);
+    this.saveTaxYearRecord(record);
+  },
+
+  deleteCountryRow(taxYearId, rowId) {
+    const record = this.getTaxYearById(taxYearId);
+    if (!record) return;
+    record.countries = record.countries.filter((c) => c.id !== rowId);
+    this.saveTaxYearRecord(record);
+  },
+
+  addTaxYearActivity(taxYearId, activity) {
+    const record = this.getTaxYearById(taxYearId);
+    if (!record) return;
+    record.activities.push({ id: uid(), ...activity });
+    this.saveTaxYearRecord(record);
+  },
+
+  deleteTaxYearActivity(taxYearId, activityId) {
+    const record = this.getTaxYearById(taxYearId);
+    if (!record) return;
+    record.activities = record.activities.filter((a) => a.id !== activityId);
+    this.saveTaxYearRecord(record);
+  },
+
+  addTaxYearFollowUp(taxYearId, followUp) {
+    const record = this.getTaxYearById(taxYearId);
+    if (!record) return;
+    record.followUps.push({ id: uid(), ...followUp });
+    this.saveTaxYearRecord(record);
+  },
+
+  deleteTaxYearFollowUp(taxYearId, followUpId) {
+    const record = this.getTaxYearById(taxYearId);
+    if (!record) return;
+    record.followUps = record.followUps.filter((f) => f.id !== followUpId);
+    this.saveTaxYearRecord(record);
   },
 
   // ---------- Monthly payslips ----------

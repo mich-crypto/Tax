@@ -26,89 +26,170 @@
   <div class="page-title">
     <div>
       <h1>Tax Years</h1>
-      <p>Pick a tax year to record what you actually declared and paid: income and tax refunded in Denmark, and what you then paid in tax abroad with that money.</p>
+      <p>One record per income-year/tax-year pair — status, income and tax by country, days per country, payments made, and what's still open. Mirrors a tax-year worksheet, not the Dashboard's automatic estimates.</p>
     </div>
   </div>
 
   <div class="card">
     <div class="toolbar">
-      <label style="margin:0;">Tax year</label>
+      <label style="margin:0;">Existing years</label>
       <select id="tax-year-select" class="select-year"></select>
-      <button type="button" id="add-year-btn" class="small">+ Add year</button>
       <span class="spacer"></span>
-      <button type="button" id="delete-year-btn" class="danger-outline small">Delete this year</button>
+      <label style="margin:0;">Income year</label>
+      <input type="number" id="new-income-year" min="2000" max="2100" style="max-width:100px;">
+      <label style="margin:0;">Tax year</label>
+      <input type="number" id="new-tax-year" min="2000" max="2100" style="max-width:100px;">
+      <button type="button" id="open-year-btn" class="primary small">Open / Create</button>
+      <button type="button" id="delete-year-btn" class="danger-outline small">Delete this record</button>
     </div>
     <p class="hint" id="also-tracked-hint"></p>
   </div>
 
-  <div class="card">
-    <div class="card-header"><h2>Denmark</h2></div>
-    <form id="denmark-form">
-      <div class="field-row">
-        <div class="field">
-          <label>Income from Denmark (DKK)</label>
-          <input type="number" id="dk-income" min="0" step="0.01" placeholder="0.00">
-        </div>
-        <div class="field">
-          <label>Tax paid/withheld in Denmark (DKK)</label>
-          <input type="number" id="dk-tax-paid" min="0" step="0.01" placeholder="0.00">
-        </div>
-        <div class="field">
-          <label>Tax refunded from Denmark (DKK)</label>
-          <input type="number" id="dk-tax-refund" min="0" step="0.01" placeholder="0.00">
-        </div>
+  <div id="tax-year-body" hidden>
+    <div class="grid" style="grid-template-columns: 1fr 1fr; align-items:start;">
+      <div class="card">
+        <div class="card-header"><h2>Tax completion status</h2></div>
+        <div id="status-fields"></div>
       </div>
-      <div class="field">
-        <label>Notes</label>
-        <textarea id="dk-notes" rows="2" placeholder="Anything about the assessment, årsopgørelse, etc."></textarea>
-      </div>
-      <button type="submit" class="primary">Save</button>
-    </form>
-  </div>
 
-  <div class="card">
-    <div class="card-header"><h2>Tax paid abroad (funded by the Danish refund)</h2></div>
-    <form id="abroad-form">
-      <div class="field-row">
+      <div class="card">
+        <div class="card-header"><h2>Currency converter</h2></div>
         <div class="field">
-          <label>Country</label>
-          <input type="text" id="abroad-country" list="abroad-country-list" placeholder="e.g. United States" required>
-          <datalist id="abroad-country-list"></datalist>
+          <label>1 EUR = ? DKK (reference rate for this tax year)</label>
+          <input type="number" id="fx-rate" min="0" step="0.0001" placeholder="e.g. 7.46">
         </div>
-        <div class="field">
-          <label>Amount</label>
-          <input type="number" id="abroad-amount" min="0" step="0.01" placeholder="0.00" required>
+        <div class="field-row">
+          <div class="field">
+            <label>Amount (EUR)</label>
+            <input type="number" id="fx-amount-eur" min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div class="field">
+            <label>≈ DKK</label>
+            <input type="text" id="fx-amount-dkk" disabled>
+          </div>
         </div>
-        <div class="field">
-          <label>Currency</label>
-          <select id="abroad-currency"></select>
-        </div>
-        <div class="field">
-          <label>Date</label>
-          <input type="date" id="abroad-date">
-        </div>
+        <p class="hint">Used to show a DKK-equivalent alongside € figures below. No live exchange rate — you set it.</p>
       </div>
-      <div class="field">
-        <label>Notes</label>
-        <input type="text" id="abroad-notes" placeholder="e.g. quarterly estimated payment">
-      </div>
-      <button type="submit" class="primary">Add payment</button>
-    </form>
-
-    <div class="table-scroll" style="margin-top:16px;">
-      <table id="abroad-table">
-        <thead>
-          <tr><th>Date</th><th>Country</th><th class="num">Amount</th><th>Notes</th><th></th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
     </div>
-    <div class="empty-state" id="abroad-empty-state">No abroad payments logged for this year yet.</div>
-  </div>
 
-  <div class="card">
-    <div class="card-header"><h2>Summary</h2></div>
-    <div id="tax-year-summary"></div>
+    <div class="card">
+      <div class="card-header"><h2>Income &amp; tax per country</h2></div>
+      <form id="country-row-form">
+        <div class="field-row">
+          <div class="field">
+            <label>Country</label>
+            <input type="text" id="row-country" list="tax-year-country-list" placeholder="e.g. Belgium" required>
+            <datalist id="tax-year-country-list"></datalist>
+          </div>
+          <div class="field">
+            <label>Days worked</label>
+            <input type="number" id="row-days" min="0" step="1" placeholder="0">
+          </div>
+          <div class="field">
+            <label>Income (EUR)</label>
+            <input type="number" id="row-income" min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div class="field">
+            <label>Tax (EUR)</label>
+            <input type="number" id="row-tax" min="0" step="0.01" placeholder="0.00">
+          </div>
+        </div>
+        <button type="submit" class="primary">Add row</button>
+      </form>
+
+      <div class="table-scroll" style="margin-top:16px;">
+        <table id="country-table">
+          <thead>
+            <tr>
+              <th>Country</th>
+              <th class="num">Days</th>
+              <th class="num">% of days</th>
+              <th class="num">Income €</th>
+              <th class="num">Income DKK</th>
+              <th class="num">Tax €</th>
+              <th class="num">Tax DKK</th>
+              <th class="num">Tax rate</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+      <div class="empty-state" id="country-empty-state">No countries logged for this tax year yet. Add one above.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Tax payment activities</h2></div>
+      <form id="activity-form">
+        <div class="field-row">
+          <div class="field">
+            <label>Action</label>
+            <input type="text" id="activity-action" list="tax-year-action-list" placeholder="e.g. Tax payed" required>
+            <datalist id="tax-year-action-list"></datalist>
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="activity-date">
+          </div>
+          <div class="field">
+            <label>Amount</label>
+            <input type="number" id="activity-amount" min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div class="field">
+            <label>Currency</label>
+            <select id="activity-currency"></select>
+          </div>
+          <div class="field">
+            <label>Country</label>
+            <input type="text" id="activity-country" list="tax-year-country-list" placeholder="e.g. Denmark">
+          </div>
+        </div>
+        <button type="submit" class="primary">Add activity</button>
+      </form>
+
+      <div class="table-scroll" style="margin-top:16px;">
+        <table id="activity-table">
+          <thead>
+            <tr><th>Action</th><th>Date</th><th class="num">Amount</th><th>Country</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+      <div class="empty-state" id="activity-empty-state">No payment activities logged yet.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Tax follow up</h2></div>
+      <form id="followup-form">
+        <div class="field-row">
+          <div class="field">
+            <label>Topic</label>
+            <input type="text" id="followup-topic" placeholder="e.g. Uploaded tax return to skat, high tax is due to sick days in Belgium" required>
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="followup-date">
+          </div>
+          <div class="field">
+            <label>Country</label>
+            <input type="text" id="followup-country" list="tax-year-country-list" placeholder="e.g. Denmark">
+          </div>
+        </div>
+        <button type="submit" class="primary">Add follow up</button>
+      </form>
+
+      <div class="table-scroll" style="margin-top:16px;">
+        <table id="followup-table">
+          <thead>
+            <tr><th>Topic</th><th>Date</th><th>Country</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="followup-empty-state">Nothing logged yet.</div>
+    </div>
   </div>
 </main>
 
