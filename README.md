@@ -16,30 +16,33 @@ highlights) — full history in [CHANGELOG.md](CHANGELOG.md).
 The site is split into two small apps, switchable from the dropdown under
 the logo in the header:
 
-- **Tax Tracker** — Dashboard, Tax Years, Correspondence.
+- **Tax Tracker** — a single page (`index.html`).
 - **Income Tracker** — Income, Payslips.
 
 ## Pages
 
-- **Dashboard** (`index.html`, Tax Tracker home) — a summary built from Tax
-  Years data: totals paid per country for a selected income year, a table
-  of every tax-year record with its completion status, and the Data card
-  (export/import/wipe — see below).
-- **Tax Years** (`tax-years.html`) — one record per income-year/tax-year
-  pair (e.g. "income 2025 / tax year 2026"): a 4-item completion checklist
-  (year completed, questionnaires done, returns filed, paid & returned), a
-  EUR→DKK reference rate with a small converter, an **Overview** tab (the
-  per-country summary table, totals, a payment-activity ledger, and a
-  free-form follow-up log) plus **one tab per country** you've paid tax in,
-  each holding just that country's income and tax figures (in EUR). Add a
-  country with the "+ Add" control — free text, so you're never blocked
-  waiting on a managed country list.
-- **Correspondence** (`correspondence.html`) — a log of communication with
-  accountants/advisors (e.g. KPMG) and tax authorities: date, counterparty,
-  channel (call/email/letter/meeting), category (question, document
-  request, tax return filed, refund notice, assessment...), subject, notes,
-  an optional amount (e.g. a confirmed refund), a follow-up date, and an
-  open/resolved status.
+- **Tax Tracker** (`index.html`) — pick (or create) a tax year — one
+  record per income-year/tax-year pair, e.g. "income 2025 / tax year
+  2026" — then switch between three tabs, all scoped to that year:
+  - **Overview** — a 4-item completion checklist (year completed,
+    questionnaires done, returns filed, paid & returned), a EUR→DKK
+    reference rate with a small converter, the per-country income/tax
+    summary table with totals, and a payment-activity ledger (action,
+    date, amount, currency, country).
+  - **Tax information** — **one tab per country** you've paid tax in,
+    each holding just that country's income and tax figures (in EUR).
+    Add a country with the "+ Add" control — free text, so you're never
+    blocked waiting on a managed country list.
+  - **Correspondence** — a log of communication with accountants/advisors
+    (e.g. KPMG) and tax authorities for this tax year: date, counterparty,
+    channel (call/email/letter/meeting), category (question, document
+    request, tax return filed, refund notice, assessment...), subject,
+    country, notes, an optional amount (e.g. a confirmed refund), a
+    follow-up date, and an open/resolved status.
+
+  Also holds the **Data** card (export/import/wipe — see below). Since
+  it's a single page, its header has no nav bar — the Tax Tracker /
+  Income Tracker switcher under the logo is the only way to leave it.
 - **Income** (`income.html`) — add/remove income entries (date, country,
   category, currency, amount, description) and filter them by year.
 - **Payslips** (`payslips.html`) — upload a monthly payslip (image or PDF)
@@ -58,7 +61,9 @@ There is no dedicated Countries or Residency page.
 
 - `js/storage.js` is the only place that touches `localStorage`, and the
   only place `exportAll()`/`importAll()`/`wipeAll()` are defined (wired up
-  from the Dashboard's Data card).
+  from the Data card on Tax Tracker). Correspondence lives inside each tax
+  year record, alongside its countries and payment activities — not a
+  separate top-level store.
 - `js/tax-data.js` holds shared reference data: suggested country names,
   a country → likely-currency hint map (convenience only, not a managed
   list), currencies, and the Correspondence/Tax Years constants.

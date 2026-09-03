@@ -7,7 +7,6 @@
 const STORAGE_KEYS = {
   income: "taxtracker_income_v1",
   residency: "taxtracker_residency_v1",
-  correspondence: "taxtracker_correspondence_v1",
   taxYears: "taxtracker_taxyears_v1",
   payslips: "taxtracker_payslips_v1",
   // Deliberately separate from the rest: never touched by exportAll/importAll,
@@ -77,36 +76,9 @@ const Store = {
     this.saveResidency(entries);
   },
 
-  getCorrespondence() {
-    return readJSON(STORAGE_KEYS.correspondence, []);
-  },
-
-  saveCorrespondence(entries) {
-    writeJSON(STORAGE_KEYS.correspondence, entries);
-  },
-
-  addCorrespondence(entry) {
-    const entries = this.getCorrespondence();
-    entries.push({ id: uid(), ...entry });
-    this.saveCorrespondence(entries);
-  },
-
-  updateCorrespondence(id, changes) {
-    const entries = this.getCorrespondence();
-    const entry = entries.find((e) => e.id === id);
-    if (!entry) return;
-    Object.assign(entry, changes);
-    this.saveCorrespondence(entries);
-  },
-
-  deleteCorrespondence(id) {
-    const entries = this.getCorrespondence().filter((e) => e.id !== id);
-    this.saveCorrespondence(entries);
-  },
-
   // ---------- Tax years (mirrors the income-year/tax-year spreadsheet workflow:
-  // a status checklist, a EUR->DKK reference rate, per-country income/tax/days,
-  // a payment-activity ledger, and a follow-up log — all scoped to one
+  // a status checklist, a EUR->DKK reference rate, per-country income/tax,
+  // a payment-activity ledger, and a correspondence log — all scoped to one
   // income-year/tax-year pair, e.g. "income 2025 / tax year 2026") ----------
 
   getTaxYears() {
@@ -148,7 +120,7 @@ const Store = {
         },
         countries: [],
         activities: [],
-        followUps: [],
+        correspondence: [],
       };
       years.push(record);
       this.saveTaxYears(this.sortTaxYears(years));
@@ -208,17 +180,27 @@ const Store = {
     this.saveTaxYearRecord(record);
   },
 
-  addTaxYearFollowUp(taxYearId, followUp) {
+  addTaxYearCorrespondence(taxYearId, entry) {
     const record = this.getTaxYearById(taxYearId);
     if (!record) return;
-    record.followUps.push({ id: uid(), ...followUp });
+    if (!record.correspondence) record.correspondence = [];
+    record.correspondence.push({ id: uid(), ...entry });
     this.saveTaxYearRecord(record);
   },
 
-  deleteTaxYearFollowUp(taxYearId, followUpId) {
+  updateTaxYearCorrespondence(taxYearId, entryId, changes) {
     const record = this.getTaxYearById(taxYearId);
     if (!record) return;
-    record.followUps = record.followUps.filter((f) => f.id !== followUpId);
+    const entry = (record.correspondence || []).find((e) => e.id === entryId);
+    if (!entry) return;
+    Object.assign(entry, changes);
+    this.saveTaxYearRecord(record);
+  },
+
+  deleteTaxYearCorrespondence(taxYearId, entryId) {
+    const record = this.getTaxYearById(taxYearId);
+    if (!record) return;
+    record.correspondence = (record.correspondence || []).filter((e) => e.id !== entryId);
     this.saveTaxYearRecord(record);
   },
 
@@ -264,7 +246,6 @@ const Store = {
       exportedAt: new Date().toISOString(),
       income: this.getIncome(),
       residency: this.getResidency(),
-      correspondence: this.getCorrespondence(),
       taxYears: this.getTaxYears(),
       payslips: this.getPayslips(),
     };
@@ -273,7 +254,6 @@ const Store = {
   importAll(data) {
     if (data.income) this.saveIncome(data.income);
     if (data.residency) this.saveResidency(data.residency);
-    if (data.correspondence) this.saveCorrespondence(data.correspondence);
     if (data.taxYears) this.saveTaxYears(data.taxYears);
     if (data.payslips) this.savePayslips(data.payslips);
   },
@@ -281,7 +261,6 @@ const Store = {
   wipeAll() {
     localStorage.removeItem(STORAGE_KEYS.income);
     localStorage.removeItem(STORAGE_KEYS.residency);
-    localStorage.removeItem(STORAGE_KEYS.correspondence);
     localStorage.removeItem(STORAGE_KEYS.taxYears);
     localStorage.removeItem(STORAGE_KEYS.payslips);
     localStorage.removeItem(STORAGE_KEYS.geminiSettings);

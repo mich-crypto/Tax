@@ -3,6 +3,28 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v1.6.0 — 2026-09-03
+
+- **Tax Tracker merged into one page.** Dashboard, Tax Years, and
+  Correspondence are no longer three separate nav pages — Tax Tracker is
+  now a single flow: pick (or create) a tax year at the top, then switch
+  between three tabs, all scoped to that year:
+  - **Overview** — status checklist, EUR→DKK converter, per-country
+    income/tax summary table with totals, and the payment-activity
+    ledger.
+  - **Tax information** — the per-country tabs where you enter income
+    and tax figures (unchanged from v1.5.0's country tabs).
+  - **Correspondence** — the full communication log (counterparty,
+    channel, category, subject, country, notes, amount, follow-up date,
+    status), now living inside the tax year it belongs to instead of one
+    global, unscoped list.
+- Retired the old flat, global Correspondence log and the lightweight
+  "Tax follow up" log that used to sit in the Overview tab — Correspondence
+  now covers that need directly, per tax year.
+- Since Tax Tracker is one page, its header no longer shows a nav bar —
+  the only way to leave it is the Tax Tracker / Income Tracker switcher
+  under the logo.
+
 ## v1.5.0 — 2026-09-03
 
 - **Split into two trackers**: Tax Tracker (Dashboard, Tax Years,
