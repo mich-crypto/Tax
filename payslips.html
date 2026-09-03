@@ -32,21 +32,9 @@
     </div>
   </div>
 
-  <datalist id="payslip-country-list"></datalist>
-
   <div class="card">
     <div class="card-header"><h2>Bulk upload</h2></div>
     <p class="hint">Pick one or more files — each is analyzed with AI and saved straight away, no per-file review. Check the monthly log below afterwards and fix anything AI got wrong.</p>
-    <div class="field-row">
-      <div class="field">
-        <label>Country (applied to every file)</label>
-        <input type="text" id="bulk-country" list="payslip-country-list" placeholder="e.g. Denmark">
-      </div>
-      <div class="field">
-        <label>Employer (optional, applied to every file)</label>
-        <input type="text" id="bulk-employer" placeholder="e.g. Acme Inc.">
-      </div>
-    </div>
     <div class="field">
       <label>Payslip files (image or PDF)</label>
       <div class="actions-row">
@@ -59,12 +47,12 @@
 
   <div class="card">
     <div class="toolbar">
-      <h2 style="margin:0;">Yearly summary by country</h2>
+      <h2 style="margin:0;">Yearly summary</h2>
       <span class="spacer"></span>
       <label style="margin:0;">Year</label>
       <select id="payslip-year-filter" class="select-year"></select>
     </div>
-    <div class="grid cols-auto" id="payslip-summary-grid"></div>
+    <div id="payslip-summary"></div>
   </div>
 
   <div class="card">
@@ -79,7 +67,7 @@
       <table id="payslip-table">
         <thead>
           <tr>
-            <th>Month</th><th>Country</th><th>Employer</th>
+            <th>Month</th>
             <th class="num">Gross</th><th class="num">Net</th><th class="num">Tax</th>
             <th>Notes</th><th></th><th></th>
           </tr>

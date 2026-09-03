@@ -3,6 +3,18 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v1.8.1 — 2026-09-03
+
+- **Payslips: removed Country and Employer.** Same employer every time,
+  so asking for it on every bulk upload (or showing it in every row) was
+  pure noise:
+  - Bulk upload no longer has Country/Employer fields.
+  - The monthly log table no longer has Country/Employer columns.
+  - "Yearly summary by country" is now just "Yearly summary" — one set
+    of Gross/Net/Tax totals for the year, no per-country grouping.
+  - AI-extracted country is still used internally to guess a currency
+    when Gemini doesn't return one directly — just not stored or shown.
+
 ## v1.8.0 — 2026-09-03
 
 - **Income gained an Overview card**: per-country totals for a selected

@@ -58,9 +58,10 @@ shared settings:
   pay, and tax withheld off each one, saving it automatically — no
   per-file review, so check the monthly log afterwards and fix anything
   AI got wrong (works fine for a single file too, so there's no separate
-  one-at-a-time form). A **missing months** strip shows which months of
-  the selected year have no payslip logged yet. Needs a Gemini API key,
-  set once under Settings.
+  one-at-a-time form). No Country/Employer fields — that's assumed to be
+  the same every time, so it isn't tracked. A **missing months** strip
+  shows which months of the selected year have no payslip logged yet.
+  Needs a Gemini API key, set once under Settings.
 - **Settings** (`settings.html`) — the Gemini API key/model used by
   Payslips, and Export/Import/Wipe for all your data. Shared across both
   trackers, so it lives outside either one.
