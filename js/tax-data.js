@@ -178,8 +178,16 @@ const CURRENCIES = [
   { code: "CHF", symbol: "Fr" },
 ];
 
-/** Default Claude model used for payslip analysis — editable per-browser in Payslip settings. */
-const CLAUDE_DEFAULT_MODEL = "claude-opus-5";
+/**
+ * Default Claude model used for payslip analysis — editable per-browser in
+ * Payslip settings. Haiku 4.5 is deliberately the default here: reading a
+ * fixed set of numbers off a clear, well-formatted document doesn't need
+ * frontier reasoning, and every extraction is reviewed against the payslip
+ * before you save it, which catches what a cheaper model gets wrong. That
+ * review step is what makes the cheaper default a reasonable tradeoff —
+ * switch this to claude-opus-5 if you'd rather have the stronger model.
+ */
+const CLAUDE_DEFAULT_MODEL = "claude-haiku-4-5";
 
 const PAYSLIP_MONTHS = [
   "January", "February", "March", "April", "May", "June",

@@ -56,6 +56,46 @@ function fileToBase64(file) {
 }
 
 /**
+ * Claude tokenizes images by pixel area (~1 token per 28x28 patch), so cost
+ * scales with resolution, not with how legible the text needs to be. A
+ * straight-from-the-phone photo is easily 3000px+ on a side — 1280px keeps a
+ * payslip perfectly readable at a fraction of the tokens (and bytes). Returns
+ * a re-encoded JPEG Blob, or the original file unchanged if it's already
+ * small enough or fails to load (never block analysis over this).
+ */
+function downscaleImageIfNeeded(file, maxDimension = 1280) {
+  return new Promise((resolve) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+      if (scale === 1) {
+        resolve(file);
+        return;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => resolve(blob || file), "image/jpeg", 0.85);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(file); // Not an image we can decode this way — send it as-is.
+    };
+    img.src = objectUrl;
+  });
+}
+
+// Server-side fallback ("declined? retry on Anthropic's recommended model")
+// is a safety net for Opus/Fable-tier safety classifiers, which cheaper
+// models don't run the same way — and isn't a supported parameter on every
+// model. Only send it for models known to support it, so switching the
+// model field to something cheaper (e.g. claude-haiku-4-5) never 400s.
+const MODELS_WITH_SERVER_SIDE_FALLBACK = new Set(["claude-opus-5"]);
+
+/**
  * Sends a payslip file to Claude and returns the parsed extraction object.
  * Throws with a human-readable message on any failure (network, API error,
  * a declined/refused request, or an unparseable response).
@@ -64,20 +104,23 @@ async function analyzePayslipWithClaude({ apiKey, model, file }) {
   if (!apiKey) throw new Error("No Claude API key set. Add one under Payslip settings.");
   if (!file) throw new Error("No file selected.");
 
-  const base64Data = await fileToBase64(file);
   const mimeType = file.type || "application/octet-stream";
-  const documentBlock = mimeType === "application/pdf"
-    ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64Data } }
-    : { type: "image", source: { type: "base64", media_type: mimeType, data: base64Data } };
+  const isPdf = mimeType === "application/pdf";
+  const uploadFile = isPdf ? file : await downscaleImageIfNeeded(file);
 
+  const base64Data = await fileToBase64(uploadFile);
+  const documentBlock = isPdf
+    ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64Data } }
+    : { type: "image", source: { type: "base64", media_type: uploadFile.type || mimeType, data: base64Data } };
+
+  const useFallback = MODELS_WITH_SERVER_SIDE_FALLBACK.has(model);
   const requestBody = {
     model,
     max_tokens: 2048,
     // Simple extraction from a clear document doesn't need deep reasoning.
     output_config: { effort: "low" },
-    // Opus-tier models can decline a request via safety classifiers; let the
-    // API retry it on Anthropic's recommended fallback rather than failing.
-    fallbacks: "default",
+    // See MODELS_WITH_SERVER_SIDE_FALLBACK above for why this is conditional.
+    ...(useFallback ? { fallbacks: "default" } : {}),
     messages: [
       {
         role: "user",
@@ -94,7 +137,7 @@ async function analyzePayslipWithClaude({ apiKey, model, file }) {
         "content-type": "application/json",
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
-        "anthropic-beta": "server-side-fallback-2026-07-01",
+        ...(useFallback ? { "anthropic-beta": "server-side-fallback-2026-07-01" } : {}),
         "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify(requestBody),

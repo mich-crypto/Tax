@@ -63,6 +63,16 @@ browser's `localStorage`; nothing is sent anywhere.
   sets) since the API otherwise blocks browser-origin calls — that name
   is a real warning: anyone with access to this browser's storage can
   read the key, so set a spend limit on it if your account supports one.
+  Two things keep this cheap by default: the model defaults to
+  `claude-haiku-4-5` rather than a frontier model (reading fixed fields off
+  a clear document doesn't need one, and you review every extraction
+  against the payslip before saving, which catches what a cheaper model
+  gets wrong — change the Model field on the Payslips page if you'd
+  rather use `claude-opus-5`), and every image is downscaled client-side
+  to at most 1280px on its long edge before upload, since Claude bills
+  vision input by pixel area — a straight-from-the-phone photo can be
+  several times that resolution for no gain in legibility. PDFs pass
+  through unresized (Anthropic handles PDF rendering server-side).
 
 ## Disclaimer
 
