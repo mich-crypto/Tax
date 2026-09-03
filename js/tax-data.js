@@ -16,6 +16,18 @@
 
 const DEFAULT_COUNTRIES = [
   {
+    id: "dk",
+    name: "Denmark",
+    currencyCode: "DKK",
+    currencySymbol: "kr",
+    residencyThresholdDays: 183,
+    notes: "Very rough, blended approximation of AM-bidrag (8%) + municipal + state income tax for an average municipality (2024, single, no church tax, no personfradrag/deductions applied). Real Danish tax depends heavily on your municipality and personal allowances — treat this as a ballpark only.",
+    brackets: [
+      { upTo: 588900, rate: 0.38 },
+      { upTo: null, rate: 0.56 },
+    ],
+  },
+  {
     id: "us",
     name: "United States",
     currencyCode: "USD",
@@ -142,3 +154,34 @@ const CORRESPONDENCE_CHANNELS = [
 ];
 
 const CORRESPONDENCE_STATUSES = ["Open", "Resolved"];
+
+/** What kind of update a correspondence entry represents — lets you log outcomes, not just channels. */
+const CORRESPONDENCE_CATEGORIES = [
+  "Question / inquiry",
+  "Document request",
+  "Tax return filed",
+  "Refund notice",
+  "Assessment / bill",
+  "General update",
+];
+
+/** Currencies offered in amount fields across Tax Years, Payslips, and Correspondence. */
+const CURRENCIES = [
+  { code: "DKK", symbol: "kr" },
+  { code: "USD", symbol: "$" },
+  { code: "EUR", symbol: "€" },
+  { code: "GBP", symbol: "£" },
+  { code: "CAD", symbol: "$" },
+  { code: "AUD", symbol: "$" },
+  { code: "NOK", symbol: "kr" },
+  { code: "SEK", symbol: "kr" },
+  { code: "CHF", symbol: "Fr" },
+];
+
+/** Default Gemini model used for payslip analysis — editable per-browser in Payslip settings. */
+const GEMINI_DEFAULT_MODEL = "gemini-2.0-flash";
+
+const PAYSLIP_MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];

@@ -14,6 +14,8 @@
   <nav class="app-nav">
     <a href="index.html" data-page="dashboard">Dashboard</a>
     <a href="income.html" data-page="income">Income</a>
+    <a href="payslips.html" data-page="payslips">Payslips</a>
+    <a href="tax-years.html" data-page="tax-years">Tax Years</a>
     <a href="residency.html" data-page="residency">Residency</a>
     <a href="correspondence.html" data-page="correspondence">Correspondence</a>
     <a href="countries.html" data-page="countries">Countries</a>
@@ -46,6 +48,10 @@
           <select id="correspondence-channel"></select>
         </div>
         <div class="field">
+          <label>Category</label>
+          <select id="correspondence-category"></select>
+        </div>
+        <div class="field">
           <label>Follow-up due (optional)</label>
           <input type="date" id="correspondence-followup">
         </div>
@@ -53,6 +59,16 @@
       <div class="field">
         <label>Subject</label>
         <input type="text" id="correspondence-subject" placeholder="e.g. 2024 residency questionnaire">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Amount (optional — e.g. a refund or bill amount)</label>
+          <input type="number" id="correspondence-amount" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label>Currency</label>
+          <select id="correspondence-currency"></select>
+        </div>
       </div>
       <div class="field">
         <label>Notes</label>
@@ -77,8 +93,10 @@
           <th>Date</th>
           <th>Counterparty</th>
           <th>Channel</th>
+          <th>Category</th>
           <th>Subject</th>
           <th>Notes</th>
+          <th class="num">Amount</th>
           <th>Follow-up</th>
           <th>Status</th>
           <th></th>

@@ -3,10 +3,13 @@
   const counterpartyInput = document.getElementById("correspondence-counterparty");
   const counterpartyList = document.getElementById("correspondence-counterparty-list");
   const channelSelect = document.getElementById("correspondence-channel");
+  const categorySelect = document.getElementById("correspondence-category");
   const dateInput = document.getElementById("correspondence-date");
   const subjectInput = document.getElementById("correspondence-subject");
   const notesInput = document.getElementById("correspondence-notes");
   const followUpInput = document.getElementById("correspondence-followup");
+  const amountInput = document.getElementById("correspondence-amount");
+  const currencySelect = document.getElementById("correspondence-currency");
 
   const statusFilter = document.getElementById("correspondence-status-filter");
   const searchInput = document.getElementById("correspondence-search");
@@ -22,9 +25,20 @@
     channelSelect.innerHTML = CORRESPONDENCE_CHANNELS
       .map((ch) => `<option value="${ch}">${ch}</option>`)
       .join("");
+    categorySelect.innerHTML = CORRESPONDENCE_CATEGORIES
+      .map((cat) => `<option value="${cat}">${cat}</option>`)
+      .join("");
+    currencySelect.innerHTML = CURRENCIES
+      .map((c) => `<option value="${c.code}">${c.code}</option>`)
+      .join("");
     statusFilter.innerHTML =
       `<option value="all">All statuses</option>` +
       CORRESPONDENCE_STATUSES.map((s) => `<option value="${s}">${s}</option>`).join("");
+  }
+
+  function currencySymbolFor(code) {
+    const match = CURRENCIES.find((c) => c.code === code);
+    return match ? match.symbol : "";
   }
 
   function badgeForStatus(status) {
@@ -43,7 +57,7 @@
     const query = searchInput.value.trim().toLowerCase();
     if (query) {
       entries = entries.filter((e) =>
-        [e.counterparty, e.subject, e.notes].some((f) => (f || "").toLowerCase().includes(query))
+        [e.counterparty, e.subject, e.notes, e.category].some((f) => (f || "").toLowerCase().includes(query))
       );
     }
 
@@ -65,8 +79,10 @@
             <td>${e.date}</td>
             <td>${escapeHtml(e.counterparty)}</td>
             <td>${escapeHtml(e.channel)}</td>
+            <td>${escapeHtml(e.category || "")}</td>
             <td>${escapeHtml(e.subject || "")}</td>
             <td>${escapeHtml(e.notes || "")}</td>
+            <td class="num">${e.amount ? formatMoney(e.amount, currencySymbolFor(e.currency)) : "—"}</td>
             <td>${e.followUp ? escapeHtml(e.followUp) : "—"}</td>
             <td>${badgeForStatus(e.status)}</td>
             <td class="actions-row" style="flex-wrap:nowrap;">
@@ -88,8 +104,11 @@
       date: dateInput.value || new Date().toISOString().slice(0, 10),
       counterparty,
       channel: channelSelect.value,
+      category: categorySelect.value,
       subject: subjectInput.value.trim(),
       notes: notesInput.value.trim(),
+      amount: amountInput.value ? Number(amountInput.value) : 0,
+      currency: currencySelect.value,
       followUp: followUpInput.value || "",
       status: "Open",
     });
@@ -97,6 +116,8 @@
     form.reset();
     dateInput.value = new Date().toISOString().slice(0, 10);
     channelSelect.value = CORRESPONDENCE_CHANNELS[0];
+    categorySelect.value = CORRESPONDENCE_CATEGORIES[0];
+    currencySelect.value = "DKK";
     renderTable();
   });
 
@@ -124,5 +145,7 @@
   dateInput.value = new Date().toISOString().slice(0, 10);
   populateStaticLists();
   channelSelect.value = CORRESPONDENCE_CHANNELS[0];
+  categorySelect.value = CORRESPONDENCE_CATEGORIES[0];
+  currencySelect.value = "DKK";
   renderTable();
 })();

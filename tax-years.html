@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tax Years — Multi-Country Tax Tracker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext y=%2224%27 font-size=%2224%27%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="tax-years">
+
+<header class="app-header">
+  <div class="app-brand"><span class="mark">₮</span> Tax Tracker</div>
+  <nav class="app-nav">
+    <a href="index.html" data-page="dashboard">Dashboard</a>
+    <a href="income.html" data-page="income">Income</a>
+    <a href="payslips.html" data-page="payslips">Payslips</a>
+    <a href="tax-years.html" data-page="tax-years">Tax Years</a>
+    <a href="residency.html" data-page="residency">Residency</a>
+    <a href="correspondence.html" data-page="correspondence">Correspondence</a>
+    <a href="countries.html" data-page="countries">Countries</a>
+  </nav>
+</header>
+
+<main class="app-main">
+  <div class="page-title">
+    <div>
+      <h1>Tax Years</h1>
+      <p>Pick a tax year to record what you actually declared and paid: income and tax refunded in Denmark, and what you then paid in tax abroad with that money.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <label style="margin:0;">Tax year</label>
+      <select id="tax-year-select" class="select-year"></select>
+      <button type="button" id="add-year-btn" class="small">+ Add year</button>
+      <span class="spacer"></span>
+      <button type="button" id="delete-year-btn" class="danger-outline small">Delete this year</button>
+    </div>
+    <p class="hint" id="also-tracked-hint"></p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Denmark</h2></div>
+    <form id="denmark-form">
+      <div class="field-row">
+        <div class="field">
+          <label>Income from Denmark (DKK)</label>
+          <input type="number" id="dk-income" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label>Tax paid/withheld in Denmark (DKK)</label>
+          <input type="number" id="dk-tax-paid" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label>Tax refunded from Denmark (DKK)</label>
+          <input type="number" id="dk-tax-refund" min="0" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="dk-notes" rows="2" placeholder="Anything about the assessment, årsopgørelse, etc."></textarea>
+      </div>
+      <button type="submit" class="primary">Save</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Tax paid abroad (funded by the Danish refund)</h2></div>
+    <form id="abroad-form">
+      <div class="field-row">
+        <div class="field">
+          <label>Country</label>
+          <input type="text" id="abroad-country" list="abroad-country-list" placeholder="e.g. United States" required>
+          <datalist id="abroad-country-list"></datalist>
+        </div>
+        <div class="field">
+          <label>Amount</label>
+          <input type="number" id="abroad-amount" min="0" step="0.01" placeholder="0.00" required>
+        </div>
+        <div class="field">
+          <label>Currency</label>
+          <select id="abroad-currency"></select>
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="abroad-date">
+        </div>
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <input type="text" id="abroad-notes" placeholder="e.g. quarterly estimated payment">
+      </div>
+      <button type="submit" class="primary">Add payment</button>
+    </form>
+
+    <div class="table-scroll" style="margin-top:16px;">
+      <table id="abroad-table">
+        <thead>
+          <tr><th>Date</th><th>Country</th><th class="num">Amount</th><th>Notes</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="abroad-empty-state">No abroad payments logged for this year yet.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Summary</h2></div>
+    <div id="tax-year-summary"></div>
+  </div>
+</main>
+
+<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere.</footer>
+
+<script src="js/tax-data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/tax-calc.js"></script>
+<script src="js/app.js"></script>
+<script src="js/tax-years.js"></script>
+</body>
+</html>

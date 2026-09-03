@@ -14,13 +14,24 @@ browser's `localStorage`; nothing is sent anywhere.
   toward that country's residency-day threshold.
 - **Income** (`income.html`) — add/remove income entries (date, country,
   category, amount, description) and filter them by year.
+- **Payslips** (`payslips.html`) — upload a monthly payslip (image or PDF)
+  and have Google Gemini read gross pay, net pay, and tax withheld off it
+  (bring your own API key — see below), or type the figures in by hand.
+  Builds a month-by-month history per country with a yearly summary.
+- **Tax Years** (`tax-years.html`) — pick a tax year and record what you
+  actually declared: income, tax paid, and tax refunded in Denmark, plus a
+  running list of tax payments made abroad (funded by that refund). Meant
+  for actual filed/paid amounts, distinct from the Dashboard's automatic
+  bracket-based estimates.
 - **Residency** (`residency.html`) — log date ranges spent in each country
   and see running day totals against a configurable threshold (defaults to
   183 days, the day count commonly used for tax-residency tests).
 - **Correspondence** (`correspondence.html`) — a log of communication with
   accountants/advisors (e.g. KPMG) and tax authorities: date, counterparty,
-  channel (call/email/letter/meeting), subject, notes, an optional
-  follow-up date, and an open/resolved status.
+  channel (call/email/letter/meeting), category (question, document
+  request, tax return filed, refund notice, assessment...), subject, notes,
+  an optional amount (e.g. a confirmed refund), a follow-up date, and an
+  open/resolved status.
 - **Countries** (`countries.html`) — add, edit, or delete countries: name,
   currency, residency threshold, and progressive tax brackets. Also export
   all data to a JSON file, import it back, or wipe everything.
@@ -28,13 +39,23 @@ browser's `localStorage`; nothing is sent anywhere.
 ## Data & calculations
 
 - `js/tax-data.js` ships simplified, illustrative national/federal tax
-  brackets for the US, UK, Germany, Canada, Australia, and France (single
-  filer, one recent tax year, no state/provincial tax, deductions, or
-  credits). Edit or replace these on the Countries page — they are meant
-  as a rough starting point, not authoritative figures.
+  brackets for Denmark, the US, UK, Germany, Canada, Australia, and France
+  (single filer, one recent tax year, no state/provincial/municipal tax,
+  deductions, or credits — Denmark's is a particularly rough blend of
+  AM-bidrag + municipal + state tax). Edit or replace these on the
+  Countries page — they are meant as a rough starting point, not
+  authoritative figures.
 - `js/tax-calc.js` applies those brackets progressively (marginal-rate
   calculation) to estimate tax and effective rate on logged income.
 - `js/storage.js` is the only place that touches `localStorage`.
+- `js/gemini.js` calls the Gemini API directly from the browser to analyze
+  an uploaded payslip. Your API key (from
+  [aistudio.google.com/apikey](https://aistudio.google.com/apikey)) is
+  entered on the Payslips page and saved only in `localStorage`, under a
+  key that `Store.exportAll()`/`importAll()` deliberately never touch —
+  it can never end up inside an export/backup JSON file. The payslip file
+  itself is sent straight to Google for analysis and is not stored by this
+  app; only the figures you review and save afterward are kept.
 
 ## Disclaimer
 

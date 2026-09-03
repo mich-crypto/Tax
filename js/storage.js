@@ -9,6 +9,11 @@ const STORAGE_KEYS = {
   income: "taxtracker_income_v1",
   residency: "taxtracker_residency_v1",
   correspondence: "taxtracker_correspondence_v1",
+  taxYears: "taxtracker_taxyears_v1",
+  payslips: "taxtracker_payslips_v1",
+  // Deliberately separate from the rest: never touched by exportAll/importAll,
+  // so a Gemini API key can never end up inside a shared/exported JSON backup.
+  geminiSettings: "taxtracker_gemini_settings_v1",
 };
 
 function readJSON(key, fallback) {
@@ -123,6 +128,96 @@ const Store = {
     this.saveCorrespondence(entries);
   },
 
+  // ---------- Tax years (per-year Denmark refund vs. abroad payments) ----------
+
+  getTaxYears() {
+    return readJSON(STORAGE_KEYS.taxYears, []);
+  },
+
+  saveTaxYears(years) {
+    writeJSON(STORAGE_KEYS.taxYears, years);
+  },
+
+  getTaxYear(year) {
+    return this.getTaxYears().find((y) => y.year === year) || null;
+  },
+
+  /** Finds the record for `year`, creating a blank one if it doesn't exist yet, and merges `fields` into it. */
+  upsertTaxYear(year, fields) {
+    const years = this.getTaxYears();
+    let record = years.find((y) => y.year === year);
+    if (!record) {
+      record = {
+        id: uid(),
+        year,
+        denmarkIncome: 0,
+        denmarkTaxPaid: 0,
+        denmarkTaxRefund: 0,
+        notes: "",
+        abroadPayments: [],
+      };
+      years.push(record);
+    }
+    Object.assign(record, fields);
+    years.sort((a, b) => b.year - a.year);
+    this.saveTaxYears(years);
+    return record;
+  },
+
+  deleteTaxYear(year) {
+    this.saveTaxYears(this.getTaxYears().filter((y) => y.year !== year));
+  },
+
+  addAbroadPayment(year, payment) {
+    const record = this.upsertTaxYear(year, {});
+    record.abroadPayments.push({ id: uid(), ...payment });
+    this.saveTaxYears(this.getTaxYears().map((y) => (y.year === year ? record : y)));
+  },
+
+  deleteAbroadPayment(year, paymentId) {
+    const record = this.getTaxYear(year);
+    if (!record) return;
+    record.abroadPayments = record.abroadPayments.filter((p) => p.id !== paymentId);
+    this.saveTaxYears(this.getTaxYears().map((y) => (y.year === year ? record : y)));
+  },
+
+  // ---------- Monthly payslips ----------
+
+  getPayslips() {
+    return readJSON(STORAGE_KEYS.payslips, []);
+  },
+
+  savePayslips(entries) {
+    writeJSON(STORAGE_KEYS.payslips, entries);
+  },
+
+  addPayslip(entry) {
+    const entries = this.getPayslips();
+    entries.push({ id: uid(), ...entry });
+    this.savePayslips(entries);
+  },
+
+  deletePayslip(id) {
+    const entries = this.getPayslips().filter((e) => e.id !== id);
+    this.savePayslips(entries);
+  },
+
+  // ---------- Gemini API settings (never exported/imported/backed up) ----------
+
+  getGeminiSettings() {
+    return readJSON(STORAGE_KEYS.geminiSettings, { apiKey: "", model: GEMINI_DEFAULT_MODEL });
+  },
+
+  saveGeminiSettings(settings) {
+    writeJSON(STORAGE_KEYS.geminiSettings, settings);
+  },
+
+  clearGeminiApiKey() {
+    const settings = this.getGeminiSettings();
+    settings.apiKey = "";
+    this.saveGeminiSettings(settings);
+  },
+
   exportAll() {
     return {
       exportedAt: new Date().toISOString(),
@@ -130,6 +225,8 @@ const Store = {
       income: this.getIncome(),
       residency: this.getResidency(),
       correspondence: this.getCorrespondence(),
+      taxYears: this.getTaxYears(),
+      payslips: this.getPayslips(),
     };
   },
 
@@ -138,6 +235,8 @@ const Store = {
     if (data.income) this.saveIncome(data.income);
     if (data.residency) this.saveResidency(data.residency);
     if (data.correspondence) this.saveCorrespondence(data.correspondence);
+    if (data.taxYears) this.saveTaxYears(data.taxYears);
+    if (data.payslips) this.savePayslips(data.payslips);
   },
 
   wipeAll() {
@@ -145,5 +244,8 @@ const Store = {
     localStorage.removeItem(STORAGE_KEYS.income);
     localStorage.removeItem(STORAGE_KEYS.residency);
     localStorage.removeItem(STORAGE_KEYS.correspondence);
+    localStorage.removeItem(STORAGE_KEYS.taxYears);
+    localStorage.removeItem(STORAGE_KEYS.payslips);
+    localStorage.removeItem(STORAGE_KEYS.geminiSettings);
   },
 };
