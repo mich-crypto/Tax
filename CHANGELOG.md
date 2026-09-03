@@ -3,6 +3,20 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v1.8.0 — 2026-09-03
+
+- **Income gained an Overview card**: per-country totals for a selected
+  year, all converted to your home currency (EUR), with a **Last year**
+  column and a **Change** badge (New / +X% / −X%) comparing the two —
+  plus a totals row.
+- **New Exchange rates card** on the Income page: one "1 EUR = ? [code]"
+  input per non-EUR currency you've actually logged income in (no
+  live rate feed — you set these). Rates are saved and included in
+  Settings' Export/Import backup.
+- A country/year with entries in a currency that has no rate set yet is
+  flagged (⚠) and excluded from that total, rather than silently
+  under-counting it — set the rate and it's included immediately.
+
 ## v1.7.0 — 2026-09-03
 
 - **New Settings page** (`settings.html`), reached via a ⚙ icon on the

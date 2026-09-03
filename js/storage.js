@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   residency: "taxtracker_residency_v1",
   taxYears: "taxtracker_taxyears_v1",
   payslips: "taxtracker_payslips_v1",
+  currencyRates: "taxtracker_currency_rates_v1",
   // Deliberately separate from the rest: never touched by exportAll/importAll,
   // so a Gemini API key can never end up inside a shared/exported JSON backup.
   geminiSettings: "taxtracker_gemini_settings_v1",
@@ -55,6 +56,17 @@ const Store = {
   deleteIncome(id) {
     const entries = this.getIncome().filter((e) => e.id !== id);
     this.saveIncome(entries);
+  },
+
+  // Exchange rates for converting logged income to EUR, keyed by currency
+  // code, stored as "1 EUR = ? [code]" (e.g. { DKK: 7.46 }). You set these;
+  // there's no live rate feed.
+  getCurrencyRates() {
+    return readJSON(STORAGE_KEYS.currencyRates, {});
+  },
+
+  saveCurrencyRates(rates) {
+    writeJSON(STORAGE_KEYS.currencyRates, rates);
   },
 
   getResidency() {
@@ -247,6 +259,7 @@ const Store = {
       residency: this.getResidency(),
       taxYears: this.getTaxYears(),
       payslips: this.getPayslips(),
+      currencyRates: this.getCurrencyRates(),
     };
   },
 
@@ -255,6 +268,7 @@ const Store = {
     if (data.residency) this.saveResidency(data.residency);
     if (data.taxYears) this.saveTaxYears(data.taxYears);
     if (data.payslips) this.savePayslips(data.payslips);
+    if (data.currencyRates) this.saveCurrencyRates(data.currencyRates);
   },
 
   wipeAll() {
@@ -263,5 +277,6 @@ const Store = {
     localStorage.removeItem(STORAGE_KEYS.taxYears);
     localStorage.removeItem(STORAGE_KEYS.payslips);
     localStorage.removeItem(STORAGE_KEYS.geminiSettings);
+    localStorage.removeItem(STORAGE_KEYS.currencyRates);
   },
 };

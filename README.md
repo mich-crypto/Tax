@@ -44,8 +44,15 @@ shared settings:
 
   Since it's a single page, its header has no nav bar — the Tax Tracker /
   Income Tracker switcher under the logo is the only way to leave it.
-- **Income** (`income.html`) — add/remove income entries (date, country,
-  category, currency, amount, description) and filter them by year.
+- **Income** (`income.html`) — an **Overview** card up top: per-country
+  totals for a selected year, converted to EUR (your home currency), next
+  to the same total for the year before with a change badge (New/+X%/−X%).
+  A row missing an exchange rate is flagged and excluded rather than
+  silently wrong. Set each currency's rate ("1 EUR = ? DKK") in the
+  **Exchange rates** card right below — only currencies you've actually
+  logged income in show up there. Below that, add/remove income entries
+  (date, country, category, currency, amount, description) and filter
+  them by year.
 - **Payslips** (`payslips.html`) — **bulk upload**: pick one or more
   payslip files (image or PDF) and Google Gemini reads gross pay, net
   pay, and tax withheld off each one, saving it automatically — no

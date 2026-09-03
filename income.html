@@ -28,8 +28,39 @@
   <div class="page-title">
     <div>
       <h1>Income</h1>
-      <p>Log income entries per country to feed the dashboard's tax estimates.</p>
+      <p>Log income entries per country. The overview below converts everything to EUR and compares against last year.</p>
     </div>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <h2 style="margin:0;">Overview</h2>
+      <span class="spacer"></span>
+      <label style="margin:0;">Year</label>
+      <select id="overview-year-select" class="select-year"></select>
+    </div>
+    <div class="table-scroll">
+      <table id="overview-table">
+        <thead>
+          <tr>
+            <th>Country</th>
+            <th class="num">This year (€)</th>
+            <th class="num">Last year (€)</th>
+            <th class="num">Change</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+    <div class="empty-state" id="overview-empty-state">No income logged yet for this year or last year.</div>
+    <p class="hint" id="overview-rate-hint"></p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Exchange rates (→ EUR)</h2></div>
+    <p class="hint">Your home currency is EUR. Set a rate for every other currency you log income in — used to convert the overview above. No live rate feed, you set these.</p>
+    <div class="field-row" id="exchange-rate-fields"></div>
   </div>
 
   <div class="card">
