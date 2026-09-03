@@ -66,6 +66,24 @@
   const countryTable = document.getElementById("country-table");
   const countryEmptyState = document.getElementById("country-empty-state");
 
+  /** Sums this country's "Refund received" activities (EUR only — see hasNonEurRefund for the rest). */
+  function refundedEurForCountry(record, countryName) {
+    const target = countryName.trim().toLowerCase();
+    return record.activities
+      .filter((a) => (a.action || "").trim().toLowerCase() === "refund received" && (a.country || "").trim().toLowerCase() === target)
+      .reduce((s, a) => s + (a.currency === "EUR" ? Number(a.amount || 0) : 0), 0);
+  }
+
+  /** True if this country has a "Refund received" activity in a currency other than EUR — can't be netted without a rate. */
+  function hasNonEurRefund(record, countryName) {
+    const target = countryName.trim().toLowerCase();
+    return record.activities.some(
+      (a) => (a.action || "").trim().toLowerCase() === "refund received"
+        && (a.country || "").trim().toLowerCase() === target
+        && a.currency !== "EUR"
+    );
+  }
+
   function renderCountrySummaryTable(record) {
     const rows = record.countries;
 
@@ -81,29 +99,40 @@
 
     const totalIncome = rows.reduce((s, r) => s + Number(r.incomeEur || 0), 0);
     const totalTax = rows.reduce((s, r) => s + Number(r.taxEur || 0), 0);
+    const totalRefunded = rows.reduce((s, r) => s + refundedEurForCountry(record, r.country), 0);
 
     countryTableBody.innerHTML = rows
       .map((r) => {
         const incomeEur = Number(r.incomeEur || 0);
         const taxEur = Number(r.taxEur || 0);
-        const taxRate = incomeEur ? (taxEur / incomeEur) * 100 : 0;
+        const refundedEur = refundedEurForCountry(record, r.country);
+        const netTaxEur = taxEur - refundedEur;
+        const netRate = incomeEur ? (netTaxEur / incomeEur) * 100 : 0;
+        const warn = hasNonEurRefund(record, r.country)
+          ? ` <span class="badge warn" title="A refund logged in a currency other than EUR exists for this country and isn't included below — log it in EUR to have it netted automatically">⚠</span>`
+          : "";
         return `
           <tr>
-            <td>${escapeHtml(r.country)}</td>
+            <td>${escapeHtml(r.country)}${warn}</td>
             <td class="num">${formatMoney(incomeEur, "€")}</td>
             <td class="num">${formatMoney(taxEur, "€")}</td>
-            <td class="num">${incomeEur ? taxRate.toFixed(1) + "%" : "—"}</td>
+            <td class="num">${refundedEur ? formatMoney(refundedEur, "€") : "—"}</td>
+            <td class="num">${formatMoney(netTaxEur, "€")}</td>
+            <td class="num">${incomeEur ? netRate.toFixed(1) + "%" : "—"}</td>
           </tr>
         `;
       })
       .join("");
 
-    const overallRate = totalIncome ? (totalTax / totalIncome) * 100 : 0;
+    const totalNetTax = totalTax - totalRefunded;
+    const overallRate = totalIncome ? (totalNetTax / totalIncome) * 100 : 0;
     countryTableFoot.innerHTML = `
       <tr class="total-row">
         <td><strong>Total</strong></td>
         <td class="num"><strong>${formatMoney(totalIncome, "€")}</strong></td>
         <td class="num"><strong>${formatMoney(totalTax, "€")}</strong></td>
+        <td class="num"><strong>${totalRefunded ? formatMoney(totalRefunded, "€") : "—"}</strong></td>
+        <td class="num"><strong>${formatMoney(totalNetTax, "€")}</strong></td>
         <td class="num"><strong>${totalIncome ? overallRate.toFixed(1) + "%" : "—"}</strong></td>
       </tr>
     `;
@@ -180,6 +209,7 @@
     activityForm.reset();
     activityCurrencySelect.value = "EUR";
     renderActivityTable(Store.getTaxYearById(currentId));
+    renderCountrySummaryTable(Store.getTaxYearById(currentId));
   });
 
   activityTableBody.addEventListener("click", (event) => {
@@ -188,6 +218,7 @@
     if (!confirm("Delete this activity?")) return;
     Store.deleteTaxYearActivity(currentId, activityId);
     renderActivityTable(Store.getTaxYearById(currentId));
+    renderCountrySummaryTable(Store.getTaxYearById(currentId));
   });
 
   // ---------- Tax information: one panel per country ----------

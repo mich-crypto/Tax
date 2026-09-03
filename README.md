@@ -30,7 +30,12 @@ shared settings:
   - **Overview** — a 4-item completion checklist (year completed,
     questionnaires done, returns filed, paid & returned), the per-country
     income/tax summary table with totals, and a payment-activity ledger
-    (action, date, amount, currency, country).
+    (action, date, amount, currency, country). The summary table nets
+    "Refund received" activities against each country's Tax € — for a
+    country that withholds tax all year and refunds part of it back
+    (Denmark, for one), Refunded €/Net tax €/Net tax rate reflect what
+    you actually end up paying. Only EUR-logged refunds are netted; a
+    refund in another currency is flagged rather than silently ignored.
   - **Tax information** — **one tab per country** you've paid tax in,
     each holding just that country's income and tax figures (in EUR).
     Add a country with the "+ Add" control — free text, so you're never

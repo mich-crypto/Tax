@@ -3,6 +3,21 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v1.11.0 — 2026-09-03
+
+- **Tax Tracker's country summary now nets refunds against tax paid.**
+  Some countries (Denmark, for one) withhold tax all year and pay part
+  of it back at year end — until now the summary table only showed the
+  gross Tax € figure with no way to reflect that refund.
+  - Log a "Refund received" payment activity (already existed) for a
+    country and it's automatically subtracted from that country's tax.
+  - New columns: **Refunded €** and **Net tax €**, plus **Net tax
+    rate** (replaces the old Tax rate, now computed on the net figure).
+  - Only refunds logged in EUR are netted — a refund logged in another
+    currency (e.g. a DKK refund from Denmark) is flagged with a ⚠
+    warning instead of being silently ignored or wrongly summed, since
+    there's no exchange-rate mechanism on this page to convert it.
+
 ## v1.10.0 — 2026-09-03
 
 - **Payslips: added holiday pay** ("feriepenge") as its own type,

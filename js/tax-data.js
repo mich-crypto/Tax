@@ -143,11 +143,12 @@ const TAX_YEAR_STATUS_FIELDS = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "1.10.0";
+const APP_VERSION = "1.11.0";
 const APP_VERSION_DATE = "2026-09-03";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "1.11.0", summary: "Tax Tracker's country summary now nets refunds against tax paid — e.g. Denmark: pay tax all year, get part back at year end. Log a \"Refund received\" payment activity and it's automatically subtracted from that country's Tax €, with new Refunded €/Net tax €/Net tax rate columns. Only EUR refunds are netted (a non-EUR one is flagged, not silently dropped)." },
   { version: "1.10.0", summary: "Payslips now handles annual holiday pay: a Type selector (Salary / Holiday pay) on bulk upload, a Type column in the monthly log, a \"includes €X holiday pay\" note on the yearly summary, and holiday pay excluded from the missing-months check (it isn't expected every month). Flows straight into Income's overview like any other payslip." },
   { version: "1.9.0", summary: "Income's Overview now pulls Gross/Net/Tax straight from Payslips (the actual source of truth) instead of duplicating that as manual entries. Manually logged entries below fold in as \"Other income\", and a Total income row combines Payslips' net pay with them — all EUR-converted, all compared against last year." },
   { version: "1.8.1", summary: "Payslips: removed Country and Employer — same employer every time, so tracking them was pure noise. Bulk upload no longer asks for them, the monthly log has no Country/Employer columns, and \"Yearly summary by country\" is just \"Yearly summary\" (one set of totals, no grouping)." },
