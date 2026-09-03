@@ -55,6 +55,7 @@
         if (!record) return;
         record.status[select.dataset.statusKey] = select.value === "yes";
         Store.saveTaxYearRecord(record);
+        renderAllYearsTable();
       });
     });
   }
@@ -66,22 +67,27 @@
   const countryTable = document.getElementById("country-table");
   const countryEmptyState = document.getElementById("country-empty-state");
 
-  /** Sums this country's "Refund received" activities (EUR only — see hasNonEurRefund for the rest). */
-  function refundedEurForCountry(record, countryName) {
-    const target = countryName.trim().toLowerCase();
-    return record.activities
-      .filter((a) => (a.action || "").trim().toLowerCase() === "refund received" && (a.country || "").trim().toLowerCase() === target)
-      .reduce((s, a) => s + (a.currency === "EUR" ? Number(a.amount || 0) : 0), 0);
+  /** Converts a local-currency amount to EUR using the rates set on the Income page ("1 EUR = ? code"). Returns null if the rate is unknown. */
+  function toEurAmount(amount, currencyCode, rates) {
+    if (!currencyCode || currencyCode === "EUR") return Number(amount) || 0;
+    const rate = Number(rates[currencyCode]);
+    if (!rate) return null;
+    return (Number(amount) || 0) / rate;
   }
 
-  /** True if this country has a "Refund received" activity in a currency other than EUR — can't be netted without a rate. */
-  function hasNonEurRefund(record, countryName) {
+  /** Sums this country's "Refund received" activities, converted to EUR via the shared exchange rates. */
+  function refundedForCountry(record, countryName, rates) {
     const target = countryName.trim().toLowerCase();
-    return record.activities.some(
-      (a) => (a.action || "").trim().toLowerCase() === "refund received"
-        && (a.country || "").trim().toLowerCase() === target
-        && a.currency !== "EUR"
-    );
+    let total = 0;
+    let missingRate = false;
+    record.activities
+      .filter((a) => (a.action || "").trim().toLowerCase() === "refund received" && (a.country || "").trim().toLowerCase() === target)
+      .forEach((a) => {
+        const eur = toEurAmount(a.amount, a.currency, rates);
+        if (eur === null) missingRate = true;
+        else total += eur;
+      });
+    return { total, missingRate };
   }
 
   function renderCountrySummaryTable(record) {
@@ -97,19 +103,20 @@
     countryTable.style.display = "";
     countryEmptyState.style.display = "none";
 
+    const rates = Store.getCurrencyRates();
     const totalIncome = rows.reduce((s, r) => s + Number(r.incomeEur || 0), 0);
     const totalTax = rows.reduce((s, r) => s + Number(r.taxEur || 0), 0);
-    const totalRefunded = rows.reduce((s, r) => s + refundedEurForCountry(record, r.country), 0);
+    const totalRefunded = rows.reduce((s, r) => s + refundedForCountry(record, r.country, rates).total, 0);
 
     countryTableBody.innerHTML = rows
       .map((r) => {
         const incomeEur = Number(r.incomeEur || 0);
         const taxEur = Number(r.taxEur || 0);
-        const refundedEur = refundedEurForCountry(record, r.country);
+        const { total: refundedEur, missingRate } = refundedForCountry(record, r.country, rates);
         const netTaxEur = taxEur - refundedEur;
         const netRate = incomeEur ? (netTaxEur / incomeEur) * 100 : 0;
-        const warn = hasNonEurRefund(record, r.country)
-          ? ` <span class="badge warn" title="A refund logged in a currency other than EUR exists for this country and isn't included below — log it in EUR to have it netted automatically">⚠</span>`
+        const warn = missingRate
+          ? ` <span class="badge warn" title="A refund is logged in a currency with no exchange rate set — set it on the Income page and it'll be included here">⚠</span>`
           : "";
         return `
           <tr>
@@ -210,6 +217,7 @@
     activityCurrencySelect.value = "EUR";
     renderActivityTable(Store.getTaxYearById(currentId));
     renderCountrySummaryTable(Store.getTaxYearById(currentId));
+    renderAllYearsTable();
   });
 
   activityTableBody.addEventListener("click", (event) => {
@@ -219,6 +227,7 @@
     Store.deleteTaxYearActivity(currentId, activityId);
     renderActivityTable(Store.getTaxYearById(currentId));
     renderCountrySummaryTable(Store.getTaxYearById(currentId));
+    renderAllYearsTable();
   });
 
   // ---------- Tax information: one panel per country ----------
@@ -288,6 +297,7 @@
         const field = input.classList.contains("country-income-input") ? "incomeEur" : "taxEur";
         Store.updateCountryRow(currentId, input.dataset.rowId, { [field]: Number(input.value) || 0 });
         renderCountrySummaryTable(Store.getTaxYearById(currentId));
+        renderAllYearsTable();
       });
     });
     countryPanelsEl.querySelectorAll("[data-remove-country]").forEach((btn) => {
@@ -297,6 +307,7 @@
         const record = Store.getTaxYearById(currentId);
         renderCountryPanels(record);
         renderCountrySummaryTable(record);
+        renderAllYearsTable();
         showCountrySubview(null);
       });
     });
@@ -322,6 +333,7 @@
     const updated = Store.getTaxYearById(currentId);
     renderCountryPanels(updated);
     renderCountrySummaryTable(updated);
+    renderAllYearsTable();
     const added = updated.countries[updated.countries.length - 1];
     showCountrySubview(added.id);
   });
@@ -470,6 +482,102 @@
   correspondenceStatusFilter.addEventListener("change", () => renderCorrespondenceTable(Store.getTaxYearById(currentId)));
   correspondenceSearchInput.addEventListener("input", () => renderCorrespondenceTable(Store.getTaxYearById(currentId)));
 
+  // ---------- All years (cross-year dashboard) ----------
+
+  const allYearsTable = document.getElementById("all-years-table");
+  const allYearsTableBody = document.querySelector("#all-years-table tbody");
+  const allYearsTableFoot = document.querySelector("#all-years-table tfoot");
+  const allYearsEmptyState = document.getElementById("all-years-empty-state");
+
+  /** Sums every "Refund received" activity in this record (any country), converted to EUR via the shared exchange rates. */
+  function refundedTotalForRecord(record, rates) {
+    let total = 0;
+    let missingRate = false;
+    record.activities
+      .filter((a) => (a.action || "").trim().toLowerCase() === "refund received")
+      .forEach((a) => {
+        const eur = toEurAmount(a.amount, a.currency, rates);
+        if (eur === null) missingRate = true;
+        else total += eur;
+      });
+    return { total, missingRate };
+  }
+
+  function statusBadgeForRecord(record) {
+    const done = TAX_YEAR_STATUS_FIELDS.filter((f) => record.status[f.key]).length;
+    const total = TAX_YEAR_STATUS_FIELDS.length;
+    const cls = done === total ? "ok" : done === 0 ? "neutral" : "warn";
+    return `<span class="badge ${cls}">${done}/${total}</span>`;
+  }
+
+  function renderAllYearsTable() {
+    const records = Store.sortTaxYears(Store.getTaxYears().slice());
+    if (!records.length) {
+      allYearsTable.style.display = "none";
+      allYearsEmptyState.style.display = "block";
+      allYearsTableBody.innerHTML = "";
+      allYearsTableFoot.innerHTML = "";
+      return;
+    }
+    allYearsTable.style.display = "";
+    allYearsEmptyState.style.display = "none";
+
+    const rates = Store.getCurrencyRates();
+    const rowsData = records.map((record) => {
+      const income = record.countries.reduce((s, r) => s + Number(r.incomeEur || 0), 0);
+      const tax = record.countries.reduce((s, r) => s + Number(r.taxEur || 0), 0);
+      const { total: refunded, missingRate } = refundedTotalForRecord(record, rates);
+      const net = tax - refunded;
+      return { record, income, tax, refunded, missingRate, net };
+    });
+
+    allYearsTableBody.innerHTML = rowsData
+      .map(({ record, income, tax, refunded, missingRate, net }) => {
+        const rate = income ? (net / income) * 100 : 0;
+        const warn = missingRate
+          ? ` <span class="badge warn" title="A refund is logged in a currency with no exchange rate set — set it on the Income page">⚠</span>`
+          : "";
+        return `
+          <tr>
+            <td>${record.incomeYear}</td>
+            <td>${record.taxYear}</td>
+            <td>${statusBadgeForRecord(record)}${warn}</td>
+            <td class="num">${formatMoney(income, "€")}</td>
+            <td class="num">${formatMoney(tax, "€")}</td>
+            <td class="num">${refunded ? formatMoney(refunded, "€") : "—"}</td>
+            <td class="num">${formatMoney(net, "€")}</td>
+            <td class="num">${income ? rate.toFixed(1) + "%" : "—"}</td>
+            <td><button type="button" class="small" data-open-year="${record.id}">Open</button></td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    const totalIncome = rowsData.reduce((s, r) => s + r.income, 0);
+    const totalTax = rowsData.reduce((s, r) => s + r.tax, 0);
+    const totalRefunded = rowsData.reduce((s, r) => s + r.refunded, 0);
+    const totalNet = totalTax - totalRefunded;
+    const overallRate = totalIncome ? (totalNet / totalIncome) * 100 : 0;
+    allYearsTableFoot.innerHTML = `
+      <tr class="total-row">
+        <td colspan="3"><strong>Total</strong></td>
+        <td class="num"><strong>${formatMoney(totalIncome, "€")}</strong></td>
+        <td class="num"><strong>${formatMoney(totalTax, "€")}</strong></td>
+        <td class="num"><strong>${totalRefunded ? formatMoney(totalRefunded, "€") : "—"}</strong></td>
+        <td class="num"><strong>${formatMoney(totalNet, "€")}</strong></td>
+        <td class="num"><strong>${totalIncome ? overallRate.toFixed(1) + "%" : "—"}</strong></td>
+        <td></td>
+      </tr>
+    `;
+  }
+
+  allYearsTableBody.addEventListener("click", (event) => {
+    const id = event.target.dataset.openYear;
+    if (!id) return;
+    populateYearSelect(id);
+    openYear(id);
+  });
+
   // ---------- Year selection ----------
 
   let currentId = null;
@@ -543,6 +651,7 @@
     const record = Store.ensureTaxYear(incomeYear, taxYear);
     populateYearSelect(record.id);
     openYear(record.id);
+    renderAllYearsTable();
   });
 
   yearSelect.addEventListener("change", () => openYear(yearSelect.value));
@@ -558,6 +667,7 @@
     populateYearSelect();
     const years = Store.getTaxYears();
     openYear(years.length ? yearSelect.value : null);
+    renderAllYearsTable();
   });
 
   // Defaults for a first-time "new" entry: last calendar year's income, filed this year.
@@ -569,4 +679,5 @@
   populateYearSelect();
   const years = Store.getTaxYears();
   openYear(years.length ? yearSelect.value : null);
+  renderAllYearsTable();
 })();

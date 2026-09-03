@@ -3,6 +3,21 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v1.12.0 — 2026-09-03
+
+- **Refund netting now handles non-EUR refunds.** It previously only
+  netted refunds logged directly in EUR, flagging anything else. Now it
+  converts using the same exchange rates you set on the Income page
+  (Store's shared currency-rates, e.g. "1 EUR = 7.46 DKK") — a real DKK
+  refund from Denmark nets correctly as long as that rate is set. A
+  currency with no rate set yet is still flagged rather than silently
+  dropped or miscounted.
+- **New "All years" dashboard** on Tax Tracker, above the year picker:
+  every tax year at a glance — completion status (X/4), Income €, Tax €,
+  Refunded €, Net tax €, and Net tax rate, with a totals row and an
+  **Open** button per row to jump straight into that year below. Updates
+  live as you edit income/tax figures, log activities, or change status.
+
 ## v1.11.0 — 2026-09-03
 
 - **Tax Tracker's country summary now nets refunds against tax paid.**

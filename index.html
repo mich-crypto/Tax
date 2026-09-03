@@ -30,6 +30,31 @@
   </div>
 
   <div class="card">
+    <div class="card-header"><h2>All years</h2></div>
+    <p class="hint">Every tax year at a glance — click "Open" to switch into it below.</p>
+    <div class="table-scroll">
+      <table id="all-years-table">
+        <thead>
+          <tr>
+            <th>Income year</th>
+            <th>Tax year</th>
+            <th>Status</th>
+            <th class="num">Income €</th>
+            <th class="num">Tax €</th>
+            <th class="num">Refunded €</th>
+            <th class="num">Net tax €</th>
+            <th class="num">Net tax rate</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+    <div class="empty-state" id="all-years-empty-state">No tax years yet. Create one below to get started.</div>
+  </div>
+
+  <div class="card">
     <div class="toolbar">
       <label style="margin:0;">Existing years</label>
       <select id="tax-year-select" class="select-year"></select>
@@ -63,7 +88,7 @@
 
       <div class="card">
         <div class="card-header"><h2>Income &amp; tax by country</h2></div>
-        <p class="hint">Tax € is what's withheld/paid over the year. Log a "Refund received" payment activity below when part of it comes back — it's netted out here automatically.</p>
+        <p class="hint">Tax € is what's withheld/paid over the year. Log a "Refund received" payment activity below when part of it comes back — it's netted out here automatically. A refund in another currency (e.g. DKK) converts using the exchange rate set on the <a href="income.html">Income</a> page; if none is set yet, it's flagged instead of dropped.</p>
         <div class="table-scroll">
           <table id="country-table">
             <thead>

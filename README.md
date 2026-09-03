@@ -24,9 +24,13 @@ shared settings:
 
 ## Pages
 
-- **Tax Tracker** (`index.html`) — pick (or create) a tax year — one
-  record per income-year/tax-year pair, e.g. "income 2025 / tax year
-  2026" — then switch between three tabs, all scoped to that year:
+- **Tax Tracker** (`index.html`) — an **All years** dashboard sits above
+  the year picker: every tax year at a glance (completion status,
+  Income €, Tax €, Refunded €, Net tax €, Net tax rate) with an **Open**
+  button per row, updating live as you edit anything below. Pick (or
+  create) a tax year — one record per income-year/tax-year pair, e.g.
+  "income 2025 / tax year 2026" — then switch between three tabs, all
+  scoped to that year:
   - **Overview** — a 4-item completion checklist (year completed,
     questionnaires done, returns filed, paid & returned), the per-country
     income/tax summary table with totals, and a payment-activity ledger
@@ -34,8 +38,10 @@ shared settings:
     "Refund received" activities against each country's Tax € — for a
     country that withholds tax all year and refunds part of it back
     (Denmark, for one), Refunded €/Net tax €/Net tax rate reflect what
-    you actually end up paying. Only EUR-logged refunds are netted; a
-    refund in another currency is flagged rather than silently ignored.
+    you actually end up paying. A refund logged in a currency other than
+    EUR (e.g. DKK) converts using the exchange rate set on the **Income**
+    page — if that currency has no rate set yet, it's flagged rather
+    than silently dropped.
   - **Tax information** — **one tab per country** you've paid tax in,
     each holding just that country's income and tax figures (in EUR).
     Add a country with the "+ Add" control — free text, so you're never
