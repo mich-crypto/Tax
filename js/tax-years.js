@@ -4,8 +4,14 @@
   const newTaxYearInput = document.getElementById("new-tax-year");
   const openYearBtn = document.getElementById("open-year-btn");
   const deleteYearBtn = document.getElementById("delete-year-btn");
-  const alsoTrackedHint = document.getElementById("also-tracked-hint");
   const bodyEl = document.getElementById("tax-year-body");
+
+  const subtabsEl = document.getElementById("country-subtabs");
+  const overviewPanel = document.getElementById("overview-panel");
+  const countryPanelsEl = document.getElementById("country-panels");
+  const newCountryInput = document.getElementById("new-country-input");
+  const addCountryBtn = document.getElementById("add-country-btn");
+  const countryListEl = document.getElementById("tax-year-country-list");
 
   const statusFieldsEl = document.getElementById("status-fields");
 
@@ -13,12 +19,6 @@
   const fxAmountEurInput = document.getElementById("fx-amount-eur");
   const fxAmountDkkInput = document.getElementById("fx-amount-dkk");
 
-  const countryList = document.getElementById("tax-year-country-list");
-  const countryRowForm = document.getElementById("country-row-form");
-  const rowCountryInput = document.getElementById("row-country");
-  const rowDaysInput = document.getElementById("row-days");
-  const rowIncomeInput = document.getElementById("row-income");
-  const rowTaxInput = document.getElementById("row-tax");
   const countryTableBody = document.querySelector("#country-table tbody");
   const countryTableFoot = document.querySelector("#country-table tfoot");
   const countryTable = document.getElementById("country-table");
@@ -45,14 +45,15 @@
   const followUpEmptyState = document.getElementById("followup-empty-state");
 
   let currentId = null;
+  let currentSubview = "overview";
 
   function currencySymbolFor(code) {
     return (CURRENCIES.find((c) => c.code === code) || {}).symbol || "";
   }
 
   function populateStaticLists() {
-    countryList.innerHTML = Store.getCountries()
-      .map((c) => `<option value="${escapeHtml(c.name)}">`)
+    countryListEl.innerHTML = COMMON_COUNTRIES
+      .map((name) => `<option value="${escapeHtml(name)}">`)
       .join("");
     actionList.innerHTML = TAX_YEAR_ACTIONS
       .map((a) => `<option value="${escapeHtml(a)}">`)
@@ -77,14 +78,6 @@
     } else if (years.length) {
       yearSelect.value = years[0].id;
     }
-  }
-
-  function renderAlsoTracked(incomeYear) {
-    const incomeCount = Store.getIncome().filter((e) => new Date(e.date).getFullYear() === incomeYear).length;
-    const residencyDays = Store.getResidency().reduce(
-      (sum, r) => sum + daysInYearOverlap(r.startDate, r.endDate, incomeYear), 0
-    );
-    alsoTrackedHint.innerHTML = `For income year ${incomeYear}, also tracked elsewhere: <a href="income.html">${incomeCount} income entr${incomeCount === 1 ? "y" : "ies"}</a> · <a href="residency.html">${residencyDays} residency day${residencyDays === 1 ? "" : "s"}</a>.`;
   }
 
   function renderStatusFields(record) {
@@ -120,7 +113,76 @@
     fxAmountDkkInput.value = formatMoney(amount * rate, "kr");
   }
 
-  function renderCountryTable(record) {
+  // ---------- Sub-tabs: Overview + one per country added to this tax year ----------
+
+  function renderSubTabs(record) {
+    const overviewBtn = `<button type="button" class="subtab-btn${currentSubview === "overview" ? " active" : ""}" data-subtab="overview">Overview</button>`;
+    const countryBtns = record.countries
+      .map((c) => `<button type="button" class="subtab-btn${currentSubview === c.id ? " active" : ""}" data-subtab="${c.id}">${escapeHtml(c.country)}</button>`)
+      .join("");
+    subtabsEl.innerHTML = overviewBtn + countryBtns;
+  }
+
+  function showSubview(view) {
+    const record = Store.getTaxYearById(currentId);
+    if (!record) return;
+    const validCountryView = view !== "overview" && record.countries.some((c) => c.id === view);
+    currentSubview = validCountryView ? view : "overview";
+
+    overviewPanel.hidden = currentSubview !== "overview";
+    countryPanelsEl.querySelectorAll(".country-panel").forEach((panel) => {
+      panel.hidden = panel.dataset.countryId !== currentSubview;
+    });
+    renderSubTabs(record);
+  }
+
+  function countryPanelHtml(row) {
+    return `
+      <div class="card country-panel" data-country-id="${row.id}" hidden>
+        <div class="card-header">
+          <h2>${escapeHtml(row.country)}</h2>
+          <button type="button" class="danger-outline small" data-remove-country="${row.id}">Remove country</button>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Income (EUR)</label>
+            <input type="number" min="0" step="0.01" class="country-income-input" data-row-id="${row.id}" value="${row.incomeEur || ""}" placeholder="0.00">
+          </div>
+          <div class="field">
+            <label>Tax (EUR)</label>
+            <input type="number" min="0" step="0.01" class="country-tax-input" data-row-id="${row.id}" value="${row.taxEur || ""}" placeholder="0.00">
+          </div>
+        </div>
+        <p class="hint">Changes save automatically.</p>
+      </div>
+    `;
+  }
+
+  function renderCountryPanels(record) {
+    countryPanelsEl.innerHTML = record.countries.map(countryPanelHtml).join("");
+    countryPanelsEl.querySelectorAll(".country-income-input, .country-tax-input").forEach((input) => {
+      input.addEventListener("change", () => {
+        const record = Store.getTaxYearById(currentId);
+        if (!record) return;
+        const field = input.classList.contains("country-income-input") ? "incomeEur" : "taxEur";
+        Store.updateCountryRow(currentId, input.dataset.rowId, { [field]: Number(input.value) || 0 });
+        renderCountrySummaryTable(Store.getTaxYearById(currentId));
+      });
+    });
+    countryPanelsEl.querySelectorAll("[data-remove-country]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (!confirm(`Remove ${btn.closest(".country-panel").querySelector("h2").textContent} from this tax year?`)) return;
+        Store.deleteCountryRow(currentId, btn.dataset.removeCountry);
+        const record = Store.getTaxYearById(currentId);
+        renderSubTabs(record);
+        renderCountryPanels(record);
+        renderCountrySummaryTable(record);
+        showSubview("overview");
+      });
+    });
+  }
+
+  function renderCountrySummaryTable(record) {
     const rows = record.countries;
     const rate = Number(record.fxRateDkkPerEur) || 0;
 
@@ -134,28 +196,22 @@
     countryTable.style.display = "";
     countryEmptyState.style.display = "none";
 
-    const totalDays = rows.reduce((s, r) => s + Number(r.days || 0), 0);
     const totalIncome = rows.reduce((s, r) => s + Number(r.incomeEur || 0), 0);
     const totalTax = rows.reduce((s, r) => s + Number(r.taxEur || 0), 0);
 
     countryTableBody.innerHTML = rows
       .map((r) => {
-        const days = Number(r.days || 0);
         const incomeEur = Number(r.incomeEur || 0);
         const taxEur = Number(r.taxEur || 0);
-        const pctDays = totalDays ? (days / totalDays) * 100 : 0;
         const taxRate = incomeEur ? (taxEur / incomeEur) * 100 : 0;
         return `
           <tr>
             <td>${escapeHtml(r.country)}</td>
-            <td class="num">${days}</td>
-            <td class="num">${pctDays.toFixed(1)}%</td>
             <td class="num">${formatMoney(incomeEur, "€")}</td>
             <td class="num">${rate ? formatMoney(incomeEur * rate, "kr") : "—"}</td>
             <td class="num">${formatMoney(taxEur, "€")}</td>
             <td class="num">${rate ? formatMoney(taxEur * rate, "kr") : "—"}</td>
             <td class="num">${incomeEur ? taxRate.toFixed(1) + "%" : "—"}</td>
-            <td><button class="icon-btn small" data-delete-row="${r.id}" title="Delete">✕</button></td>
           </tr>
         `;
       })
@@ -165,14 +221,11 @@
     countryTableFoot.innerHTML = `
       <tr class="total-row">
         <td><strong>Total</strong></td>
-        <td class="num"><strong>${totalDays}</strong></td>
-        <td class="num"><strong>100%</strong></td>
         <td class="num"><strong>${formatMoney(totalIncome, "€")}</strong></td>
         <td class="num"><strong>${rate ? formatMoney(totalIncome * rate, "kr") : "—"}</strong></td>
         <td class="num"><strong>${formatMoney(totalTax, "€")}</strong></td>
         <td class="num"><strong>${rate ? formatMoney(totalTax * rate, "kr") : "—"}</strong></td>
         <td class="num"><strong>${totalIncome ? overallRate.toFixed(1) + "%" : "—"}</strong></td>
-        <td></td>
       </tr>
     `;
   }
@@ -242,22 +295,24 @@
     const record = Store.getTaxYearById(id);
     if (!record) {
       bodyEl.hidden = true;
-      alsoTrackedHint.textContent = "";
       currentId = null;
       return;
     }
     currentId = id;
+    currentSubview = "overview";
     bodyEl.hidden = false;
     yearSelect.value = id;
 
-    renderAlsoTracked(record.incomeYear);
     renderStatusFields(record);
     fxRateInput.value = record.fxRateDkkPerEur || "";
     fxAmountEurInput.value = "";
     fxAmountDkkInput.value = "";
-    renderCountryTable(record);
+    renderSubTabs(record);
+    renderCountryPanels(record);
+    renderCountrySummaryTable(record);
     renderActivityTable(record);
     renderFollowUpTable(record);
+    showSubview("overview");
   }
 
   openYearBtn.addEventListener("click", () => {
@@ -278,7 +333,7 @@
     if (!currentId) return;
     const record = Store.getTaxYearById(currentId);
     if (!record) return;
-    if (!confirm(`Delete the entire record for ${yearLabel(record)}? This removes its status, country rows, activities, and follow-ups. This can't be undone.`)) {
+    if (!confirm(`Delete the entire record for ${yearLabel(record)}? This removes its status, country tabs, activities, and follow-ups. This can't be undone.`)) {
       return;
     }
     Store.deleteTaxYearRecord(currentId);
@@ -290,32 +345,33 @@
   fxRateInput.addEventListener("change", () => {
     if (!currentId) return;
     Store.updateTaxYearMeta(currentId, { fxRateDkkPerEur: Number(fxRateInput.value) || null });
-    renderCountryTable(Store.getTaxYearById(currentId));
+    renderCountrySummaryTable(Store.getTaxYearById(currentId));
     updateFxConverter();
   });
   fxAmountEurInput.addEventListener("input", updateFxConverter);
 
-  countryRowForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (!currentId) return;
-    const country = rowCountryInput.value.trim();
-    if (!country) return;
-    Store.addCountryRow(currentId, {
-      country,
-      days: Number(rowDaysInput.value) || 0,
-      incomeEur: Number(rowIncomeInput.value) || 0,
-      taxEur: Number(rowTaxInput.value) || 0,
-    });
-    countryRowForm.reset();
-    renderCountryTable(Store.getTaxYearById(currentId));
+  subtabsEl.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-subtab]");
+    if (!btn) return;
+    showSubview(btn.dataset.subtab);
   });
 
-  countryTableBody.addEventListener("click", (event) => {
-    const rowId = event.target.dataset.deleteRow;
-    if (!rowId || !currentId) return;
-    if (!confirm("Delete this country row?")) return;
-    Store.deleteCountryRow(currentId, rowId);
-    renderCountryTable(Store.getTaxYearById(currentId));
+  addCountryBtn.addEventListener("click", () => {
+    if (!currentId) return;
+    const country = newCountryInput.value.trim();
+    if (!country) return;
+    const record = Store.getTaxYearById(currentId);
+    if (record.countries.some((c) => c.country.toLowerCase() === country.toLowerCase())) {
+      alert(`${country} is already added to this tax year.`);
+      return;
+    }
+    Store.addCountryRow(currentId, { country, incomeEur: 0, taxEur: 0 });
+    newCountryInput.value = "";
+    const updated = Store.getTaxYearById(currentId);
+    renderCountryPanels(updated);
+    renderCountrySummaryTable(updated);
+    const added = updated.countries[updated.countries.length - 1];
+    showSubview(added.id);
   });
 
   activityForm.addEventListener("submit", (event) => {

@@ -10,15 +10,17 @@
 <body data-page="dashboard">
 
 <header class="app-header">
-  <div class="app-brand"><span class="mark">₮</span> Tax Tracker</div>
+  <div class="brand-switcher">
+    <button type="button" class="app-brand" id="tracker-switch-btn"><span class="mark">₮</span> Tax Tracker <span class="caret">▾</span></button>
+    <div class="switch-menu" id="tracker-switch-menu" hidden>
+      <a class="switch-item active" href="index.html"><span class="mark">₮</span> Tax Tracker</a>
+      <a class="switch-item" href="income.html"><span class="mark">€</span> Income Tracker</a>
+    </div>
+  </div>
   <nav class="app-nav">
     <a href="index.html" data-page="dashboard">Dashboard</a>
-    <a href="income.html" data-page="income">Income</a>
-    <a href="payslips.html" data-page="payslips">Payslips</a>
     <a href="tax-years.html" data-page="tax-years">Tax Years</a>
-    <a href="residency.html" data-page="residency">Residency</a>
     <a href="correspondence.html" data-page="correspondence">Correspondence</a>
-    <a href="countries.html" data-page="countries">Countries</a>
   </nav>
 </header>
 
@@ -26,30 +28,54 @@
   <div class="page-title">
     <div>
       <h1>Dashboard</h1>
-      <p>Estimated tax exposure and residency-day progress across the countries you track.</p>
+      <p>A summary of what you've logged in Tax Years — totals by country, and which years are still open.</p>
     </div>
     <div class="field" style="margin:0;">
-      <label>Tax year</label>
+      <label>Income year</label>
       <select id="year-select" class="select-year"></select>
     </div>
-  </div>
-
-  <div class="disclaimer">
-    ⚠️ <span>Figures here are rough estimates from simplified, national-level tax brackets you can edit on the
-    <a href="countries.html">Countries</a> page. They ignore deductions, credits, state/provincial tax, and
-    social contributions. This is not tax advice — confirm real figures with a professional or official source.</span>
   </div>
 
   <div class="card" id="overall-totals" style="margin-bottom:16px;"></div>
 
   <div class="grid cols-auto" id="country-summary-grid"></div>
+
+  <div class="card">
+    <div class="card-header"><h2>All tax years</h2></div>
+    <table id="tax-years-table">
+      <thead>
+        <tr>
+          <th>Income year</th>
+          <th>Tax year</th>
+          <th>Status</th>
+          <th class="num">Total income</th>
+          <th class="num">Total tax</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="empty-state" id="tax-years-empty-state">No tax years yet. Start one on the <a href="tax-years.html">Tax Years</a> page.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Data</h2></div>
+    <p class="hint">Everything lives in this browser's local storage. Back it up as a JSON file, restore from one, or wipe everything and start over.</p>
+    <div class="toolbar" style="margin-bottom:0;">
+      <button type="button" id="export-data-btn">Export data (JSON)</button>
+      <label class="btn" style="margin:0;">
+        Import data
+        <input type="file" id="import-data-input" accept="application/json" style="display:none;">
+      </label>
+      <button type="button" id="wipe-data-btn" class="danger-outline">Wipe all data</button>
+    </div>
+  </div>
 </main>
 
 <footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere. · <span id="app-version"></span></footer>
 
 <script src="js/tax-data.js"></script>
 <script src="js/storage.js"></script>
-<script src="js/tax-calc.js"></script>
 <script src="js/app.js"></script>
 <script src="js/dashboard.js"></script>
 </body>

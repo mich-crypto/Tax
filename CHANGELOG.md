@@ -3,6 +3,37 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v1.5.0 — 2026-09-03
+
+- **Split into two trackers**: Tax Tracker (Dashboard, Tax Years,
+  Correspondence) and Income Tracker (Income, Payslips), switchable from
+  a dropdown under the logo in the header — click it to jump between
+  apps without hunting through one long nav bar.
+- **Removed Residency and Countries.** Both were deprioritized for now:
+  - Residency (day-count tracking) is gone entirely — planned for a
+    later stage.
+  - Countries (the managed list of countries/currencies/tax brackets) is
+    gone, along with the Dashboard's bracket-based tax estimate that
+    depended on it. Every country field across the site (Income,
+    Payslips, Tax Years, Correspondence) is now free text with
+    suggestions, so you're never blocked adding a country that wasn't
+    pre-registered.
+  - Export/Import/Wipe data controls moved from the old Countries page
+    to a new "Data" card on the Dashboard.
+- **Dashboard rebuilt** to summarize Tax Years data instead: totals paid
+  per country for a selected income year, and a table of every tax-year
+  record with its completion status.
+- **Tax Years restructured**: instead of one flat table, pick a tax year
+  and get an **Overview** tab (status checklist, EUR→DKK converter, the
+  per-country summary table and totals, payment activities, follow-up
+  log) plus **one tab per country** you've paid tax in, each holding just
+  that country's income/tax figures. Add a country with free text — new
+  countries start blank, no placeholder figures.
+- **Payslips**: added **bulk upload** (pick several files at once; each
+  is analyzed with AI and saved automatically, no per-file review) and a
+  **missing months** tracker showing which months of the selected year
+  have no payslip logged yet.
+
 ## v1.4.1 — 2026-09-03
 
 - Tuned the Gemini payslip-extraction prompt against a real multi-page

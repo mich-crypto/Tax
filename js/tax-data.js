@@ -1,123 +1,47 @@
 /**
- * Default country tax data.
- *
- * IMPORTANT: These brackets are simplified, illustrative approximations of
- * national individual income tax schedules (single filer, national/federal
- * level only — no state/provincial, regional, social-security, or
- * surtax components, and no deductions/credits applied). They are meant
- * to give a rough order-of-magnitude estimate for personal tracking only.
- * This is NOT tax advice. Always confirm figures with an official source
- * or a qualified tax professional before relying on them.
- *
- * `brackets` is a list of { upTo, rate } pairs read in order: income up to
- * `upTo` (exclusive of the previous bracket's cap) is taxed at `rate`.
- * The last bracket uses `upTo: null` to mean "and above".
+ * Country names offered as datalist suggestions across Income, Payslips,
+ * Tax Years, and Correspondence — free text everywhere, so you're never
+ * blocked on adding a country that isn't in this list. Not a managed
+ * "Countries" list any more: no brackets, no per-country editing page.
  */
-
-const DEFAULT_COUNTRIES = [
-  {
-    id: "dk",
-    name: "Denmark",
-    currencyCode: "DKK",
-    currencySymbol: "kr",
-    residencyThresholdDays: 183,
-    notes: "Very rough, blended approximation of AM-bidrag (8%) + municipal + state income tax for an average municipality (2024, single, no church tax, no personfradrag/deductions applied). Real Danish tax depends heavily on your municipality and personal allowances — treat this as a ballpark only.",
-    brackets: [
-      { upTo: 588900, rate: 0.38 },
-      { upTo: null, rate: 0.56 },
-    ],
-  },
-  {
-    id: "us",
-    name: "United States",
-    currencyCode: "USD",
-    currencySymbol: "$",
-    residencyThresholdDays: 183,
-    notes: "Federal income tax only (2024, single filer). State taxes not included.",
-    brackets: [
-      { upTo: 11600, rate: 0.10 },
-      { upTo: 47150, rate: 0.12 },
-      { upTo: 100525, rate: 0.22 },
-      { upTo: 191950, rate: 0.24 },
-      { upTo: 243725, rate: 0.32 },
-      { upTo: 609350, rate: 0.35 },
-      { upTo: null, rate: 0.37 },
-    ],
-  },
-  {
-    id: "uk",
-    name: "United Kingdom",
-    currencyCode: "GBP",
-    currencySymbol: "£",
-    residencyThresholdDays: 183,
-    notes: "Income tax only (2024/25). Personal allowance ~£12,570 taxed at 0%.",
-    brackets: [
-      { upTo: 12570, rate: 0.0 },
-      { upTo: 50270, rate: 0.20 },
-      { upTo: 125140, rate: 0.40 },
-      { upTo: null, rate: 0.45 },
-    ],
-  },
-  {
-    id: "de",
-    name: "Germany",
-    currencyCode: "EUR",
-    currencySymbol: "€",
-    residencyThresholdDays: 183,
-    notes: "Simplified step approximation of the progressive Einkommensteuer schedule (2024). The real formula is continuous, not stepped.",
-    brackets: [
-      { upTo: 11604, rate: 0.0 },
-      { upTo: 66760, rate: 0.24 },
-      { upTo: 277825, rate: 0.42 },
-      { upTo: null, rate: 0.45 },
-    ],
-  },
-  {
-    id: "ca",
-    name: "Canada",
-    currencyCode: "CAD",
-    currencySymbol: "$",
-    residencyThresholdDays: 183,
-    notes: "Federal income tax only (2024). Provincial tax not included.",
-    brackets: [
-      { upTo: 55867, rate: 0.15 },
-      { upTo: 111733, rate: 0.205 },
-      { upTo: 173205, rate: 0.26 },
-      { upTo: 246752, rate: 0.29 },
-      { upTo: null, rate: 0.33 },
-    ],
-  },
-  {
-    id: "au",
-    name: "Australia",
-    currencyCode: "AUD",
-    currencySymbol: "$",
-    residencyThresholdDays: 183,
-    notes: "Resident individual income tax (2024/25). Medicare levy not included.",
-    brackets: [
-      { upTo: 18200, rate: 0.0 },
-      { upTo: 45000, rate: 0.16 },
-      { upTo: 135000, rate: 0.30 },
-      { upTo: 190000, rate: 0.37 },
-      { upTo: null, rate: 0.45 },
-    ],
-  },
-  {
-    id: "fr",
-    name: "France",
-    currencyCode: "EUR",
-    currencySymbol: "€",
-    residencyThresholdDays: 183,
-    notes: "Simplified single-share impôt sur le revenu schedule (2024).",
-    brackets: [
-      { upTo: 11294, rate: 0.0 },
-      { upTo: 28797, rate: 0.11 },
-      { upTo: 82341, rate: 0.30 },
-      { upTo: 177106, rate: 0.41 },
-      { upTo: null, rate: 0.45 },
-    ],
-  },
+const COMMON_COUNTRIES = [
+  "Denmark",
+  "Belgium",
+  "Poland",
+  "Netherlands",
+  "Germany",
+  "France",
+  "United Kingdom",
+  "United States",
+  "Ireland",
+  "Spain",
+  "Italy",
+  "Sweden",
+  "Norway",
+  "Switzerland",
+  "Canada",
+  "Australia",
 ];
+
+/** Convenience only: auto-selects a likely currency when a known country name is entered. Not exhaustive — pick your own if it's wrong. */
+const COUNTRY_CURRENCY_HINTS = {
+  "denmark": "DKK",
+  "belgium": "EUR",
+  "poland": "PLN",
+  "netherlands": "EUR",
+  "germany": "EUR",
+  "france": "EUR",
+  "ireland": "EUR",
+  "spain": "EUR",
+  "italy": "EUR",
+  "united kingdom": "GBP",
+  "united states": "USD",
+  "sweden": "SEK",
+  "norway": "NOK",
+  "switzerland": "CHF",
+  "canada": "CAD",
+  "australia": "AUD",
+};
 
 const INCOME_CATEGORIES = [
   "Salary",
@@ -171,6 +95,7 @@ const CURRENCIES = [
   { code: "USD", symbol: "$" },
   { code: "EUR", symbol: "€" },
   { code: "GBP", symbol: "£" },
+  { code: "PLN", symbol: "zł" },
   { code: "CAD", symbol: "$" },
   { code: "AUD", symbol: "$" },
   { code: "NOK", symbol: "kr" },
@@ -215,11 +140,12 @@ const TAX_YEAR_STATUS_FIELDS = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "1.4.1";
+const APP_VERSION = "1.5.0";
 const APP_VERSION_DATE = "2026-09-03";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "1.5.0", summary: "Split into Tax Tracker / Income Tracker with a header switcher. Removed Residency and Countries (and the bracket-based estimate they powered) — countries are free text everywhere now. Dashboard rebuilt to summarize Tax Years data; Data export/import/wipe moved there. Tax Years restructured into an Overview tab + one tab per country. Payslips gained bulk upload and a missing-months tracker." },
   { version: "1.4.1", summary: "Payslip AI extraction tuned against a real multi-page European payslip: ignores YTD boxes and daily time-sheet pages, handles comma-decimal numbers, auto-fills Year/Month/Country from the result." },
   { version: "1.4.0", summary: "Tax Years rebuilt: income/tax-year pairs, status checklist, EUR→DKK converter, per-country table, payment activities, follow-up log." },
   { version: "1.3.0", summary: "Payslip AI analysis on Gemini (free tier), with client-side image downscaling to keep it cheap." },

@@ -37,7 +37,8 @@
   const form = document.getElementById("payslip-form");
   const yearInput = document.getElementById("payslip-year");
   const monthSelect = document.getElementById("payslip-month");
-  const countrySelect = document.getElementById("payslip-country");
+  const countryInput = document.getElementById("payslip-country");
+  const countryListEl = document.getElementById("payslip-country-list");
   const employerInput = document.getElementById("payslip-employer");
   const fileInput = document.getElementById("payslip-file");
   const analyzeBtn = document.getElementById("analyze-payslip-btn");
@@ -55,27 +56,40 @@
   const table = document.getElementById("payslip-table");
   const emptyState = document.getElementById("payslip-empty-state");
 
+  const missingMonthsYearEl = document.getElementById("missing-months-year");
+  const missingMonthsListEl = document.getElementById("missing-months-list");
+
+  // --- Bulk upload ---
+  const bulkCountryInput = document.getElementById("bulk-country");
+  const bulkEmployerInput = document.getElementById("bulk-employer");
+  const bulkFilesInput = document.getElementById("bulk-files");
+  const bulkAnalyzeBtn = document.getElementById("bulk-analyze-btn");
+  const bulkStatus = document.getElementById("bulk-status");
+
   function populateStaticSelects() {
     monthSelect.innerHTML = PAYSLIP_MONTHS
       .map((name, i) => `<option value="${i + 1}">${name}</option>`)
       .join("");
-    countrySelect.innerHTML = Store.getCountries()
-      .map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`)
+    countryListEl.innerHTML = COMMON_COUNTRIES
+      .map((name) => `<option value="${escapeHtml(name)}">`)
       .join("");
     currencySelect.innerHTML = CURRENCIES
       .map((c) => `<option value="${c.code}">${c.code}</option>`)
       .join("");
   }
 
-  function countryCurrency(countryId) {
-    const country = Store.getCountries().find((c) => c.id === countryId);
-    return country ? country.currencyCode : "";
+  function currencySymbolFor(code) {
+    return (CURRENCIES.find((c) => c.code === code) || {}).symbol || "";
   }
 
-  countrySelect.addEventListener("change", () => {
-    const currency = countryCurrency(countrySelect.value);
-    if (currency && [...currencySelect.options].some((o) => o.value === currency)) {
-      currencySelect.value = currency;
+  function currencyHintFor(countryName) {
+    return COUNTRY_CURRENCY_HINTS[(countryName || "").trim().toLowerCase()] || "";
+  }
+
+  countryInput.addEventListener("change", () => {
+    const hint = currencyHintFor(countryInput.value);
+    if (hint && [...currencySelect.options].some((o) => o.value === hint)) {
+      currencySelect.value = hint;
     }
   });
 
@@ -101,14 +115,12 @@
         file,
       });
 
-      if (result.country) {
-        const match = Store.getCountries().find(
-          (c) => c.name.toLowerCase() === result.country.toLowerCase()
-        );
-        if (match) countrySelect.value = match.id;
-      }
+      if (result.country) countryInput.value = result.country;
       if (result.currency && [...currencySelect.options].some((o) => o.value === result.currency)) {
         currencySelect.value = result.currency;
+      } else {
+        const hint = currencyHintFor(result.country);
+        if (hint) currencySelect.value = hint;
       }
       if (typeof result.grossPay === "number") grossInput.value = result.grossPay;
       if (typeof result.netPay === "number") netInput.value = result.netPay;
@@ -153,15 +165,15 @@
   }
 
   function renderSummary(year) {
-    const countries = Store.getCountries();
     const payslips = Store.getPayslips().filter((p) => p.year === year);
     const byCountry = {};
     payslips.forEach((p) => {
-      if (!byCountry[p.countryId]) byCountry[p.countryId] = { gross: 0, net: 0, tax: 0, count: 0 };
-      byCountry[p.countryId].gross += Number(p.grossPay || 0);
-      byCountry[p.countryId].net += Number(p.netPay || 0);
-      byCountry[p.countryId].tax += Number(p.taxWithheld || 0);
-      byCountry[p.countryId].count += 1;
+      const key = (p.country || "(no country)").trim() || "(no country)";
+      if (!byCountry[key]) byCountry[key] = { gross: 0, net: 0, tax: 0, count: 0, currency: p.currency };
+      byCountry[key].gross += Number(p.grossPay || 0);
+      byCountry[key].net += Number(p.netPay || 0);
+      byCountry[key].tax += Number(p.taxWithheld || 0);
+      byCountry[key].count += 1;
     });
 
     const rows = Object.keys(byCountry);
@@ -171,11 +183,9 @@
     }
 
     summaryGrid.innerHTML = rows
-      .map((countryId) => {
-        const country = countries.find((c) => c.id === countryId);
-        const name = country ? country.name : "(deleted country)";
-        const symbol = country ? country.currencySymbol : "";
-        const totals = byCountry[countryId];
+      .map((name) => {
+        const totals = byCountry[name];
+        const symbol = currencySymbolFor(totals.currency);
         return `
           <div class="card country-card">
             <div class="country-head">
@@ -193,9 +203,21 @@
       .join("");
   }
 
+  function renderMissingMonths(year) {
+    missingMonthsYearEl.textContent = year;
+    const loggedMonths = new Set(
+      Store.getPayslips().filter((p) => p.year === year).map((p) => p.month)
+    );
+    missingMonthsListEl.innerHTML = PAYSLIP_MONTHS
+      .map((name, i) => {
+        const month = i + 1;
+        const logged = loggedMonths.has(month);
+        return `<span class="badge ${logged ? "ok" : "warn"}">${logged ? "✓" : "—"} ${name}</span>`;
+      })
+      .join("");
+  }
+
   function renderTable() {
-    const countries = Store.getCountries();
-    const countryById = Object.fromEntries(countries.map((c) => [c.id, c]));
     const year = Number(yearFilter.value) || currentYear();
 
     const entries = Store.getPayslips()
@@ -210,13 +232,11 @@
       emptyState.style.display = "none";
       tableBody.innerHTML = entries
         .map((p) => {
-          const country = countryById[p.countryId];
-          const symbol = country ? country.currencySymbol : "";
-          const name = country ? country.name : "(deleted country)";
+          const symbol = currencySymbolFor(p.currency);
           return `
             <tr>
               <td>${PAYSLIP_MONTHS[p.month - 1] || p.month}</td>
-              <td>${escapeHtml(name)}</td>
+              <td>${escapeHtml(p.country || "")}</td>
               <td>${escapeHtml(p.employer || "")}</td>
               <td class="num">${formatMoney(p.grossPay, symbol)}</td>
               <td class="num">${formatMoney(p.netPay, symbol)}</td>
@@ -231,6 +251,7 @@
     }
 
     renderSummary(year);
+    renderMissingMonths(year);
   }
 
   form.addEventListener("submit", (event) => {
@@ -241,7 +262,7 @@
     Store.addPayslip({
       year,
       month: Number(monthSelect.value),
-      countryId: countrySelect.value,
+      country: countryInput.value.trim(),
       employer: employerInput.value.trim(),
       currency: currencySelect.value,
       grossPay: Number(grossInput.value) || 0,
@@ -275,6 +296,84 @@
   });
 
   yearFilter.addEventListener("change", renderTable);
+
+  // --- Bulk upload: analyze every selected file with AI and save it straight
+  // away (no per-file review — that's the point of "bulk"). Files are
+  // processed one at a time so a single failure doesn't lose the rest. ---
+
+  bulkAnalyzeBtn.addEventListener("click", async () => {
+    const files = Array.from(bulkFilesInput.files || []);
+    if (!files.length) {
+      bulkStatus.textContent = "Choose one or more payslip files first.";
+      return;
+    }
+    const settings = Store.getGeminiSettings();
+    if (!settings.apiKey) {
+      bulkStatus.textContent = "Add and save a Gemini API key above first.";
+      return;
+    }
+
+    const fallbackCountry = bulkCountryInput.value.trim();
+    const fallbackEmployer = bulkEmployerInput.value.trim();
+
+    bulkAnalyzeBtn.disabled = true;
+    let saved = 0;
+    const failures = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      bulkStatus.textContent = `Analyzing ${i + 1} / ${files.length}: ${file.name}…`;
+      try {
+        const result = await analyzePayslipWithGemini({
+          apiKey: settings.apiKey,
+          model: settings.model || GEMINI_DEFAULT_MODEL,
+          file,
+        });
+
+        const country = result.country || fallbackCountry;
+        const currency = (result.currency && [...currencySelect.options].some((o) => o.value === result.currency))
+          ? result.currency
+          : (currencyHintFor(country) || "EUR");
+
+        const periodDate = new Date(result.payPeriodEnd || result.payPeriodStart);
+        const hasPeriod = !Number.isNaN(periodDate.getTime());
+
+        const noteBits = [];
+        if (result.notes) noteBits.push(result.notes);
+        if (typeof result.otherDeductions === "number" && result.otherDeductions > 0) {
+          noteBits.push(`Other deductions: ${result.otherDeductions}`);
+        }
+        if (result.payPeriodStart || result.payPeriodEnd) {
+          noteBits.push(`Pay period: ${result.payPeriodStart || "?"} to ${result.payPeriodEnd || "?"}`);
+        }
+
+        Store.addPayslip({
+          year: hasPeriod ? periodDate.getFullYear() : currentYear(),
+          month: hasPeriod ? periodDate.getMonth() + 1 : new Date().getMonth() + 1,
+          country,
+          employer: result.employer || fallbackEmployer,
+          currency,
+          grossPay: Number(result.grossPay) || 0,
+          netPay: Number(result.netPay) || 0,
+          taxWithheld: Number(result.taxWithheld) || 0,
+          notes: noteBits.join(" — "),
+          analyzedByAI: true,
+        });
+        saved++;
+      } catch (e) {
+        failures.push(`${file.name}: ${e.message}`);
+      }
+    }
+
+    bulkAnalyzeBtn.disabled = false;
+    bulkFilesInput.value = "";
+    bulkStatus.textContent = failures.length
+      ? `Saved ${saved} / ${files.length}. Failed: ${failures.join("; ")}`
+      : `Saved ${saved} / ${files.length} payslips. Review them in the monthly log below.`;
+
+    populateYearFilter();
+    renderTable();
+  });
 
   loadGeminiSettingsIntoForm();
   populateStaticSelects();

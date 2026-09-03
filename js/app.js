@@ -63,6 +63,28 @@ function markActiveNav() {
   });
 }
 
+/** Wires up the header's Tax Tracker / Income Tracker switcher dropdown, present on every page. */
+function wireTrackerSwitcher() {
+  const btn = document.getElementById("tracker-switch-btn");
+  const menu = document.getElementById("tracker-switch-menu");
+  if (!btn || !menu) return;
+
+  btn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    menu.hidden = !menu.hidden;
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!menu.hidden && event.target !== btn && !menu.contains(event.target) && !btn.contains(event.target)) {
+      menu.hidden = true;
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") menu.hidden = true;
+  });
+}
+
 /** Builds a <select> of years covering any data present, plus the current year. */
 function collectYearsFromDates(dates) {
   const years = new Set([currentYear()]);
@@ -76,4 +98,5 @@ function collectYearsFromDates(dates) {
 document.addEventListener("DOMContentLoaded", () => {
   markActiveNav();
   renderVersionFooter();
+  wireTrackerSwitcher();
 });
