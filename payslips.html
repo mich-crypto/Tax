@@ -35,12 +35,17 @@
   <div class="card">
     <div class="card-header"><h2>Bulk upload</h2></div>
     <p class="hint">Pick one or more files — each is analyzed with AI and saved straight away, no per-file review. Check the monthly log below afterwards and fix anything AI got wrong.</p>
+    <div class="field" style="max-width:220px;">
+      <label>Type (applied to this batch)</label>
+      <select id="bulk-type"></select>
+    </div>
     <div class="field">
       <label>Payslip files (image or PDF)</label>
       <div class="actions-row">
         <input type="file" id="bulk-files" accept="image/*,.pdf" multiple style="max-width:320px;">
         <button type="button" id="bulk-analyze-btn" class="small primary">🪄 Analyze &amp; save all</button>
       </div>
+      <p class="hint">Uploading your annual holiday pay? Switch Type to "Holiday pay" first, then upload it separately from your monthly payslips.</p>
       <p class="hint" id="bulk-status"></p>
     </div>
   </div>
@@ -57,7 +62,7 @@
 
   <div class="card">
     <div class="card-header"><h2>Missing months — <span id="missing-months-year"></span></h2></div>
-    <p class="hint">Months with no payslip logged yet for the selected year (any country).</p>
+    <p class="hint">Months with no salary payslip logged yet for the selected year. Holiday pay doesn't count toward this — it isn't expected every month.</p>
     <div class="actions-row" id="missing-months-list"></div>
   </div>
 
@@ -67,7 +72,7 @@
       <table id="payslip-table">
         <thead>
           <tr>
-            <th>Month</th>
+            <th>Month</th><th>Type</th>
             <th class="num">Gross</th><th class="num">Net</th><th class="num">Tax</th>
             <th>Notes</th><th></th><th></th>
           </tr>

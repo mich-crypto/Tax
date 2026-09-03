@@ -63,9 +63,15 @@ shared settings:
   per-file review, so check the monthly log afterwards and fix anything
   AI got wrong (works fine for a single file too, so there's no separate
   one-at-a-time form). No Country/Employer fields — that's assumed to be
-  the same every time, so it isn't tracked. A **missing months** strip
-  shows which months of the selected year have no payslip logged yet.
-  Needs a Gemini API key, set once under Settings.
+  the same every time, so it isn't tracked. A **Type** selector (Salary /
+  Holiday pay) applies to each batch — upload the once-a-year holiday
+  pay ("feriepenge") payout separately from monthly salary payslips and
+  it's tagged and shown distinctly in the log, with a note on the yearly
+  summary for how much of the year's total was holiday pay. A **missing
+  months** strip shows which months of the selected year have no salary
+  payslip logged yet (holiday pay doesn't count toward that, since it
+  isn't expected every month). Needs a Gemini API key, set once under
+  Settings.
 - **Settings** (`settings.html`) — the Gemini API key/model used by
   Payslips, and Export/Import/Wipe for all your data. Shared across both
   trackers, so it lives outside either one.

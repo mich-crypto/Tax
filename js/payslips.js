@@ -9,6 +9,7 @@
   const missingMonthsListEl = document.getElementById("missing-months-list");
 
   // --- Bulk upload ---
+  const bulkTypeSelect = document.getElementById("bulk-type");
   const bulkFilesInput = document.getElementById("bulk-files");
   const bulkAnalyzeBtn = document.getElementById("bulk-analyze-btn");
   const bulkStatus = document.getElementById("bulk-status");
@@ -39,25 +40,29 @@
     }
 
     const totals = { gross: 0, net: 0, tax: 0 };
+    let holidayGross = 0;
     payslips.forEach((p) => {
       totals.gross += Number(p.grossPay || 0);
       totals.net += Number(p.netPay || 0);
       totals.tax += Number(p.taxWithheld || 0);
+      if (p.type === "Holiday pay") holidayGross += Number(p.grossPay || 0);
     });
     const symbol = currencySymbolFor(payslips[0].currency);
+    const holidayNote = holidayGross ? ` — includes ${formatMoney(holidayGross, symbol)} holiday pay (gross)` : "";
 
     summaryEl.innerHTML = `
       <div class="stat-row"><span>Gross</span><strong>${formatMoney(totals.gross, symbol)}</strong></div>
       <div class="stat-row"><span>Net</span><strong>${formatMoney(totals.net, symbol)}</strong></div>
       <div class="stat-row"><span>Tax withheld</span><strong>${formatMoney(totals.tax, symbol)}</strong></div>
-      <p class="hint">${payslips.length} payslip${payslips.length === 1 ? "" : "s"} logged for ${year}.</p>
+      <p class="hint">${payslips.length} payslip${payslips.length === 1 ? "" : "s"} logged for ${year}${holidayNote}.</p>
     `;
   }
 
   function renderMissingMonths(year) {
     missingMonthsYearEl.textContent = year;
+    // Holiday pay isn't expected every month, so it doesn't count toward "logged".
     const loggedMonths = new Set(
-      Store.getPayslips().filter((p) => p.year === year).map((p) => p.month)
+      Store.getPayslips().filter((p) => p.year === year && p.type !== "Holiday pay").map((p) => p.month)
     );
     missingMonthsListEl.innerHTML = PAYSLIP_MONTHS
       .map((name, i) => {
@@ -87,6 +92,7 @@
           return `
             <tr>
               <td>${PAYSLIP_MONTHS[p.month - 1] || p.month}</td>
+              <td>${p.type === "Holiday pay" ? '<span class="badge ok">Holiday pay</span>' : "Salary"}</td>
               <td class="num">${formatMoney(p.grossPay, symbol)}</td>
               <td class="num">${formatMoney(p.netPay, symbol)}</td>
               <td class="num">${formatMoney(p.taxWithheld, symbol)}</td>
@@ -166,6 +172,7 @@
         Store.addPayslip({
           year: hasPeriod ? periodDate.getFullYear() : currentYear(),
           month: hasPeriod ? periodDate.getMonth() + 1 : new Date().getMonth() + 1,
+          type: bulkTypeSelect.value,
           currency,
           grossPay: Number(result.grossPay) || 0,
           netPay: Number(result.netPay) || 0,
@@ -184,11 +191,13 @@
     bulkStatus.textContent = failures.length
       ? `Saved ${saved} / ${files.length}. Failed: ${failures.join("; ")}`
       : `Saved ${saved} / ${files.length} payslips. Review them in the monthly log below.`;
+    bulkTypeSelect.value = "Salary";
 
     populateYearFilter();
     renderTable();
   });
 
+  bulkTypeSelect.innerHTML = PAYSLIP_TYPES.map((t) => `<option value="${t}">${t}</option>`).join("");
   populateYearFilter();
   renderTable();
 })();

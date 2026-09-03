@@ -3,6 +3,25 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v1.10.0 — 2026-09-03
+
+- **Payslips: added holiday pay** ("feriepenge") as its own type,
+  distinct from the recurring monthly salary payslip:
+  - Bulk upload has a **Type** selector (Salary / Holiday pay),
+    applied to that batch — upload your monthly payslips as Salary,
+    then switch to Holiday pay and upload the once-a-year payout
+    separately. Resets to Salary after each batch.
+  - The monthly log has a **Type** column; Holiday pay rows carry a
+    badge so they're easy to spot among regular salary rows.
+  - The yearly summary notes how much of the year's gross total was
+    holiday pay, e.g. "— includes €2,681.50 holiday pay (gross)".
+  - Missing months no longer counts holiday pay as "logged" — it isn't
+    expected every month, so it doesn't hide a genuinely missing
+    salary payslip.
+  - No changes needed on Income's Overview — holiday pay is still a
+    payslip, so it's already included in Gross/Net/Tax and Total
+    income there.
+
 ## v1.9.0 — 2026-09-03
 
 - **Income's Overview now pulls from Payslips.** It previously

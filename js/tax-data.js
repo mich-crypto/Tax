@@ -117,6 +117,9 @@ const PAYSLIP_MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+/** Payslip entry types — "Salary" is the default recurring monthly one; "Holiday pay" is the once-a-year extra payout. */
+const PAYSLIP_TYPES = ["Salary", "Holiday pay"];
+
 /** Suggested actions for the Tax Years payment-activity ledger (free text — pick or type your own). */
 const TAX_YEAR_ACTIONS = [
   "Tax payed",
@@ -140,11 +143,12 @@ const TAX_YEAR_STATUS_FIELDS = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "1.9.0";
+const APP_VERSION = "1.10.0";
 const APP_VERSION_DATE = "2026-09-03";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "1.10.0", summary: "Payslips now handles annual holiday pay: a Type selector (Salary / Holiday pay) on bulk upload, a Type column in the monthly log, a \"includes €X holiday pay\" note on the yearly summary, and holiday pay excluded from the missing-months check (it isn't expected every month). Flows straight into Income's overview like any other payslip." },
   { version: "1.9.0", summary: "Income's Overview now pulls Gross/Net/Tax straight from Payslips (the actual source of truth) instead of duplicating that as manual entries. Manually logged entries below fold in as \"Other income\", and a Total income row combines Payslips' net pay with them — all EUR-converted, all compared against last year." },
   { version: "1.8.1", summary: "Payslips: removed Country and Employer — same employer every time, so tracking them was pure noise. Bulk upload no longer asks for them, the monthly log has no Country/Employer columns, and \"Yearly summary by country\" is just \"Yearly summary\" (one set of totals, no grouping)." },
   { version: "1.8.0", summary: "Income gained an Overview: per-country totals converted to EUR, compared against last year (New/+X%/−X%). You set the exchange rate for each non-EUR currency you log (\"1 EUR = ? DKK\"), saved and included in backups. Rows missing a rate are flagged and excluded from totals rather than silently wrong." },
