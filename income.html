@@ -28,7 +28,7 @@
   <div class="page-title">
     <div>
       <h1>Income</h1>
-      <p>Log income entries per country. The overview below converts everything to EUR and compares against last year.</p>
+      <p>The overview pulls your Gross/Net/Tax straight from Payslips, adds anything logged below as other income, converts everything to EUR, and compares against last year.</p>
     </div>
   </div>
 
@@ -43,7 +43,7 @@
       <table id="overview-table">
         <thead>
           <tr>
-            <th>Country</th>
+            <th></th>
             <th class="num">This year (€)</th>
             <th class="num">Last year (€)</th>
             <th class="num">Change</th>
@@ -53,13 +53,13 @@
         <tfoot></tfoot>
       </table>
     </div>
-    <div class="empty-state" id="overview-empty-state">No income logged yet for this year or last year.</div>
+    <div class="empty-state" id="overview-empty-state">No payslips or income logged yet for this year or last year.</div>
     <p class="hint" id="overview-rate-hint"></p>
   </div>
 
   <div class="card">
     <div class="card-header"><h2>Exchange rates (→ EUR)</h2></div>
-    <p class="hint">Your home currency is EUR. Set a rate for every other currency you log income in — used to convert the overview above. No live rate feed, you set these.</p>
+    <p class="hint">Your home currency is EUR. Set a rate for every other currency used in Payslips or logged below — used to convert the overview above. No live rate feed, you set these.</p>
     <div class="field-row" id="exchange-rate-fields"></div>
   </div>
 

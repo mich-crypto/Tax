@@ -140,11 +140,12 @@ const TAX_YEAR_STATUS_FIELDS = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "1.8.1";
+const APP_VERSION = "1.9.0";
 const APP_VERSION_DATE = "2026-09-03";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "1.9.0", summary: "Income's Overview now pulls Gross/Net/Tax straight from Payslips (the actual source of truth) instead of duplicating that as manual entries. Manually logged entries below fold in as \"Other income\", and a Total income row combines Payslips' net pay with them — all EUR-converted, all compared against last year." },
   { version: "1.8.1", summary: "Payslips: removed Country and Employer — same employer every time, so tracking them was pure noise. Bulk upload no longer asks for them, the monthly log has no Country/Employer columns, and \"Yearly summary by country\" is just \"Yearly summary\" (one set of totals, no grouping)." },
   { version: "1.8.0", summary: "Income gained an Overview: per-country totals converted to EUR, compared against last year (New/+X%/−X%). You set the exchange rate for each non-EUR currency you log (\"1 EUR = ? DKK\"), saved and included in backups. Rows missing a rate are flagged and excluded from totals rather than silently wrong." },
   { version: "1.7.0", summary: "New Settings page (reached via a gear icon, not the tracker switcher) holds the Gemini API key and Data export/import/wipe — both used to live on Payslips and Tax Tracker respectively. Removed the Currency converter from Tax Tracker's Overview. Payslips' single-file \"Add a payslip\" form is gone — bulk upload (which also works for one file) is now the only way in. The header's Tax Tracker / Income Tracker switcher is a real button with a working dropdown." },

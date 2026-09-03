@@ -32,7 +32,9 @@
   }
 
   function distinctNonEurCurrencies() {
-    const set = new Set(Store.getIncome().map((e) => e.currency).filter((c) => c && c !== "EUR"));
+    const fromIncome = Store.getIncome().map((e) => e.currency);
+    const fromPayslips = Store.getPayslips().map((p) => p.currency);
+    const set = new Set([...fromIncome, ...fromPayslips].filter((c) => c && c !== "EUR"));
     return Array.from(set).sort();
   }
 
@@ -63,18 +65,37 @@
     });
   }
 
-  function countryTotalsForYear(year, rates) {
-    const totals = {};
+  /** Gross/Net/Tax for a year, straight from the Payslips log (the definitive source — see Payslips). */
+  function payslipTotalsForYear(year, rates) {
+    const totals = { gross: 0, net: 0, tax: 0, missingRate: false };
+    Store.getPayslips()
+      .filter((p) => p.year === year)
+      .forEach((p) => {
+        const gross = toEur(p.grossPay, p.currency, rates);
+        const net = toEur(p.netPay, p.currency, rates);
+        const tax = toEur(p.taxWithheld, p.currency, rates);
+        if (gross === null || net === null || tax === null) {
+          totals.missingRate = true;
+          return;
+        }
+        totals.gross += gross;
+        totals.net += net;
+        totals.tax += tax;
+      });
+    return totals;
+  }
+
+  /** Anything logged manually below (freelance, other side income, etc.) — separate from Payslips' salary. */
+  function otherIncomeTotalForYear(year, rates) {
+    const result = { total: 0, missingRate: false };
     Store.getIncome()
       .filter((e) => new Date(e.date).getFullYear() === year)
       .forEach((e) => {
-        const country = (e.country || "").trim() || "(no country)";
-        if (!totals[country]) totals[country] = { eur: 0, missingRate: false };
         const eur = toEur(e.amount, e.currency, rates);
-        if (eur === null) totals[country].missingRate = true;
-        else totals[country].eur += eur;
+        if (eur === null) result.missingRate = true;
+        else result.total += eur;
       });
-    return totals;
+    return result;
   }
 
   function formatChange(thisAmount, lastAmount) {
@@ -88,7 +109,9 @@
   }
 
   function populateOverviewYearSelect() {
-    const years = collectYearsFromDates(Store.getIncome().map((e) => e.date));
+    const fromIncome = Store.getIncome().map((e) => e.date);
+    const fromPayslips = Store.getPayslips().map((p) => `${p.year}-01-01`);
+    const years = collectYearsFromDates([...fromIncome, ...fromPayslips]);
     const previous = overviewYearSelect.value;
     overviewYearSelect.innerHTML = years.map((y) => `<option value="${y}">${y}</option>`).join("");
     overviewYearSelect.value = previous && years.some((y) => String(y) === previous)
@@ -99,13 +122,14 @@
   function renderOverview() {
     const year = Number(overviewYearSelect.value) || currentYear();
     const rates = Store.getCurrencyRates();
-    const thisYear = countryTotalsForYear(year, rates);
-    const lastYear = countryTotalsForYear(year - 1, rates);
 
-    const countries = Array.from(new Set([...Object.keys(thisYear), ...Object.keys(lastYear)]))
-      .sort((a, b) => (thisYear[b]?.eur || 0) - (thisYear[a]?.eur || 0));
+    const thisPay = payslipTotalsForYear(year, rates);
+    const lastPay = payslipTotalsForYear(year - 1, rates);
+    const thisOther = otherIncomeTotalForYear(year, rates);
+    const lastOther = otherIncomeTotalForYear(year - 1, rates);
 
-    if (!countries.length) {
+    const hasAnyData = Store.getPayslips().length > 0 || Store.getIncome().length > 0;
+    if (!hasAnyData) {
       overviewTable.style.display = "none";
       overviewEmptyState.style.display = "block";
       overviewTableBody.innerHTML = "";
@@ -116,37 +140,41 @@
     overviewTable.style.display = "";
     overviewEmptyState.style.display = "none";
 
-    let anyMissing = false;
-    overviewTableBody.innerHTML = countries
-      .map((country) => {
-        const cur = thisYear[country] || { eur: 0, missingRate: false };
-        const prev = lastYear[country] || { eur: 0, missingRate: false };
-        if (cur.missingRate || prev.missingRate) anyMissing = true;
-        const flag = cur.missingRate || prev.missingRate
+    const rows = [
+      ["Gross pay (Payslips)", thisPay.gross, lastPay.gross, thisPay.missingRate || lastPay.missingRate],
+      ["Net pay (Payslips)", thisPay.net, lastPay.net, thisPay.missingRate || lastPay.missingRate],
+      ["Tax withheld (Payslips)", thisPay.tax, lastPay.tax, thisPay.missingRate || lastPay.missingRate],
+      ["Other income (logged below)", thisOther.total, lastOther.total, thisOther.missingRate || lastOther.missingRate],
+    ];
+
+    overviewTableBody.innerHTML = rows
+      .map(([label, cur, prev, missing]) => {
+        const flag = missing
           ? ` <span class="badge warn" title="Some entries here use a currency without a set exchange rate and are excluded">⚠</span>`
           : "";
         return `
           <tr>
-            <td>${escapeHtml(country)}${flag}</td>
-            <td class="num">${formatMoney(cur.eur, "€")}</td>
-            <td class="num">${formatMoney(prev.eur, "€")}</td>
-            <td class="num">${formatChange(cur.eur, prev.eur)}</td>
+            <td>${label}${flag}</td>
+            <td class="num">${formatMoney(cur, "€")}</td>
+            <td class="num">${formatMoney(prev, "€")}</td>
+            <td class="num">${formatChange(cur, prev)}</td>
           </tr>
         `;
       })
       .join("");
 
-    const totalThis = countries.reduce((s, c) => s + (thisYear[c]?.eur || 0), 0);
-    const totalLast = countries.reduce((s, c) => s + (lastYear[c]?.eur || 0), 0);
+    const totalThis = thisPay.net + thisOther.total;
+    const totalLast = lastPay.net + lastOther.total;
     overviewTableFoot.innerHTML = `
       <tr class="total-row">
-        <td><strong>Total</strong></td>
+        <td><strong>Total income (net + other)</strong></td>
         <td class="num"><strong>${formatMoney(totalThis, "€")}</strong></td>
         <td class="num"><strong>${formatMoney(totalLast, "€")}</strong></td>
         <td class="num"><strong>${formatChange(totalThis, totalLast)}</strong></td>
       </tr>
     `;
 
+    const anyMissing = thisPay.missingRate || lastPay.missingRate || thisOther.missingRate || lastOther.missingRate;
     overviewRateHint.textContent = anyMissing
       ? "⚠ Some entries use a currency without a set exchange rate and are excluded from these totals — set it below."
       : "";

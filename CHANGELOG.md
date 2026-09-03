@@ -3,6 +3,23 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v1.9.0 — 2026-09-03
+
+- **Income's Overview now pulls from Payslips.** It previously
+  duplicated data entry (per-country totals from manually logged Income
+  entries only) with no link to the payslips you'd already uploaded.
+  Now the Overview shows, for the selected year vs last year, all
+  EUR-converted:
+  - **Gross pay**, **Net pay**, and **Tax withheld** — summed directly
+    from your Payslips log.
+  - **Other income** — anything logged manually below (freelance, side
+    income, etc.), kept separate from salary.
+  - **Total income** — Payslips' net pay plus other income.
+- The Exchange rates card now covers currencies used in Payslips too,
+  not just manually logged Income entries.
+- Manual Income entries and their table are unchanged — still there for
+  anything that isn't on a payslip.
+
 ## v1.8.1 — 2026-09-03
 
 - **Payslips: removed Country and Employer.** Same employer every time,
