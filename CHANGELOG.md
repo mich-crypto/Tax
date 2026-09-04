@@ -3,6 +3,25 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.2.0 — 2026-09-04
+
+- **Income year removed.** A tax year is identified by its tax year alone —
+  one field when adding a year, "2025" in the list rather than
+  "Tax 2025 / income 2024", and no income year in the year page's
+  subheading or in storage. In practice the income year was always the tax
+  year minus one, so nothing is lost; if a year ever breaks that pattern it
+  can come back as an optional field.
+- **The Tax years list is leaner.** The headline figure bar is gone, along
+  with the **Refunded from DK** and **Balance** columns. The list is now
+  tax year, gross income, tax paid, net income, rate and progress. Both
+  dropped figures still live on each year's own page, where the refund is
+  entered and the balance is derived.
+- **New: a flow diagram on each tax year.** "Where the money went" shows
+  the year's gross income on the left splitting into what you kept and the
+  tax paid in each country on the right, sized to the real figures and
+  updating as you edit them. Green is money kept, red is money out — the
+  same meaning those colors carry everywhere else in the app.
+
 ## v2.1.0 — 2026-09-04
 
 A visual rework, and one new way in.

@@ -62,7 +62,7 @@ const Store = {
 
   /** Newest tax year first. */
   sortTaxYears(years) {
-    years.sort((a, b) => b.taxYear - a.taxYear || b.incomeYear - a.incomeYear);
+    years.sort((a, b) => b.taxYear - a.taxYear);
     return years;
   },
 
@@ -70,10 +70,9 @@ const Store = {
     return this.getTaxYears().find((y) => y.id === id) || null;
   },
 
-  blankTaxYear(incomeYear, taxYear) {
+  blankTaxYear(taxYear) {
     return {
       id: uid(),
-      incomeYear,
       taxYear,
       grossIncomeEur: 0,
       refundedFromDkEur: 0,
@@ -90,12 +89,12 @@ const Store = {
     };
   },
 
-  /** Finds the record for this income-year/tax-year pair, creating a blank one if it doesn't exist. */
-  ensureTaxYear(incomeYear, taxYear) {
+  /** Finds the record for this tax year, creating a blank one if it doesn't exist. */
+  ensureTaxYear(taxYear) {
     const years = this.getTaxYears();
-    let record = years.find((y) => y.incomeYear === incomeYear && y.taxYear === taxYear);
+    let record = years.find((y) => y.taxYear === taxYear);
     if (!record) {
-      record = this.blankTaxYear(incomeYear, taxYear);
+      record = this.blankTaxYear(taxYear);
       years.push(record);
       this.saveTaxYears(this.sortTaxYears(years));
     }

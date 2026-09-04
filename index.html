@@ -28,19 +28,15 @@
   <div class="page-title">
     <div>
       <h1>Tax years</h1>
-      <p>One row per income year. <strong>Balance</strong> is what Denmark refunded minus the tax you paid elsewhere — positive means you're ahead, negative means you're short.</p>
+      <p>One row per tax year. Open one to work through its countries, payments and correspondence.</p>
     </div>
   </div>
 
-  <div class="stat-grid" id="headline-stats"></div>
-
-  <div class="card" style="margin-top:22px;">
+  <div class="card">
     <div class="toolbar">
       <h2>All years</h2>
       <span class="spacer"></span>
-      <label style="margin:0;">Income year</label>
-      <input type="number" id="new-income-year" min="2000" max="2100" style="max-width:96px;">
-      <label style="margin:0;">Tax year</label>
+      <label for="new-tax-year">Tax year</label>
       <input type="number" id="new-tax-year" min="2000" max="2100" style="max-width:96px;">
       <button type="button" id="add-year-btn" class="primary small">+ Add year</button>
     </div>
@@ -48,11 +44,9 @@
       <table id="years-table">
         <thead>
           <tr>
-            <th>Year</th>
+            <th>Tax year</th>
             <th class="num">Gross income</th>
-            <th class="num">Refunded from DK</th>
             <th class="num">Tax paid</th>
-            <th class="num">Balance</th>
             <th class="num">Net income</th>
             <th class="num">Rate</th>
             <th>Progress</th>

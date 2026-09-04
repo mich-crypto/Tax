@@ -823,3 +823,23 @@ dialog.sheet::backdrop { background: rgba(12, 20, 20, 0.45); }
 
 .sheet-panel { padding: 18px 20px 22px; }
 .sheet-panel[hidden] { display: none; }
+
+/* ---------- Flow diagram ---------- */
+
+#flow-diagram { margin-top: 14px; overflow-x: auto; }
+
+#flow-diagram svg { display: block; min-width: 560px; }
+
+.flow-name {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  fill: var(--ink);
+}
+
+.flow-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  fill: var(--ink-soft);
+}

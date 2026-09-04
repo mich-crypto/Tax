@@ -24,8 +24,8 @@
   // ---------- Header ----------
 
   document.getElementById("year-heading").textContent = `Tax year ${record.taxYear}`;
-  document.getElementById("year-subheading").textContent = `Income earned in ${record.incomeYear}, filed in ${record.taxYear}.`;
-  document.title = `${yearLabel(record)} — Multi-Country Tax Tracker`;
+  document.getElementById("year-subheading").textContent = "Everything filed, paid and refunded for this tax year.";
+  document.title = `Tax year ${record.taxYear} — Multi-Country Tax Tracker`;
 
   document.getElementById("delete-year-btn").addEventListener("click", () => {
     if (!confirm(`Delete ${yearLabel(record)} entirely? Countries, payments and correspondence for this year go with it. This can't be undone.`)) return;
@@ -69,11 +69,110 @@
   grossInput.addEventListener("change", () => {
     Store.updateTaxYear(yearId, { grossIncomeEur: Number(grossInput.value) || 0 });
     renderMoneyStats();
+    renderFlow();
   });
   refundedInput.addEventListener("change", () => {
     Store.updateTaxYear(yearId, { refundedFromDkEur: Number(refundedInput.value) || 0 });
     renderMoneyStats();
   });
+
+
+  // ---------- Where the money went ----------
+
+  const flowEl = document.getElementById("flow-diagram");
+
+  /**
+   * A Sankey of one year: gross income on the left, splitting into what you
+   * kept and the tax paid in each country on the right.
+   *
+   * The geometry that matters: each ribbon leaves the gross bar from its OWN
+   * slice of it, sized in proportion to where it lands. Drawing every ribbon
+   * from the full height of the source is the classic bug — the fills stack
+   * on top of each other and the picture stops meaning anything.
+   */
+  function renderFlow() {
+    const record = reload();
+    const totals = taxYearTotals(record);
+
+    const flows = (record.countries || [])
+      .filter((c) => (Number(c.taxEur) || 0) > 0)
+      .map((c) => ({ label: c.country || "Unnamed", value: Number(c.taxEur) || 0, kind: "tax" }))
+      .sort((a, b) => b.value - a.value);
+
+    const kept = totals.gross - totals.taxPaid;
+    if (kept > 0) flows.unshift({ label: "Net income", value: kept, kind: "kept" });
+
+    if (!totals.gross || !flows.length) {
+      flowEl.innerHTML = `<p class="hint">Enter this year's gross income above, and the tax paid against at least one country below, and the split appears here.</p>`;
+      return;
+    }
+
+    // Tax can exceed gross in a bad year; scale to whatever is larger so the
+    // ribbons still add up to the bar they leave.
+    const scaleTotal = Math.max(totals.gross, flows.reduce((s, f) => s + f.value, 0));
+
+    const W = 800;
+    const NODE = 14;
+    const GAP = 12;
+    const MIN = 4;
+    const PAD = 12;
+    const leftX = 168;
+    const rightX = W - 168 - NODE;
+
+    // Height follows the content: enough for every node plus the gaps.
+    const inner = Math.max(200, flows.length * 46);
+    const H = inner + PAD * 2;
+    const usable = inner - GAP * (flows.length - 1);
+    const heightFor = (value) => Math.max(MIN, (value / scaleTotal) * usable);
+
+    const fills = {
+      kept: "var(--pos)",
+      tax: "var(--neg)",
+    };
+
+    let cursor = PAD;
+    let sourceCursor = PAD;
+    const ribbons = [];
+    const nodes = [];
+
+    flows.forEach((flow, i) => {
+      const h = heightFor(flow.value);
+      // The ribbon's slice of the SOURCE bar matches its share, so slices
+      // sit side by side down the gross bar instead of overlapping.
+      const sourceY0 = sourceCursor;
+      const sourceY1 = sourceCursor + h;
+      sourceCursor = sourceY1;
+
+      const targetY0 = cursor;
+      const targetY1 = cursor + h;
+      cursor = targetY1 + GAP;
+
+      const midX = (leftX + NODE + rightX) / 2;
+      ribbons.push(`<path d="M ${leftX + NODE} ${sourceY0}
+        C ${midX} ${sourceY0} ${midX} ${targetY0} ${rightX} ${targetY0}
+        L ${rightX} ${targetY1}
+        C ${midX} ${targetY1} ${midX} ${sourceY1} ${leftX + NODE} ${sourceY1} Z"
+        fill="${fills[flow.kind]}" opacity="${0.5 - i * 0.05}"></path>`);
+
+      nodes.push(`
+        <rect x="${rightX}" y="${targetY0}" width="${NODE}" height="${Math.max(h, 2)}" rx="2" fill="${fills[flow.kind]}"></rect>
+        <text x="${rightX + NODE + 12}" y="${targetY0 + h / 2 - 2}" class="flow-name">${escapeHtml(flow.label)}</text>
+        <text x="${rightX + NODE + 12}" y="${targetY0 + h / 2 + 13}" class="flow-value">${escapeHtml(formatMoney(flow.value, "\u20ac"))}</text>`);
+    });
+
+    const grossHeight = sourceCursor - PAD;
+
+    flowEl.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
+           aria-label="Gross income of ${formatMoney(totals.gross, "\u20ac")} splitting into ${flows.map((f) => f.label).join(", ")}">
+        ${ribbons.join("")}
+        ${nodes.join("")}
+        <rect x="${leftX}" y="${PAD}" width="${NODE}" height="${grossHeight}" rx="2" fill="var(--accent)"></rect>
+        <text x="${leftX - 12}" y="${PAD + grossHeight / 2 - 2}" class="flow-name" text-anchor="end">Gross income</text>
+        <text x="${leftX - 12}" y="${PAD + grossHeight / 2 + 13}" class="flow-value" text-anchor="end">${escapeHtml(formatMoney(totals.gross, "\u20ac"))}</text>
+      </svg>
+      ${totals.taxPaid > totals.gross ? `<p class="hint">Tax paid is more than the gross income entered for this year — check the figures above.</p>` : ""}`;
+  }
 
   // ---------- Progress ----------
 
@@ -182,9 +281,10 @@
         const value = isMoney ? parseMoney(input.value) : input.value;
         Store.updateCountryRow(yearId, input.dataset.row, { [field]: value });
         if (field === "comment") input.title = value;
-        if (field === "taxEur") {
+        if (field === "taxEur" || field === "country") {
           renderMoneyStats();
           renderCountries();
+          renderFlow();
         }
       });
     });
@@ -201,6 +301,7 @@
         if (!confirm(`Remove ${row ? row.country : "this country"} from ${yearLabel(record)}?`)) return;
         Store.deleteCountryRow(yearId, btn.dataset.remove);
         renderCountries();
+        renderFlow();
       });
     });
 
@@ -218,6 +319,7 @@
     Store.addCountryRow(yearId, { country });
     newCountryInput.value = "";
     renderCountries();
+    renderFlow();
   });
 
   // ---------- Payments ----------
@@ -383,6 +485,7 @@
   renderChecks("status-checks", TAX_YEAR_STATUS_FIELDS, "status");
   renderChecks("forms-checks", TAX_YEAR_FORM_FIELDS, "forms");
   renderCountries();
+  renderFlow();
   renderPayments();
   renderCorrespondence();
 })();

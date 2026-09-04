@@ -64,7 +64,7 @@ function statusProgress(record) {
 }
 
 function yearLabel(record) {
-  return `Income ${record.incomeYear} → Tax ${record.taxYear}`;
+  return `tax year ${record.taxYear}`;
 }
 
 /** Converts a local-currency amount to EUR using the saved rates ("1 EUR = ? code"). Null if the rate is unknown. */

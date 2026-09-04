@@ -21,6 +21,9 @@ country rows: the same salary is taxable in Belgium, the UK and the
 Netherlands as well as Denmark, so adding those up counts it two or three
 times over.
 
+A year is identified by its **tax year** alone — there is no separate
+income year to enter.
+
 **Denmark withholds tax all year and refunds part of it back.** That
 refund is the year's other headline figure, and it's what pays the tax
 owed everywhere else. Everything else is derived from those two numbers
@@ -48,18 +51,21 @@ the logo in the header, with a gear icon on the right for shared settings:
 
 ## Pages
 
-- **Tax years** (`index.html`) — the landing page. Four headline tiles
-  across every year on record (refunded from Denmark, tax paid
-  elsewhere, balance, years still open) over one row per income year:
-  gross income, refunded from DK, tax paid, balance, net income,
-  effective rate and a progress badge, with a totals row underneath. Add
-  a year by entering its income year and tax year — one record per
-  income-year/tax-year pair, e.g. "income 2025 / tax year 2026".
+- **Tax years** (`index.html`) — the landing page: one row per tax year
+  with gross income, tax paid, net income, effective rate and a progress
+  badge, and a totals row underneath. Add a year by entering its tax
+  year. The refund and the balance are deliberately not here — they're
+  entered and derived on the year's own page.
 - **One tax year** (`year.html?id=…`) — everything about a single year on
   one page, no tabs:
   - **The money** — the two figures you enter (gross income, refunded
     from Denmark), with tax paid / balance / net income / effective rate
     derived live beside them.
+  - **Where the money went** — a flow diagram: the year's gross income on
+    the left splitting into what you kept and the tax paid in each
+    country on the right, sized to the real figures and redrawn as you
+    edit them. Green is money kept, red is money out, matching the
+    semantic colors used everywhere else.
   - **Progress** — the four completion checks (year completed,
     questionnaires done, returns prepared & filed, tax payed & returned)
     plus the year's social-security and insurance paperwork: A1
