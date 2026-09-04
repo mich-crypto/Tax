@@ -131,16 +131,21 @@
     const record = reload();
     const totals = taxYearTotals(record);
 
-    // Gross tax paid per country, so the parts add back up to the bar they
-    // leave: gross = net income + the tax paid in every country. A refund
-    // is a separate, later event — Denmark's shows on its own tile above
-    // the diagram rather than being netted into a ribbon here.
+    // Actual tax per country (pre-paid minus what came back) — what each
+    // country really cost, matching the Tax paid tile above. "Net income"
+    // here is recomputed to match (gross minus that same actual-tax total),
+    // so the ribbons still add back up to the bar they leave; that's a
+    // diagram-local figure, not the headline Net income tile, which stays
+    // on the gross pre-paid basis it's always used.
+    const rates = Store.getCurrencyRates();
     const flows = (record.countries || [])
-      .map((c) => ({ label: `Tax ${c.country || "Unnamed"}`, value: countryEur(c, "tax") || 0, kind: "tax" }))
+      .map((c) => ({ label: `Tax ${c.country || "Unnamed"}`, value: toEur(countryNetTax(c), c.currency, rates) || 0, kind: "tax" }))
       .filter((f) => f.value > 0)
       .sort((a, b) => b.value - a.value);
 
-    if (totals.netIncome > 0) flows.unshift({ label: "Net income", value: totals.netIncome, kind: "kept" });
+    const totalActualTax = flows.reduce((s, f) => s + f.value, 0);
+    const kept = totals.gross - totalActualTax;
+    if (kept > 0) flows.unshift({ label: "Net income", value: kept, kind: "kept" });
 
     if (!totals.gross || !flows.length) {
       flowEl.innerHTML = `<p class="hint">Add a country below with income and tax paid, and the split appears here.</p>`;
@@ -150,7 +155,7 @@
     // Tax can exceed gross in a bad year; scale to whatever is larger so the
     // ribbons still add up to the bar they leave.
     const scaleTotal = Math.max(totals.gross, flows.reduce((s, f) => s + f.value, 0));
-    const overspent = totals.taxPaid > totals.gross;
+    const overspent = totalActualTax > totals.gross;
 
     const W = 800;
     const NODE = 14;

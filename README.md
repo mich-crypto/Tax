@@ -72,6 +72,13 @@ the logo in the header, with a gear icon on the right for shared settings:
 - **Settings** (`settings.html`) — reached via the ⚙ icon, not the app
   switcher, since it isn't part of either tracker.
 
+Every card's explanatory paragraph lives behind a small `.info-icon` ("i")
+next to its heading now, rather than sitting on the page as a standing
+line — hover it for the same text. Pure native `title` attributes, no
+script, so it works the same inside a sandboxed preview. A dynamic status
+message (a missing-rate warning, a save confirmation) is a different
+thing and still shows inline where it always did.
+
 ## Pages
 
 - **Tax years** (`index.html`) — the landing page: one row per tax year
@@ -89,10 +96,14 @@ the logo in the header, with a gear icon on the right for shared settings:
     pre-paid tax paid ÷ gross), and **Tax return from Denmark** (read
     from Denmark's own row). Nothing here is entered directly.
   - **Where the money went** — a flow diagram: the year's gross income on
-    the left splitting into what you kept and the tax paid in each
-    country on the right, sized to the real figures and redrawn as you
-    edit them. Green is money kept, red is money out, matching the
-    semantic colors used everywhere else.
+    the left splitting into what you kept and the **actual tax** paid in
+    each country on the right (matching the Tax paid tile — Pre-paid tax
+    minus Tax return), sized to the real figures and redrawn as you edit
+    them. The diagram's own "Net income" ribbon is gross minus that same
+    actual-tax total, so it balances against the gross bar — a
+    diagram-local figure, not the headline Net income tile above it,
+    which stays on the gross Pre-paid tax basis. Green is money kept, red
+    is money out, matching the semantic colors used everywhere else.
   - **Progress** — the four completion checks (year completed,
     questionnaires done, returns prepared & filed, tax payed & returned),
     **read off the country rows** rather than ticked separately: a year is

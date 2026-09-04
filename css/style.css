@@ -283,6 +283,33 @@ a:hover { text-decoration: underline; }
   margin-bottom: 4px;
 }
 
+/* A section's explanation, on hover rather than sitting on the page as its
+   own paragraph — the native title attribute carries the text, so this
+   needs no script and works the same inside a sandboxed preview. */
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  margin-left: 2px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 600;
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: help;
+  flex-shrink: 0;
+}
+
+.info-icon:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* Every section heading is the same size, whether it sits in a
    .card-header or a .toolbar — they read as one level. */
 .card-header h2,

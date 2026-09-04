@@ -3,6 +3,22 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.18.0 — 2026-09-04
+
+- **The flow diagram now shows Actual Tax, not Pre-paid tax.** Each
+  country's ribbon in "Where the money went" is its Actual Tax (Pre-paid
+  tax minus Tax return) — the same figure the Tax paid tile sums — instead
+  of gross Pre-paid tax. The diagram's "Net income" ribbon is recalculated
+  to match (gross minus that same Actual Tax total) so the picture still
+  balances against the gross-income bar; this is a diagram-local figure,
+  separate from the headline Net income tile, which is unchanged.
+- **Every card's explanation is a small (i) icon now, not a standing
+  paragraph.** Hover it, next to the section heading, for the same text
+  that used to sit on the page permanently — across the Tax years,
+  one-tax-year, Payslips and Settings pages. Dynamic status messages
+  (missing-rate warnings, save confirmations, and similar) are unchanged
+  and still show inline.
+
 ## v2.17.0 — 2026-09-04
 
 - **Actual Tax means something different by country now.** Denmark

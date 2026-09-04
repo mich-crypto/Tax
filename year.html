@@ -43,24 +43,21 @@
 
     <!-- ============ THE MONEY ============ -->
     <div class="card">
-      <div class="card-header"><h2>The money</h2></div>
-      <p class="hint">All figures in euro, calculated from the Countries table below. Tax return from Denmark is read from Denmark's own row, since it's the one country here that withholds all year and pays part of it back.</p>
-      <div class="stat-grid" id="money-stats"></div>
+      <div class="card-header"><h2>The money <span class="info-icon" title="All figures in euro, calculated from the Countries table below. Tax return from Denmark is read from Denmark's own row, since it's the one country here that withholds all year and pays part of it back.">i</span></h2></div>
+      <div class="stat-grid" id="money-stats" style="margin-top:14px;"></div>
       <p class="hint" id="money-note"></p>
       <div class="disclaimer" id="refund-warning" hidden></div>
     </div>
 
     <!-- ============ WHERE THE MONEY WENT ============ -->
     <div class="card">
-      <div class="card-header"><h2>Where the money went</h2></div>
-      <p class="hint">Your gross income for the year, splitting into what you kept and the tax paid in each country.</p>
+      <div class="card-header"><h2>Where the money went <span class="info-icon" title="Your gross income for the year, splitting into what you kept and the actual tax paid in each country.">i</span></h2></div>
       <div id="flow-diagram"></div>
     </div>
 
     <!-- ============ WHERE YOU WERE ============ -->
     <div class="card" id="travel-card" hidden>
-      <div class="card-header"><h2>Where you were</h2></div>
-      <p class="hint">Days spent in each country during this tax year, from your Travel Tracker report. Transit days aren't counted as presence, matching the report's own summary.</p>
+      <div class="card-header"><h2>Where you were <span class="info-icon" title="Days spent in each country during this tax year, from your Travel Tracker report. Transit days aren't counted as presence, matching the report's own summary.">i</span></h2></div>
       <div class="table-scroll">
         <table id="travel-table">
           <thead>
@@ -82,22 +79,20 @@
 
     <!-- ============ PROGRESS ============ -->
     <div class="card">
-      <div class="card-header"><h2>Progress</h2></div>
-      <p class="hint" style="margin-top:0;">Read off the country rows below — a year is done when every country in it is.</p>
+      <div class="card-header"><h2>Progress <span class="info-icon" title="Read off the country rows below — a year is done when every country in it is.">i</span></h2></div>
       <div class="check-grid" id="status-checks"></div>
     </div>
 
     <!-- ============ COUNTRIES ============ -->
     <div class="card">
       <div class="toolbar">
-        <h2 style="margin:0;">Countries</h2>
+        <h2 style="margin:0;">Countries <span class="info-icon" title="Each row is in its own currency — kroner for Denmark, złoty for Poland — so the figures match the documents they come from. Switching a row's currency converts it at the rate under Settings. The totals underneath are in euro. Taxable income is the slice of income taxed in that country; Pre-paid tax is everything handed over that year, before any of it came back; Tax return is how much came back. Actual Tax — what it really cost — is editable too, but means something different by country: Denmark genuinely withholds all year and settles up later, so typing its Actual Tax works Tax return out backwards from it, holding Pre-paid tax fixed. Every other country normally has no separate pre-paid phase — what's assessed is what's paid — so typing its Actual Tax there just sets Pre-paid tax to match, leaving Tax return alone (typically zero, still yours to edit directly if something really was refunded).">i</span></h2>
         <span class="spacer"></span>
         <input type="text" id="new-country" list="country-list" placeholder="Add a country…" style="max-width:180px;">
         <datalist id="country-list"></datalist>
         <button type="button" id="add-country-btn" class="small">+ Add</button>
         <button type="button" id="open-assessment-dialog" class="small">🤖 Analyze assessment</button>
       </div>
-      <p class="hint">Each row is in <strong>its own currency</strong> — kroner for Denmark, złoty for Poland — so the figures match the documents they come from. Switching a row's currency converts it at the rate under <a href="settings.html">Settings</a>. The totals underneath are in euro. <strong>Taxable income</strong> is the slice of income taxed in that country; <strong>Pre-paid tax</strong> is everything handed over that year, before any of it came back; <strong>Tax return</strong> is how much came back. <strong>Actual Tax</strong> — what it really cost — is editable too, but means something different depending on the country: <strong>Denmark</strong> genuinely withholds all year and settles up later, so typing its Actual Tax works Tax return out backwards from it, holding Pre-paid tax fixed. <strong>Every other country</strong> normally has no separate pre-paid phase — what's assessed is what's paid — so typing its Actual Tax there just sets Pre-paid tax to match, leaving Tax return alone (typically zero, still yours to edit directly if something really was refunded).</p>
       <div class="table-scroll">
         <table id="countries-table">
           <thead>
@@ -125,9 +120,8 @@
 
     <!-- ============ PAYMENTS ============ -->
     <div class="card">
-      <div class="card-header"><h2>Payments &amp; refunds</h2></div>
-      <p class="hint">A dated log of what actually moved — separate from the totals above, which are the year's final position.</p>
-      <form id="payment-form">
+      <div class="card-header"><h2>Payments &amp; refunds <span class="info-icon" title="A dated log of what actually moved — separate from the totals above, which are the year's final position.">i</span></h2></div>
+      <form id="payment-form" style="margin-top:14px;">
         <div class="field-row">
           <div class="field">
             <label>Action</label>
