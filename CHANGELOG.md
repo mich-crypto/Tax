@@ -3,6 +3,28 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.15.0 — 2026-09-04
+
+- **Analyze a tax assessment with AI.** A "🤖 Analyze assessment" button
+  next to Countries' "+ Add" opens a bulk uploader (mirrors the Income
+  Tracker's payslip reader): pick one or more assessment letters (PDF or
+  image, not a payslip), and each is read for its **Taxable income** and
+  **Actual Tax** by whichever AI provider and key you've set under
+  Settings. Nothing is saved automatically — each result is shown with an
+  editable Country row picker (including "+ New country…") and editable
+  figures, and only applies once you click Apply. Country and currency
+  aren't guessed by the AI; you assign the row, and figures are read in
+  that row's own currency, matching the rest of the Countries table.
+- **Site lock (optional, off by default).** A new Settings section
+  generates a password's SHA-256 hash for you to paste into
+  `js/site-lock.js`, which then shows a lock screen before any page loads
+  until the right password is typed once per browser. This is a static
+  site with no server, so it's a deterrent against a casually-shared link
+  landing on the wrong screen, not real protection — the check ships in
+  JavaScript readable by anyone who opens devtools. For genuine access
+  control, use your static host's own gate (e.g. Netlify's site-wide
+  password under Site settings → Visitor access) instead.
+
 ## v2.14.0 — 2026-09-04
 
 - **Actual Tax is editable again.** It's a real figure that lives on your

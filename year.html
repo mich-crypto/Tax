@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="js/site-lock.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tax year — Multi-Country Tax Tracker</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext y=%2224%27 font-size=%2224%27%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
@@ -94,6 +95,7 @@
         <input type="text" id="new-country" list="country-list" placeholder="Add a country…" style="max-width:180px;">
         <datalist id="country-list"></datalist>
         <button type="button" id="add-country-btn" class="small">+ Add</button>
+        <button type="button" id="open-assessment-dialog" class="small">🤖 Analyze assessment</button>
       </div>
       <p class="hint">Each row is in <strong>its own currency</strong> — kroner for Denmark, złoty for Poland — so the figures match the documents they come from. Switching a row's currency converts it at the rate under <a href="settings.html">Settings</a>. The totals underneath are in euro. <strong>Taxable income</strong> is the slice of income taxed in that country; <strong>Pre-paid tax</strong> is everything handed over that year, before any of it came back; <strong>Tax return</strong> is how much came back. <strong>Actual Tax</strong> — what it really cost — is editable too: type the figure straight off an assessment letter and Tax return works itself out from it, holding Pre-paid tax fixed.</p>
       <div class="table-scroll">
@@ -216,12 +218,35 @@
   </div>
 </main>
 
-<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere. · <span id="app-version"></span></footer>
+<dialog id="assessment-dialog" class="sheet">
+  <form method="dialog" class="sheet-head">
+    <h2>Analyze a tax assessment</h2>
+    <button class="icon-btn" value="cancel" aria-label="Close">✕</button>
+  </form>
+  <section class="sheet-panel" data-panel="ai">
+    <p class="hint" style="margin-top:0;">Pick one or more assessment letters (the final-numbers document from a tax authority or accountant — not a payslip). Each is read by AI, then shown below for you to check and assign to a country row before anything is saved. Figures are read in whatever currency is printed on the document — verify them against that country's own currency below.</p>
+    <div class="field-row">
+      <div class="field">
+        <label for="assessment-files">Files (image or PDF)</label>
+        <input type="file" id="assessment-files" accept="image/*,.pdf" multiple>
+      </div>
+    </div>
+    <div class="actions-row" style="margin-top:16px;">
+      <button type="button" id="assessment-analyze-btn" class="primary small">Read with AI</button>
+      <span class="hint" id="assessment-status" style="margin:0;"></span>
+    </div>
+    <div id="assessment-results"></div>
+  </section>
+</dialog>
+
+<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere — except an assessment letter you choose to analyze, which goes straight to your selected AI provider. · <span id="app-version"></span></footer>
 
 <script src="js/tax-data.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/app.js"></script>
 <script src="js/travel.js"></script>
+<script src="js/gemini.js"></script>
+<script src="js/claude-vision.js"></script>
 <script src="js/year.js"></script>
 </body>
 </html>

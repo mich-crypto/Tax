@@ -474,6 +474,175 @@
     renderStatus();
   });
 
+  // ---------- Analyze a tax assessment (AI) ----------
+  // Reads Taxable income + Actual Tax off an assessment letter (not a
+  // payslip) via whichever AI provider is set under Settings — same
+  // provider/key plumbing as the Income Tracker's payslip analyzer, but a
+  // different, narrower extraction prompt (js/gemini.js's
+  // ASSESSMENT_EXTRACTION_PROMPT). Country and currency are deliberately NOT
+  // guessed by the AI: this page already knows which country rows exist, so
+  // the person reviewing each result picks the row themselves. Nothing is
+  // written to a country row until they click Apply — a wrong AI read here
+  // would otherwise silently corrupt a real filed figure.
+
+  const assessmentDialog = document.getElementById("assessment-dialog");
+  const openAssessmentBtn = document.getElementById("open-assessment-dialog");
+  const assessmentFiles = document.getElementById("assessment-files");
+  const assessmentAnalyzeBtn = document.getElementById("assessment-analyze-btn");
+  const assessmentStatus = document.getElementById("assessment-status");
+  const assessmentResults = document.getElementById("assessment-results");
+
+  function activeAIProvider() {
+    if (Store.getAIProvider() === "claude") {
+      const settings = Store.getClaudeSettings();
+      return {
+        name: "Claude",
+        apiKey: settings.apiKey,
+        run: (file) => analyzePayslipWithClaude({
+          apiKey: settings.apiKey, model: settings.model || CLAUDE_DEFAULT_MODEL, file, prompt: ASSESSMENT_EXTRACTION_PROMPT,
+        }),
+      };
+    }
+    const settings = Store.getGeminiSettings();
+    return {
+      name: "Gemini",
+      apiKey: settings.apiKey,
+      run: (file) => analyzePayslipWithGemini({
+        apiKey: settings.apiKey, model: settings.model || GEMINI_DEFAULT_MODEL, file, prompt: ASSESSMENT_EXTRACTION_PROMPT,
+      }),
+    };
+  }
+
+  function countryOptionsHtml() {
+    const rows = (reload().countries || []);
+    const options = rows.map((c) => `<option value="${c.id}">${escapeHtml(c.country || "Unnamed")}</option>`).join("");
+    return `<option value="">— choose —</option>${options}<option value="__new__">+ New country…</option>`;
+  }
+
+  function renderAssessmentResult(file, extraction, index) {
+    const wrap = document.createElement("div");
+    wrap.className = "card";
+    wrap.style.padding = "12px";
+    wrap.style.marginTop = "10px";
+    wrap.dataset.index = String(index);
+    wrap.innerHTML = `
+      <div style="font-weight:600;">${escapeHtml(file.name)}</div>
+      ${extraction.notes ? `<p class="hint" style="margin:4px 0 0;">${escapeHtml(extraction.notes)}</p>` : ""}
+      <div class="field-row" style="margin-top:8px;">
+        <div class="field" style="max-width:220px;">
+          <label>Country row</label>
+          <select class="result-country">${countryOptionsHtml()}</select>
+          <input type="text" class="result-new-country" placeholder="New country name" hidden style="margin-top:6px;">
+        </div>
+        <div class="field" style="max-width:160px;">
+          <label>Taxable income</label>
+          <input type="number" class="result-income" step="0.01" value="${extraction.taxableIncome ?? ""}" placeholder="0.00">
+        </div>
+        <div class="field" style="max-width:160px;">
+          <label>Actual Tax</label>
+          <input type="number" class="result-actual-tax" step="0.01" value="${extraction.actualTax ?? ""}" placeholder="0.00">
+        </div>
+      </div>
+      <div class="actions-row" style="margin-top:8px;">
+        <button type="button" class="small result-apply">Apply to row</button>
+        <span class="hint result-note" style="margin:0;"></span>
+      </div>
+    `;
+
+    const countrySelect = wrap.querySelector(".result-country");
+    const newCountryField = wrap.querySelector(".result-new-country");
+    countrySelect.addEventListener("change", () => {
+      newCountryField.hidden = countrySelect.value !== "__new__";
+    });
+
+    wrap.querySelector(".result-apply").addEventListener("click", () => {
+      const note = wrap.querySelector(".result-note");
+      let rowId = countrySelect.value;
+      if (!rowId) {
+        note.textContent = "Choose a country row first.";
+        return;
+      }
+      if (rowId === "__new__") {
+        const name = newCountryField.value.trim();
+        if (!name) {
+          note.textContent = "Name the new country first.";
+          return;
+        }
+        Store.addCountryRow(yearId, {
+          country: name,
+          currency: COUNTRY_CURRENCY_HINTS[name.toLowerCase()] || "EUR",
+        });
+        const match = (reload().countries || []).find((c) => c.country.toLowerCase() === name.toLowerCase());
+        rowId = match ? match.id : null;
+        if (!rowId) {
+          note.textContent = "Couldn't create that country row.";
+          return;
+        }
+      }
+      const row = (reload().countries || []).find((c) => c.id === rowId);
+      if (!row) {
+        note.textContent = "That country row no longer exists.";
+        return;
+      }
+      const taxableIncome = Number(wrap.querySelector(".result-income").value) || 0;
+      const actualTax = Number(wrap.querySelector(".result-actual-tax").value) || 0;
+      const prePaidTax = Number(row.tax) || 0;
+      Store.updateCountryRow(yearId, rowId, { income: taxableIncome, refunded: prePaidTax - actualTax });
+      renderMoneyStats();
+      renderCountries();
+      renderFlow();
+      renderStatus();
+      note.textContent = `Applied to ${row.country || "that row"}.`;
+      wrap.querySelector(".result-apply").disabled = true;
+    });
+
+    assessmentResults.appendChild(wrap);
+  }
+
+  openAssessmentBtn.addEventListener("click", () => {
+    assessmentStatus.textContent = "";
+    assessmentResults.innerHTML = "";
+    assessmentFiles.value = "";
+    assessmentDialog.showModal();
+  });
+
+  assessmentDialog.addEventListener("click", (event) => {
+    if (event.target === assessmentDialog) assessmentDialog.close();
+  });
+
+  assessmentAnalyzeBtn.addEventListener("click", async () => {
+    const files = Array.from(assessmentFiles.files || []);
+    if (!files.length) {
+      assessmentStatus.textContent = "Choose one or more assessment files first.";
+      return;
+    }
+    const provider = activeAIProvider();
+    if (!provider.apiKey) {
+      assessmentStatus.textContent = `Add and save a ${provider.name} API key under Settings first.`;
+      return;
+    }
+
+    assessmentAnalyzeBtn.disabled = true;
+    assessmentResults.innerHTML = "";
+    const failures = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      assessmentStatus.textContent = `Reading ${i + 1} / ${files.length} with ${provider.name}: ${file.name}…`;
+      try {
+        const extraction = await provider.run(file);
+        renderAssessmentResult(file, extraction, i);
+      } catch (e) {
+        failures.push(`${file.name}: ${e.message}`);
+      }
+    }
+
+    assessmentAnalyzeBtn.disabled = false;
+    assessmentStatus.textContent = failures.length
+      ? `Read ${files.length - failures.length} / ${files.length}. Failed: ${failures.join("; ")}`
+      : `Read ${files.length} / ${files.length}. Check each one below, then apply.`;
+  });
+
   // ---------- Payments ----------
 
   const paymentForm = document.getElementById("payment-form");

@@ -18,9 +18,11 @@
  *     separate, pay-as-you-go API billing, not a claude.ai subscription.
  *     Treat it like a password: anyone with it can spend your quota.
  *
- * Uses the same extraction prompt and downscaling helper as Gemini
- * (GEMINI_EXTRACTION_PROMPT / downscaleImageIfNeeded, both from js/gemini.js
- * — load that script before this one) so results are a drop-in match.
+ * Uses the same extraction prompts and downscaling helper as Gemini
+ * (GEMINI_EXTRACTION_PROMPT / ASSESSMENT_EXTRACTION_PROMPT /
+ * downscaleImageIfNeeded, all from js/gemini.js — load that script before
+ * this one) so results are a drop-in match; pass either prompt in via the
+ * `prompt` option, defaulting to the payslip one.
  */
 
 /**
@@ -28,7 +30,7 @@
  * Throws with a human-readable message on any failure (network, API error,
  * refusal, or an unparseable response).
  */
-async function analyzePayslipWithClaude({ apiKey, model, file }) {
+async function analyzePayslipWithClaude({ apiKey, model, file, prompt }) {
   if (!apiKey) throw new Error("No Claude API key set. Add one under Settings.");
   if (!file) throw new Error("No file selected.");
 
@@ -51,7 +53,7 @@ async function analyzePayslipWithClaude({ apiKey, model, file }) {
     messages: [
       {
         role: "user",
-        content: [fileBlock, { type: "text", text: GEMINI_EXTRACTION_PROMPT }],
+        content: [fileBlock, { type: "text", text: prompt || GEMINI_EXTRACTION_PROMPT }],
       },
     ],
   };

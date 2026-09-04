@@ -106,6 +106,14 @@ the logo in the header, with a gear icon on the right for shared settings:
     offers EUR and that country's own currency, converted to EUR for the
     totals row at the rate under Settings. Country names are free text
     with suggestions — never blocked waiting on a managed list.
+    **🤖 Analyze assessment**, next to "+ Add", opens a bulk uploader for
+    tax assessment letters (a final-numbers document from a tax authority
+    or accountant, not a payslip): AI reads each one's Taxable income and
+    Actual Tax, shown for review with a Country row picker (including
+    "+ New country…") before anything is applied — nothing is guessed at
+    or saved automatically, since these are the two hard facts real
+    assessment letters state. Needs an API key for whichever AI provider
+    is active, set once under Settings, same as payslip analysis.
   - **Where you were** — days of presence and days worked per country for
     the calendar year this return covers, from the Travel Tracker report
     loaded under Settings. Hidden until a report is loaded. Transit days
@@ -142,11 +150,15 @@ the logo in the header, with a gear icon on the right for shared settings:
   active, set once under Settings.
 - **Settings** (`settings.html`) — exchange rates (fetched from the ECB, or
   typed in), the **Travel Tracker** import, the AI provider and its API
-  key/model, and Export/Import/Wipe. Shared across both
+  key/model, **Site lock**, and Export/Import/Wipe. Shared across both
   trackers, so it lives outside either one. **Exchange rates** are set
   by hand ("1 EUR = ? DKK") — there's no live rate feed; a payslip in a
   currency with no rate set is flagged and excluded from the EUR figures
-  rather than silently counted as zero.
+  rather than silently counted as zero. **Site lock** generates a
+  password's SHA-256 hash for pasting into `js/site-lock.js`'s
+  `SITE_LOCK_HASH` constant (see below) — Settings only prepares the
+  hash, since flipping the switch means shipping that file, not writing
+  to this browser's storage.
 
 ### Temporary: Claude vs. Gemini for payslip analysis
 
@@ -156,15 +168,33 @@ under Settings → **AI provider**. This exists for a one-off quality
 comparison and currently defaults to Claude. **Gemini is what ships at
 release** — before then, either switch the selector back to Gemini, or
 remove the Claude path entirely (`js/claude-vision.js`, its `<script>` tag
-on `payslips.html`, the Claude Settings card, `Store.getClaudeSettings()`/
-`saveClaudeSettings()`/`clearClaudeApiKey()`, `Store.getAIProvider()`/
-`saveAIProvider()`, and `CLAUDE_DEFAULT_MODEL`). Both integrations share
-the same extraction prompt (`GEMINI_EXTRACTION_PROMPT`) and downscaling
-helper so results are directly comparable. Claude calls
+on `payslips.html` and `year.html`, the Claude Settings card,
+`Store.getClaudeSettings()`/`saveClaudeSettings()`/`clearClaudeApiKey()`,
+`Store.getAIProvider()`/`saveAIProvider()`, and `CLAUDE_DEFAULT_MODEL`).
+Both integrations take an optional `prompt` — payslip analysis passes
+`GEMINI_EXTRACTION_PROMPT` (the default if omitted), the Countries table's
+assessment analyzer passes `ASSESSMENT_EXTRACTION_PROMPT` — plus the same
+downscaling helper, so results stay directly comparable across providers
+regardless of which prompt is in use. Claude calls
 `https://api.anthropic.com/v1/messages` directly from the browser with
 the `anthropic-dangerous-direct-browser-access` header (Anthropic's own
 opt-in for client-side calling) — same security model as Gemini: the key
 lives only in `localStorage`, excluded from Export/Import.
+
+## Site lock
+
+`js/site-lock.js`, loaded first on every page, can show a password screen
+before any page loads — off by default (`SITE_LOCK_HASH = ""`, meaning
+nothing is asked). Settings → **Site lock** generates a password's
+SHA-256 hash for you to paste into that constant; once set and deployed,
+every visitor is asked for the password once per browser (a `localStorage`
+flag remembers a correct entry until the password changes or storage is
+cleared). This is a deterrent, not real security — there's no server here,
+so the check ships as plain JavaScript anyone can read or attempt to
+brute-force offline. For genuine access control, use your static host's
+own gate instead (e.g. Netlify's site-wide password, under Site settings
+→ Visitor access), which is enforced before any of this code is even sent
+to a visitor's browser.
 
 ## Data
 
@@ -241,10 +271,13 @@ named for when the income was earned.
 
 ## Script load order
 
-Every page loads, in this order: `js/tax-data.js` (constants) →
-`js/storage.js` (the `Store`) → `js/app.js` (shared helpers and the money
-model) → any AI scripts → that page's own script. Nothing is a module and
-nothing is bundled, so the order is what wires it together.
+`js/site-lock.js` loads first of all, before anything else in `<head>` —
+it needs to hide the page before it paints, if a site password is set (see
+[Site lock](#site-lock) above). After that, every page loads, in this
+order: `js/tax-data.js` (constants) → `js/storage.js` (the `Store`) →
+`js/app.js` (shared helpers and the money model) → any AI scripts → that
+page's own script. Nothing is a module and nothing is bundled, so the
+order is what wires it together.
 
 ## Disclaimer
 

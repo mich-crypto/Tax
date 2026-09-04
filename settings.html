@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="js/site-lock.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Settings — Multi-Country Tax Tracker</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext y=%2224%27 font-size=%2224%27%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
@@ -109,6 +110,26 @@
       <button type="button" id="save-claude-settings" class="primary small">Save settings</button>
       <button type="button" id="clear-claude-key" class="danger-outline small">Clear saved key</button>
       <span class="hint" id="claude-settings-status"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Site lock <span id="site-lock-status-badge" class="badge"></span></h2></div>
+    <p class="hint">A password screen shown before any page loads. This is a static site with no server, so this is a <strong>deterrent, not real security</strong> — the check runs in JavaScript shipped to every visitor, so it can be read or brute-forced offline. For real protection, use your static host's own access control instead (e.g. Netlify's site-wide password, under Site settings → Visitor access).</p>
+    <p class="hint">Type a password below and generate its hash — never the password itself, only its SHA-256 digest, computed right here in your browser. Paste that hash into <code>js/site-lock.js</code>'s <code>SITE_LOCK_HASH</code> constant, then deploy. Leaving it blank there ships with the gate off, which is the state now.</p>
+    <div class="field-row">
+      <div class="field">
+        <label for="site-lock-password">New password</label>
+        <input type="password" id="site-lock-password" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="site-lock-hash-output">Hash to paste into js/site-lock.js</label>
+        <input type="text" id="site-lock-hash-output" readonly placeholder="Click Generate hash →">
+      </div>
+    </div>
+    <div class="actions-row">
+      <button type="button" id="generate-site-lock-hash" class="primary small">Generate hash</button>
+      <span class="hint" id="site-lock-status" style="margin:0;"></span>
     </div>
   </div>
 

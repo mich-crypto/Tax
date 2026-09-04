@@ -278,6 +278,40 @@
     notify("All data wiped.");
   });
 
+  // --- Site lock (see js/site-lock.js) -----------------------------------
+  // Only prepares a hash for you to paste into that file's SITE_LOCK_HASH
+  // constant — it can't flip the switch itself, since the file it lives in
+  // has to actually ship to every visitor for the gate to apply to them,
+  // not just to this browser's local storage.
+
+  const siteLockBadge = document.getElementById("site-lock-status-badge");
+  const siteLockPassword = document.getElementById("site-lock-password");
+  const siteLockHashOutput = document.getElementById("site-lock-hash-output");
+  const siteLockStatus = document.getElementById("site-lock-status");
+  const generateSiteLockHashBtn = document.getElementById("generate-site-lock-hash");
+
+  if (siteLockBadge) {
+    const on = typeof SITE_LOCK_HASH !== "undefined" && !!SITE_LOCK_HASH;
+    siteLockBadge.textContent = on ? "ON" : "OFF";
+    siteLockBadge.className = `badge ${on ? "ok" : "neutral"}`;
+  }
+
+  async function sha256Hex(text) {
+    const data = new TextEncoder().encode(text);
+    const digest = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  generateSiteLockHashBtn?.addEventListener("click", async () => {
+    const password = siteLockPassword.value;
+    if (!password) {
+      siteLockStatus.textContent = "Type a password first.";
+      return;
+    }
+    siteLockHashOutput.value = await sha256Hex(password);
+    siteLockStatus.textContent = "Hash generated — paste it into js/site-lock.js and deploy.";
+  });
+
   renderRateFields();
   renderTravel();
 })();
