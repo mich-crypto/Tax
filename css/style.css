@@ -911,13 +911,6 @@ button.danger-solid:hover { background: var(--neg); filter: brightness(1.08); }
 .check.state.done { background: var(--pos-soft); color: var(--pos); font-weight: 600; }
 .check-mark { font-size: 13px; width: 14px; text-align: center; }
 
-.net-cell {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-soft);
-}
-
 /* "Not liable" sits apart from the three progress flags it overrides. */
 td.na-cell, th.na-cell { border-left: 1px solid var(--line); }
 tbody tr:has(input[data-field="notLiable"]:checked) { color: var(--ink-faint); }

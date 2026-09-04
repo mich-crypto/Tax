@@ -316,7 +316,9 @@
         <td><select class="cell-input" data-row="${row.id}" data-field="currency" data-currency="${row.currency || "EUR"}">${currencyOptionsForCountry(row.country, row.currency || "EUR")}</select></td>
         ${moneyCellHtml("income")}
         ${moneyCellHtml("tax")}
-        <td class="num net-cell">${actualTax ? escapeHtml(moneyCell(actualTax)) : "—"}</td>
+        <td class="num">
+          <input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="actualTax" value="${moneyCell(actualTax)}" placeholder="0.00">
+        </td>
         ${moneyCellHtml("refunded")}
         ${checks}
         <td class="col-grow"><input type="text" class="cell-input" data-row="${row.id}" data-field="comment" value="${escapeHtml(row.comment || "")}" title="${escapeHtml(row.comment || "")}" placeholder="—"></td>
@@ -369,6 +371,24 @@
 
       input.addEventListener("change", () => {
         const field = input.dataset.field;
+
+        // Actual Tax isn't stored on its own — it's Pre-paid tax minus Tax
+        // return. Typing a new Actual Tax (the figure a tax authority's own
+        // assessment letter states directly) holds Pre-paid tax fixed and
+        // works Tax return backwards from it, rather than making the user
+        // do that subtraction by hand.
+        if (field === "actualTax") {
+          const row = (reload().countries || []).find((c) => c.id === input.dataset.row);
+          if (!row) return;
+          const paid = Number(row.tax) || 0;
+          const newActual = parseMoney(input.value);
+          Store.updateCountryRow(yearId, input.dataset.row, { refunded: paid - newActual });
+          renderMoneyStats();
+          renderCountries();
+          renderFlow();
+          return;
+        }
+
         // Money is kept in the row's own currency; EUR is derived on render.
         const value = isMoney ? parseMoney(input.value) : input.value;
         Store.updateCountryRow(yearId, input.dataset.row, { [field]: value });

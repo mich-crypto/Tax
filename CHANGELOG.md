@@ -3,6 +3,15 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.14.0 — 2026-09-04
+
+- **Actual Tax is editable again.** It's a real figure that lives on your
+  own assessment letters — Actual Tax and Pre-paid tax are the two things
+  you actually know, and Tax return is what's left over between them. Typing
+  a new Actual Tax now solves Tax return backwards from it (`Tax return =
+  Pre-paid tax − Actual Tax`), holding Pre-paid tax fixed, instead of Actual
+  Tax sitting there as a read-only value with no way to correct it.
+
 ## v2.13.0 — 2026-09-04
 
 - **A country row's currency picker only offers two options now**: EUR,

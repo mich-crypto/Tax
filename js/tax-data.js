@@ -146,11 +146,12 @@ const CORRESPONDENCE_CATEGORIES = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "2.13.0";
+const APP_VERSION = "2.14.0";
 const APP_VERSION_DATE = "2026-09-04";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "2.14.0", summary: "Actual Tax in the Countries table is editable again. Type the figure straight off an assessment letter and Tax return works itself out backwards from it, holding Pre-paid tax fixed — instead of Actual Tax being a read-only value you couldn't correct." },
   { version: "2.13.0", summary: "A country row's currency picker now only offers EUR and that country's own currency (Denmark -> DKK, Poland -> PLN, ...) instead of the full ten-currency list — narrowing what could be picked by mistake." },
   { version: "2.12.0", summary: "The money section is one combined card: Gross income, Tax paid, Net income, Tax rate, and Tax return from Denmark — Net income and Tax rate now use gross pre-paid tax (matching the source spreadsheet's own definitions) rather than netting refunds off, with Denmark's refund shown as its own figure instead. The flow diagram reverts to gross tax paid per country to match." },
   { version: "2.11.0", summary: "The year's headline is now Gross income / Net income / Tax / Tax rate, all calculated from the Countries table — the manual gross-income entry is gone. Countries table columns are Taxable income / Pre-paid tax / Actual Tax / Tax return. Gross income summing per-country figures can double-count a salary taxed as a whole in one country and as a slice in another — check your country rows if a year's gross looks wrong." },

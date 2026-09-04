@@ -92,15 +92,20 @@ the logo in the header, with a gear icon on the right for shared settings:
     **read off the country rows** rather than ticked separately: a year is
     done when every country in it is. A country marked **N/A** — listed
     for the record but not liable there — sits the year out.
-  - **Countries** — one editable row per country: the income taxable
-    there, the **tax paid**, the amount **refunded**,
-    a derived **net income** (that country's income less the tax paid on
-    it) and **rate** (actual tax, paid less refunded, over that income),
-    its own Questionnaire / Return filed / Payed-returned flags, an
-    **N/A** flag, and a free-text comment. Edited inline, with an
-    "Amounts in" picker so the whole table can be typed in DKK. Country
-    names are free text with suggestions — never blocked waiting on a
-    managed list.
+  - **Countries** — one editable row per country, each kept in **its own
+    currency** (kroner for Denmark, złoty for Poland, ...) so the figures
+    match the documents they come from: **Taxable income**, **Pre-paid
+    tax** (everything handed over that year, before any of it came back),
+    **Actual Tax** (what it really cost, editable straight off an
+    assessment letter), and **Tax return** (how much came back). Actual
+    Tax and Tax return are two views of the same fact — typing one solves
+    the other backwards, holding Pre-paid tax fixed
+    (`Tax return = Pre-paid tax − Actual Tax`); nothing is stored twice.
+    Also its own Questionnaire / Return filed / Payed-returned flags, an
+    **N/A** flag, and a free-text comment. A row's currency picker only
+    offers EUR and that country's own currency, converted to EUR for the
+    totals row at the rate under Settings. Country names are free text
+    with suggestions — never blocked waiting on a managed list.
   - **Where you were** — days of presence and days worked per country for
     the calendar year this return covers, from the Travel Tracker report
     loaded under Settings. Hidden until a report is loaded. Transit days
