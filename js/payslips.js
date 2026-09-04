@@ -14,6 +14,11 @@
   const bulkBtn = document.getElementById("bulk-analyze-btn");
   const bulkStatus = document.getElementById("bulk-status");
 
+  const dialog = document.getElementById("add-payslip-dialog");
+  const openDialogBtn = document.getElementById("open-add-payslip");
+  const manualForm = document.getElementById("manual-payslip-form");
+  const manualStatus = document.getElementById("manual-status");
+
   function currencySymbolFor(code) {
     return (CURRENCIES.find((c) => c.code === code) || {}).symbol || "";
   }
@@ -262,6 +267,86 @@
 
     populateYearFilter();
     renderTable();
+    if (saved && !failures.length) dialog.close();
+  });
+
+  // --- Add payslip dialog -----------------------------------------------
+
+  function showPanel(name) {
+    dialog.querySelectorAll(".sheet-tab").forEach((tab) => {
+      const on = tab.dataset.tab === name;
+      tab.classList.toggle("active", on);
+      tab.setAttribute("aria-selected", String(on));
+    });
+    dialog.querySelectorAll(".sheet-panel").forEach((panel) => {
+      panel.hidden = panel.dataset.panel !== name;
+    });
+  }
+
+  dialog.querySelectorAll(".sheet-tab").forEach((tab) => {
+    tab.addEventListener("click", () => showPanel(tab.dataset.tab));
+  });
+
+  openDialogBtn.addEventListener("click", () => {
+    bulkStatus.textContent = "";
+    manualStatus.textContent = "";
+    // Default the manual form to the year being viewed and the first month
+    // that has no salary payslip yet - usually the one being added.
+    const year = Number(yearFilter.value) || currentYear();
+    manualYear.value = year;
+    const logged = new Set(
+      Store.getPayslips().filter((p) => p.year === year && p.type !== "Holiday pay").map((p) => p.month)
+    );
+    const nextMonth = PAYSLIP_MONTHS.findIndex((_, i) => !logged.has(i + 1)) + 1;
+    manualMonth.value = String(nextMonth || new Date().getMonth() + 1);
+    showPanel("ai");
+    dialog.showModal();
+  });
+
+  dialog.addEventListener("click", (event) => {
+    // Click the backdrop (outside the dialog's own box) to dismiss.
+    if (event.target === dialog) dialog.close();
+  });
+
+  // --- Manual entry ------------------------------------------------------
+
+  const manualYear = document.getElementById("manual-year");
+  const manualMonth = document.getElementById("manual-month");
+  const manualType = document.getElementById("manual-type");
+  const manualCurrency = document.getElementById("manual-currency");
+
+  manualMonth.innerHTML = PAYSLIP_MONTHS
+    .map((name, i) => `<option value="${i + 1}">${name}</option>`)
+    .join("");
+  manualType.innerHTML = PAYSLIP_TYPES.map((t) => `<option value="${t}">${t}</option>`).join("");
+  manualCurrency.innerHTML = CURRENCIES.map((c) => `<option value="${c.code}">${c.code}</option>`).join("");
+  manualCurrency.value = "DKK";
+
+  manualForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const year = Number(manualYear.value);
+    if (!year) {
+      manualStatus.textContent = "Enter a year.";
+      return;
+    }
+    Store.addPayslip({
+      year,
+      month: Number(manualMonth.value),
+      type: manualType.value,
+      currency: manualCurrency.value,
+      grossPay: Number(document.getElementById("manual-gross").value) || 0,
+      netPay: Number(document.getElementById("manual-net").value) || 0,
+      taxWithheld: Number(document.getElementById("manual-tax").value) || 0,
+      notes: document.getElementById("manual-notes").value.trim(),
+      analyzedByAI: false,
+    });
+
+    manualForm.reset();
+    manualCurrency.value = "DKK";
+    populateYearFilter();
+    yearFilter.value = String(year);
+    renderTable();
+    dialog.close();
   });
 
   bulkType.innerHTML = PAYSLIP_TYPES.map((t) => `<option value="${t}">${t}</option>`).join("");

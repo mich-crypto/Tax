@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Payslips — Multi-Country Tax Tracker</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext y=%2224%27 font-size=%2224%27%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-page="payslips">
@@ -33,36 +36,22 @@
     </div>
   </div>
 
-  <div class="grid stat-grid" id="pay-stats"></div>
+  <div class="stat-grid" id="pay-stats"></div>
   <p class="hint" id="pay-summary-note"></p>
 
-  <div class="card">
-    <div class="card-header"><h2>Add payslips</h2></div>
-    <p class="hint">Pick one or more files — each is analyzed and saved straight away. Check the log below afterwards and fix anything AI got wrong. Uploading the annual holiday pay? Switch Type first and upload it on its own.</p>
-    <div class="field-row">
-      <div class="field" style="max-width:200px;">
-        <label for="bulk-type">Type</label>
-        <select id="bulk-type"></select>
-      </div>
-      <div class="field">
-        <label for="bulk-files">Files (image or PDF)</label>
-        <div class="actions-row">
-          <input type="file" id="bulk-files" accept="image/*,.pdf" multiple style="max-width:300px;">
-          <button type="button" id="bulk-analyze-btn" class="small primary">🪄 Analyze &amp; save</button>
-        </div>
-      </div>
-    </div>
-    <p class="hint" id="bulk-status"></p>
-  </div>
-
+  <div class="section-stack" style="margin-top:22px;">
   <div class="card">
     <div class="card-header"><h2>Coverage — <span id="coverage-year"></span></h2></div>
     <p class="hint">Which months have a salary payslip logged. Holiday pay doesn't count — it isn't expected every month.</p>
-    <div class="actions-row" id="coverage-list"></div>
+    <div class="month-strip" id="coverage-list"></div>
   </div>
 
   <div class="card">
-    <div class="card-header"><h2>Monthly log</h2></div>
+    <div class="toolbar">
+      <h2>Monthly log</h2>
+      <span class="spacer"></span>
+      <button type="button" id="open-add-payslip" class="small primary">+ Add payslip</button>
+    </div>
     <div class="table-scroll">
       <table id="payslips-table">
         <thead>
@@ -79,7 +68,84 @@
     </div>
     <div class="empty-state" id="payslips-empty-state">No payslips logged yet for this year.</div>
   </div>
+  </div>
 </main>
+
+<dialog id="add-payslip-dialog" class="sheet">
+  <form method="dialog" class="sheet-head">
+    <h2>Add payslip</h2>
+    <button class="icon-btn" value="cancel" aria-label="Close">✕</button>
+  </form>
+
+  <div class="sheet-tabs" role="tablist">
+    <button type="button" class="sheet-tab active" data-tab="ai" role="tab" aria-selected="true">Read from a file</button>
+    <button type="button" class="sheet-tab" data-tab="manual" role="tab" aria-selected="false">Enter manually</button>
+  </div>
+
+  <section class="sheet-panel" data-panel="ai">
+    <p class="hint" style="margin-top:0;">Pick one or more payslips — each is read and saved straight away. Check the log afterwards and fix anything the AI got wrong. Adding the annual holiday pay? Set Type first and add it on its own.</p>
+    <div class="field-row">
+      <div class="field" style="max-width:190px;">
+        <label for="bulk-type">Type</label>
+        <select id="bulk-type"></select>
+      </div>
+      <div class="field">
+        <label for="bulk-files">Files (image or PDF)</label>
+        <input type="file" id="bulk-files" accept="image/*,.pdf" multiple>
+      </div>
+    </div>
+    <div class="actions-row" style="margin-top:16px;">
+      <button type="button" id="bulk-analyze-btn" class="primary small">Read &amp; save</button>
+      <span class="hint" id="bulk-status" style="margin:0;"></span>
+    </div>
+  </section>
+
+  <section class="sheet-panel" data-panel="manual" hidden>
+    <p class="hint" style="margin-top:0;">No file to hand, or the AI got it wrong? Type the figures straight in.</p>
+    <form id="manual-payslip-form">
+      <div class="field-row">
+        <div class="field" style="max-width:118px;">
+          <label for="manual-year">Year</label>
+          <input type="number" id="manual-year" min="2000" max="2100" required>
+        </div>
+        <div class="field" style="max-width:148px;">
+          <label for="manual-month">Month</label>
+          <select id="manual-month"></select>
+        </div>
+        <div class="field" style="max-width:148px;">
+          <label for="manual-type">Type</label>
+          <select id="manual-type"></select>
+        </div>
+        <div class="field" style="max-width:118px;">
+          <label for="manual-currency">Currency</label>
+          <select id="manual-currency"></select>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top:14px;">
+        <div class="field">
+          <label for="manual-gross">Gross pay</label>
+          <input type="number" id="manual-gross" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label for="manual-net">Net pay</label>
+          <input type="number" id="manual-net" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label for="manual-tax">Tax withheld</label>
+          <input type="number" id="manual-tax" step="0.01" min="0" placeholder="0.00">
+        </div>
+      </div>
+      <div class="field" style="margin-top:14px;">
+        <label for="manual-notes">Notes (optional)</label>
+        <input type="text" id="manual-notes" placeholder="e.g. includes an overtime payment">
+      </div>
+      <div class="actions-row" style="margin-top:16px;">
+        <button type="submit" class="primary small">Save payslip</button>
+        <span class="hint" id="manual-status" style="margin:0;"></span>
+      </div>
+    </form>
+  </section>
+</dialog>
 
 <footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere — except a payslip you choose to analyze, which goes straight to your selected AI provider. · <span id="app-version"></span></footer>
 

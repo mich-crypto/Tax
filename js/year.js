@@ -107,6 +107,18 @@
   const newCountryInput = document.getElementById("new-country");
   const addCountryBtn = document.getElementById("add-country-btn");
 
+  /** Grouped for reading; the raw number comes back on focus for typing. */
+  function moneyCell(value) {
+    const n = Number(value) || 0;
+    return n ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+  }
+
+  /** Accepts what moneyCell() renders, plus a comma decimal separator. */
+  function parseMoney(text) {
+    const cleaned = String(text).replace(/\s/g, "").replace(/,(\d{1,2})$/, ".$1").replace(/[,\u00a0]/g, "");
+    return Number(cleaned) || 0;
+  }
+
   function countryRowHtml(row) {
     const checks = COUNTRY_STATUS_FIELDS.map((f) => `
       <td class="center">
@@ -115,11 +127,11 @@
     `).join("");
     return `
       <tr>
-        <td><input type="text" class="cell-input" list="country-list" data-row="${row.id}" data-field="country" value="${escapeHtml(row.country)}"></td>
-        <td class="num"><input type="number" class="cell-input num" data-row="${row.id}" data-field="incomeEur" step="0.01" value="${row.incomeEur || ""}" placeholder="0.00"></td>
-        <td class="num"><input type="number" class="cell-input num" data-row="${row.id}" data-field="taxEur" step="0.01" value="${row.taxEur || ""}" placeholder="0.00"></td>
+        <td class="col-name"><input type="text" class="cell-input" list="country-list" data-row="${row.id}" data-field="country" value="${escapeHtml(row.country)}"></td>
+        <td class="num"><input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="incomeEur" value="${moneyCell(row.incomeEur)}" placeholder="0.00"></td>
+        <td class="num"><input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="taxEur" value="${moneyCell(row.taxEur)}" placeholder="0.00"></td>
         ${checks}
-        <td><input type="text" class="cell-input" data-row="${row.id}" data-field="comment" value="${escapeHtml(row.comment || "")}" placeholder="—"></td>
+        <td class="col-grow"><input type="text" class="cell-input" data-row="${row.id}" data-field="comment" value="${escapeHtml(row.comment || "")}" title="${escapeHtml(row.comment || "")}" placeholder="—"></td>
         <td><button type="button" class="icon-btn small" data-remove="${row.id}" title="Remove country">✕</button></td>
       </tr>
     `;
@@ -151,10 +163,25 @@
     `;
 
     countriesBody.querySelectorAll(".cell-input").forEach((input) => {
+      const isMoney = input.classList.contains("money");
+
+      if (isMoney) {
+        // Grouped digits are for reading, not for typing into.
+        input.addEventListener("focus", () => {
+          const raw = Number(input.dataset.raw ?? parseMoney(input.value)) || 0;
+          input.value = raw ? String(raw) : "";
+          input.select();
+        });
+        input.addEventListener("blur", () => {
+          input.value = moneyCell(parseMoney(input.value));
+        });
+      }
+
       input.addEventListener("change", () => {
         const field = input.dataset.field;
-        const value = input.type === "number" ? Number(input.value) || 0 : input.value;
+        const value = isMoney ? parseMoney(input.value) : input.value;
         Store.updateCountryRow(yearId, input.dataset.row, { [field]: value });
+        if (field === "comment") input.title = value;
         if (field === "taxEur") {
           renderMoneyStats();
           renderCountries();
@@ -250,8 +277,7 @@
   // ---------- Correspondence ----------
 
   const corrForm = document.getElementById("correspondence-form");
-  const corrTable = document.getElementById("correspondence-table");
-  const corrBody = document.querySelector("#correspondence-table tbody");
+  const corrList = document.getElementById("correspondence-list");
   const corrEmpty = document.getElementById("correspondence-empty-state");
   const openCountEl = document.getElementById("open-count");
 
@@ -265,33 +291,44 @@
     openCountEl.textContent = entries.filter((e) => e.status !== "Resolved").length;
 
     if (!entries.length) {
-      corrTable.style.display = "none";
+      corrList.hidden = true;
       corrEmpty.style.display = "block";
-      corrBody.innerHTML = "";
+      corrList.innerHTML = "";
       return;
     }
-    corrTable.style.display = "";
+    corrList.hidden = false;
     corrEmpty.style.display = "none";
-    corrBody.innerHTML = entries
-      .map((e) => `
-        <tr>
-          <td>${e.date || "—"}</td>
-          <td>${escapeHtml(e.counterparty)}</td>
-          <td>${escapeHtml(e.category || "")}</td>
-          <td>${escapeHtml(e.subject || "")}</td>
-          <td>${escapeHtml(e.country || "")}</td>
-          <td class="notes-cell">${escapeHtml(e.notes || "")}</td>
-          <td>${e.followUp || "—"}</td>
-          <td>${e.status === "Resolved" ? '<span class="badge ok">Resolved</span>' : '<span class="badge warn">Open</span>'}</td>
-          <td class="actions-row" style="flex-wrap:nowrap;">
-            <button type="button" class="icon-btn small" data-toggle="${e.id}" title="${e.status === "Resolved" ? "Reopen" : "Mark resolved"}">${e.status === "Resolved" ? "↺" : "✓"}</button>
+
+    // Subject leads; everything else is one metadata line underneath. As
+    // table columns these clipped each other on any real-length note.
+    corrList.innerHTML = entries
+      .map((e) => {
+        const meta = [
+          e.date ? `<time>${escapeHtml(e.date)}</time>` : "",
+          escapeHtml(e.counterparty || ""),
+          escapeHtml(e.category || ""),
+          escapeHtml(e.country || ""),
+          e.channel ? escapeHtml(e.channel) : "",
+          e.followUp ? `follow up ${escapeHtml(e.followUp)}` : "",
+        ].filter(Boolean).join('<span class="sep">·</span>');
+        const resolved = e.status === "Resolved";
+        return `
+        <div class="entry">
+          <div class="entry-body">
+            <div class="entry-subject">${escapeHtml(e.subject || e.counterparty || "Untitled")}</div>
+            <div class="entry-meta">${meta}</div>
+            ${e.notes ? `<div class="entry-notes">${escapeHtml(e.notes)}</div>` : ""}
+          </div>
+          <span class="badge ${resolved ? "ok" : "warn"}">${resolved ? "Resolved" : "Open"}</span>
+          <div class="entry-actions">
+            <button type="button" class="icon-btn small" data-toggle="${e.id}" title="${resolved ? "Reopen" : "Mark resolved"}">${resolved ? "↺" : "✓"}</button>
             <button type="button" class="icon-btn small" data-delete="${e.id}" title="Delete">✕</button>
-          </td>
-        </tr>
-      `)
+          </div>
+        </div>`;
+      })
       .join("");
 
-    corrBody.querySelectorAll("[data-toggle]").forEach((btn) => {
+    corrList.querySelectorAll("[data-toggle]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const entry = (reload().correspondence || []).find((e) => e.id === btn.dataset.toggle);
         if (!entry) return;
@@ -299,7 +336,7 @@
         renderCorrespondence();
       });
     });
-    corrBody.querySelectorAll("[data-delete]").forEach((btn) => {
+    corrList.querySelectorAll("[data-delete]").forEach((btn) => {
       btn.addEventListener("click", () => {
         if (!confirm("Delete this correspondence entry?")) return;
         Store.deleteCorrespondence(yearId, btn.dataset.delete);

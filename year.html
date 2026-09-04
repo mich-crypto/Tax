@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tax year — Multi-Country Tax Tracker</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext y=%2224%27 font-size=%2224%27%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-page="year">
@@ -35,6 +38,8 @@
       <button type="button" id="delete-year-btn" class="danger-outline small">Delete this year</button>
     </div>
 
+    <div class="section-stack">
+
     <!-- ============ THE MONEY ============ -->
     <div class="card">
       <div class="card-header"><h2>The money</h2></div>
@@ -49,8 +54,9 @@
           <input type="number" id="refunded-dk" min="0" step="0.01" placeholder="0.00">
         </div>
       </div>
-      <div class="grid stat-grid" id="money-stats"></div>
     </div>
+
+    <div class="stat-grid" id="money-stats"></div>
 
     <!-- ============ PROGRESS ============ -->
     <div class="card">
@@ -179,15 +185,10 @@
         </div>
         <button type="submit" class="primary small">Add entry</button>
       </form>
-      <div class="table-scroll" style="margin-top:12px;">
-        <table id="correspondence-table">
-          <thead>
-            <tr><th>Date</th><th>Counterparty</th><th>Category</th><th>Subject</th><th>Country</th><th>Notes</th><th>Follow-up</th><th>Status</th><th></th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <div class="entry-list" id="correspondence-list"></div>
       <div class="empty-state" id="correspondence-empty-state">Nothing logged yet.</div>
+    </div>
+
     </div>
   </div>
 </main>

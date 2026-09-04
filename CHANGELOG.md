@@ -3,6 +3,48 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.1.0 — 2026-09-04
+
+A visual rework, and one new way in.
+
+**Look**
+
+- Figures across the whole site are set in IBM Plex Mono with tabular
+  figures, so columns of money line up on the digit; page titles are set
+  in IBM Plex Serif, closer to the documents this replaces. Palette moved
+  off the default blue-on-grey to a petrol accent over cool paper
+  neutrals, with green/red kept strictly for direction of travel (money
+  back vs money out) rather than as decoration.
+
+**Fixes**
+
+- **Summary figures no longer misalign.** `.card + .card` gave every card
+  after another a 16px top margin. A summary figure was itself a card, so
+  the second, third and fourth in a row were pushed down while the first
+  wasn't — the leftmost tile looked taller. They are now one band with
+  hairline dividers between equal columns, so they align by construction.
+- **Checkbox labels sat at the far edge of their box.** The blanket
+  `input { width: 100% }` applied to checkboxes too, stretching each one
+  across its container and pushing its label away. Checkboxes and radios
+  now size to themselves.
+- **Section headings were two different sizes** depending on whether they
+  sat in a `.card-header` or a `.toolbar`. One rule now covers both.
+- **Correspondence clipped.** Nine columns squeezed each other and cut off
+  notes and subjects. Each entry is now a stacked block — subject first,
+  then one metadata line — which cannot clip.
+- Country rows show grouped figures at rest and the raw number when you
+  focus one to type; the comment column takes whatever width is left over
+  instead of scrolling inside a fixed box.
+
+**Adding a payslip**
+
+- The upload card is replaced by a **+ Add payslip** button on the Monthly
+  log, opening a dialog with two tabs: read the figures off a file with
+  AI, or **enter them manually** (year, month, type, currency, gross, net,
+  tax, note). A manually entered row carries no AI tag, so it stays
+  obvious which figures came from a document. The dialog opens set to the
+  year in view and the first month with no salary payslip yet.
+
 ## v2.0.0 — 2026-09-03
 
 Rebuilt around the model the real spreadsheet uses. The old layout summed
