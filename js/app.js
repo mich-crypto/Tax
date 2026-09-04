@@ -48,7 +48,6 @@ function currentYear() {
  * number there can only ever mean one of the two.
  */
 function taxYearTotals(record) {
-  const gross = Number(record.grossIncomeEur) || 0;
   const countries = record.countries || [];
   const rates = Store.getCurrencyRates();
 
@@ -64,11 +63,19 @@ function taxYearTotals(record) {
     return value;
   };
 
+  const gross = eur(record.grossIncome, record.grossCurrency);
+
+  // The income allocated across countries. Whether it should equal gross
+  // depends on how the rows are filled: complementary slices (work done in
+  // Denmark, Polish-source income) add up; a country that taxes the whole
+  // salary again does not. Reported, never fed into net income or the rate.
+  const incomeAllocated = countries.reduce((sum, c) => sum + eur(c.income, c.currency), 0);
   const taxPaid = countries.reduce((sum, c) => sum + eur(c.tax, c.currency), 0);
   const refunded = countries.reduce((sum, c) => sum + eur(c.refunded, c.currency), 0);
   const netTax = taxPaid - refunded;
   return {
     gross,
+    incomeAllocated,
     taxPaid,
     refunded,
     netTax,

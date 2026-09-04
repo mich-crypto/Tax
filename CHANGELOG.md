@@ -3,6 +3,23 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.9.0 — 2026-09-04
+
+- **The money card is per country, not Denmark-only.** Every country that
+  paid tax gets three lines: *Pre-paid tax in X*, *Actual tax in X*, *Tax
+  return from X*. For 2025 that's Denmark and Poland. Countries marked N/A,
+  or with no tax and no refund, are left out.
+- **Gross income carries its own currency** and converts when you switch
+  it, exactly like a country row: €175,138.67 becomes 1,309,266.64 DKK and
+  back. Every figure derived from it — net income, the effective rate, the
+  flow diagram, the years list — is unchanged by the switch.
+- **The countries footer totals income**, next to the tax and refund
+  totals, with a line underneath comparing it against the year's gross:
+  whether income is unallocated, or the same salary is counted in more
+  than one row (expected where a country taxes the whole amount rather
+  than a slice). The per-country Net income and Rate columns are still not
+  totalled — those genuinely cannot be added up.
+
 ## v2.8.1 — 2026-09-04
 
 - Summary figures renamed **Tax prepaid** and **Tax refunded**, with hints

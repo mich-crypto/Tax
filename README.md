@@ -67,10 +67,11 @@ the logo in the header, with a gear icon on the right for shared settings:
   entered and derived on the year's own page.
 - **One tax year** (`year.html?id=…`) — everything about a single year on
   one page, no tabs:
-  - **The money** — the one figure you enter (gross income), with tax
-    paid / refunded / net tax / net income / effective rate derived live
-    beside it. "Enter in" lets you type the figure in DKK; it is stored
-    and reported in EUR.
+  - **The money** — gross income (the one figure you enter, in whichever
+    currency you like), then three lines for each country that paid tax:
+    pre-paid, actual, and returned. Underneath, the year's own figures:
+    tax prepaid / refunded / net tax / net income / effective rate, across
+    every country.
   - **Where the money went** — a flow diagram: the year's gross income on
     the left splitting into what you kept and the tax paid in each
     country on the right, sized to the real figures and redrawn as you

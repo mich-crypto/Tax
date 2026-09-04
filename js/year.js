@@ -42,6 +42,7 @@
   const grossInput = document.getElementById("gross-income");
   const moneyStatsEl = document.getElementById("money-stats");
   const dkNote = document.getElementById("dk-note");
+  const moneyLinesEl = document.getElementById("money-lines");
 
   // Every country row keeps its figures in its own currency, so the picker
   // lives per row. This card is euro throughout.
@@ -53,38 +54,43 @@
       .join("");
   }
 
-  /** Denmark's row — the one country that withholds all year and refunds. */
-  function denmarkRow() {
-    return (reload().countries || []).find(
-      (c) => (c.country || "").trim().toLowerCase() === "denmark"
-    ) || null;
-  }
+  /**
+   * One set of lines per country that actually paid tax: what was handed
+   * over, what it really cost, and what came back. Read from the Countries
+   * table so they can't drift from it.
+   */
+  function renderMoneyLines() {
+    const record = reload();
+    const rows = (record.countries || []).filter(
+      (c) => !c.notLiable && ((Number(c.tax) || 0) !== 0 || (Number(c.refunded) || 0) !== 0)
+    );
 
-  /** The three Danish lines, in EUR. Null where a rate is missing. */
-  function renderDenmarkLines() {
-    const row = denmarkRow();
-    const set = (id, value) => {
-      const el = document.getElementById(id);
-      el.textContent = value === null ? "—" : formatMoney(value, "€");
-    };
+    // Everything after the gross-income line is rebuilt; the input stays put.
+    moneyLinesEl.querySelectorAll(".money-line.derived").forEach((el) => el.remove());
 
-    if (!row) {
-      set("dk-paid", null);
-      set("dk-actual", null);
-      set("dk-refund", null);
-      dkNote.textContent = "Add Denmark under Countries and these fill in from it.";
-      return;
-    }
+    const missing = [];
+    const html = rows.map((row) => {
+      const name = escapeHtml(row.country || "Unnamed");
+      const paid = countryEur(row, "tax");
+      const refund = countryEur(row, "refunded");
+      if (paid === null || refund === null) {
+        if (!missing.includes(row.currency)) missing.push(row.currency);
+      }
+      const money = (value) => (value === null ? "—" : formatMoney(value, "€"));
+      const actual = paid === null || refund === null ? null : paid - refund;
+      return `
+        <div class="money-line derived"><dt>Pre-paid tax in ${name}</dt><dd>${money(paid)}</dd></div>
+        <div class="money-line derived"><dt>Actual tax in ${name}</dt><dd>${money(actual)}</dd></div>
+        <div class="money-line derived"><dt>Tax return from ${name}</dt><dd>${money(refund)}</dd></div>`;
+    }).join("");
 
-    const paid = countryEur(row, "tax");
-    const refund = countryEur(row, "refunded");
-    set("dk-paid", paid);
-    set("dk-refund", refund);
-    set("dk-actual", paid === null || refund === null ? null : paid - refund);
+    moneyLinesEl.insertAdjacentHTML("beforeend", html);
 
-    dkNote.textContent = paid === null || refund === null
-      ? `No exchange rate set for ${row.currency} — add one under Settings.`
-      : "";
+    dkNote.textContent = !rows.length
+      ? "Add a country under Countries with the tax paid there, and its lines appear here."
+      : missing.length
+        ? `No exchange rate set for ${missing.join(", ")} — add one under Settings.`
+        : "";
   }
 
   function renderMoneyStats() {
@@ -110,7 +116,7 @@
         </div>
       `)
       .join("");
-    renderDenmarkLines();
+    renderMoneyLines();
     renderRefundWarning();
   }
 
@@ -130,10 +136,45 @@
       `so both numbers belong on its row.</span>`;
   }
 
-  grossInput.value = reload().grossIncomeEur || "";
+  const grossCurrency = document.getElementById("gross-currency");
+
+  function renderGrossField() {
+    const current = reload();
+    grossInput.value = current.grossIncome || "";
+    grossCurrency.innerHTML = currencyOptionsHtml(current.grossCurrency || "EUR");
+  }
+
+  renderGrossField();
 
   grossInput.addEventListener("change", () => {
-    Store.updateTaxYear(yearId, { grossIncomeEur: Number(grossInput.value) || 0 });
+    Store.updateTaxYear(yearId, { grossIncome: Number(grossInput.value) || 0 });
+    renderMoneyStats();
+    renderFlow();
+  });
+
+  // Same as a country row: switching currency converts, so the figure keeps
+  // meaning the same money rather than being relabelled.
+  grossCurrency.addEventListener("change", () => {
+    const current = reload();
+    const from = current.grossCurrency || "EUR";
+    const to = grossCurrency.value;
+    const rates = Store.getCurrencyRates();
+    const amount = Number(current.grossIncome) || 0;
+
+    if (amount) {
+      const asEur = toEur(amount, from, rates);
+      const converted = asEur === null ? null : fromEur(asEur, to, rates);
+      if (converted === null) {
+        notify(`No exchange rate set for ${asEur === null ? from : to} — add one under Settings.`);
+        renderGrossField();
+        return;
+      }
+      Store.updateTaxYear(yearId, { grossCurrency: to, grossIncome: Number(converted.toFixed(2)) });
+    } else {
+      Store.updateTaxYear(yearId, { grossCurrency: to });
+    }
+
+    renderGrossField();
     renderMoneyStats();
     renderFlow();
   });
@@ -352,6 +393,30 @@
     `;
   }
 
+  const allocationNote = document.getElementById("allocation-note");
+
+  /**
+   * How the income spread across countries compares with the year's gross.
+   * Equal means every euro is accounted for once; short means some income
+   * isn't taxed anywhere yet, or a country's slice is missing; over means
+   * the same salary is counted in more than one row, which is fine when a
+   * country taxes the whole amount and a warning sign when it isn't.
+   */
+  function renderAllocationNote(totals) {
+    if (!totals.gross || !totals.incomeAllocated) {
+      allocationNote.textContent = "";
+      return;
+    }
+    const difference = totals.incomeAllocated - totals.gross;
+    if (Math.abs(difference) < 1) {
+      allocationNote.textContent = "The income above adds up to the year's gross income exactly.";
+      return;
+    }
+    allocationNote.textContent = difference < 0
+      ? `${formatMoney(Math.abs(difference), "€")} of the year's gross income isn't allocated to any country above.`
+      : `The income above exceeds the year's gross by ${formatMoney(difference, "€")} — expected where a country taxes the whole salary rather than a slice of it.`;
+  }
+
   function renderCountries() {
     const current = reload();
     const rows = current.countries || [];
@@ -370,7 +435,8 @@
     const totals = taxYearTotals(current);
     countriesFoot.innerHTML = `
       <tr class="total-row">
-        <td colspan="3"><strong>Total in EUR</strong></td>
+        <td colspan="2"><strong>Total in EUR</strong></td>
+        <td class="num"><strong>${formatMoney(totals.incomeAllocated, "€")}</strong></td>
         <td class="num"><strong>${formatMoney(totals.taxPaid, "€")}</strong></td>
         <td class="num"><strong>${formatMoney(totals.refunded, "€")}</strong></td>
         <td></td>
@@ -378,6 +444,8 @@
         <td colspan="6"></td>
       </tr>
     `;
+
+    renderAllocationNote(totals);
 
     countriesBody.querySelectorAll("input.cell-input").forEach((input) => {
       const isMoney = input.classList.contains("money");

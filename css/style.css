@@ -974,3 +974,7 @@ tbody tr:has(input[data-field="notLiable"]:checked) { color: var(--ink-faint); }
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
+
+/* Gross income carries its own currency, like a country row does. */
+.money-line dd { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.money-line dd select { width: auto; min-width: 76px; padding: 6px 8px; font-size: 13px; }

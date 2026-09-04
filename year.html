@@ -43,23 +43,14 @@
     <!-- ============ THE MONEY ============ -->
     <div class="card">
       <div class="card-header"><h2>The money</h2></div>
-      <p class="hint">All figures in euro. Gross income is the one salary you earned that year (your Danish payroll) — not a per-country total; the same salary gets taxed in several countries, so adding those up would count it twice. The Danish lines are read from the Denmark row under Countries.</p>
-      <dl class="money-lines">
+      <p class="hint">All figures in euro. Gross income is the one salary you earned that year (your Danish payroll) — not a per-country total; the same salary gets taxed in several countries, so adding those up would count it twice. The lines below it are read from the Countries table, one set per country you paid tax in.</p>
+      <dl class="money-lines" id="money-lines">
         <div class="money-line">
           <dt><label for="gross-income">Gross income</label></dt>
-          <dd><input type="number" id="gross-income" min="0" step="0.01" placeholder="0.00"></dd>
-        </div>
-        <div class="money-line">
-          <dt>Already payed taxes in DK</dt>
-          <dd id="dk-paid">—</dd>
-        </div>
-        <div class="money-line">
-          <dt>Actual taxes in DK</dt>
-          <dd id="dk-actual">—</dd>
-        </div>
-        <div class="money-line">
-          <dt>Tax return from DK</dt>
-          <dd id="dk-refund">—</dd>
+          <dd>
+            <input type="number" id="gross-income" min="0" step="0.01" placeholder="0.00">
+            <select id="gross-currency" aria-label="Currency for gross income"></select>
+          </dd>
         </div>
       </dl>
       <p class="hint" id="dk-note"></p>
@@ -138,6 +129,7 @@
           <tfoot></tfoot>
         </table>
       </div>
+      <p class="hint" id="allocation-note"></p>
       <div class="empty-state" id="countries-empty-state">No countries yet. Add the ones you were tax liable in that year.</div>
     </div>
 

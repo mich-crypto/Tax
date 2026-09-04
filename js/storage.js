@@ -76,7 +76,8 @@ function migrateTaxYears() {
 }
 
 /**
- * Country figures used to be stored already converted to EUR. They are kept
+ * The year's gross income and every country figure used to be stored
+ * already converted to EUR. They are kept
  * in the country's own currency now, so a corrected exchange rate restates
  * them. An older record is read forward here rather than rewritten, so an
  * export taken before the change still imports.
@@ -93,8 +94,11 @@ function normalizeCountryRow(row) {
 }
 
 function normalizeTaxYear(year) {
-  if (!year.countries || !year.countries.length) return year;
-  return { ...year, countries: year.countries.map(normalizeCountryRow) };
+  const normalized = year.grossCurrency !== undefined
+    ? year
+    : { ...year, grossCurrency: "EUR", grossIncome: Number(year.grossIncomeEur) || 0 };
+  if (!normalized.countries || !normalized.countries.length) return normalized;
+  return { ...normalized, countries: normalized.countries.map(normalizeCountryRow) };
 }
 
 const Store = {
@@ -123,7 +127,8 @@ const Store = {
     return {
       id: uid(),
       taxYear,
-      grossIncomeEur: 0,
+      grossCurrency: "DKK",
+      grossIncome: 0,
       countries: [],
       payments: [],
       correspondence: [],
@@ -150,7 +155,7 @@ const Store = {
     this.saveTaxYears(this.getTaxYears().filter((y) => y.id !== id));
   },
 
-  /** Merges top-level fields (grossIncomeEur...) into one record. */
+  /** Merges top-level fields (grossIncome, grossCurrency...) into one record. */
   updateTaxYear(id, fields) {
     const record = this.getTaxYearById(id);
     if (!record) return;
