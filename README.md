@@ -32,8 +32,8 @@ plus the tax on each country row — see `taxYearTotals()` in `js/app.js`:
 
 | Figure | How it's derived |
 | --- | --- |
-| Tax paid | sum of `taxEur` across the year's country rows — everything handed over |
-| Refunded | sum of `refundedEur` — how much came back |
+| Tax paid | sum of each country's `tax`, converted to EUR — everything handed over |
+| Refunded | sum of each country's `refunded`, converted — how much came back |
 | Net tax | tax paid − refunded — what the year really cost |
 | Net income | gross − tax paid |
 | Effective rate | tax paid ÷ gross |
@@ -117,8 +117,9 @@ the logo in the header, with a gear icon on the right for shared settings:
   no salary payslip logged yet (holiday pay doesn't count — it isn't
   expected every month). Needs an API key for whichever AI provider is
   active, set once under Settings.
-- **Settings** (`settings.html`) — exchange rates, the **Travel Tracker**
-  import, the AI provider and its API key/model, and Export/Import/Wipe. Shared across both
+- **Settings** (`settings.html`) — exchange rates (fetched from the ECB, or
+  typed in), the **Travel Tracker** import, the AI provider and its API
+  key/model, and Export/Import/Wipe. Shared across both
   trackers, so it lives outside either one. **Exchange rates** are set
   by hand ("1 EUR = ? DKK") — there's no live rate feed; a payslip in a
   currency with no rate set is flagged and excluded from the EUR figures
@@ -174,6 +175,29 @@ lives only in `localStorage`, excluded from Export/Import.
   Studio's standard tier as of this writing — check current limits and
   rates at [ai.google.dev/gemini-api/docs/pricing](https://ai.google.dev/gemini-api/docs/pricing),
   since this changes over time.
+
+## Currencies
+
+Every country's figures are stored in **that country's own currency** —
+Denmark in DKK, Poland in PLN, Belgium in EUR — with the euro equivalent
+derived at render time from the rate under Settings. Storing the converted
+euro instead would bake a wrong rate in permanently; this way, correcting a
+rate restates every figure that depends on it.
+
+`js/rates.js` fetches ECB reference rates from
+[Frankfurter](https://frankfurter.dev) — no key, straight from the browser,
+nothing about you is sent. Two shapes: today's published rates, and the
+average across a calendar year's publication days, which is generally what
+a tax authority expects for converting a year's income. The ECB publishes
+on working days only, so "today" can be Friday's rate on a Sunday; the
+service reports the date it used. Hand-entered rates work exactly the same
+and are the fallback wherever the request can't get out — an artifact
+preview's sandbox blocks it, for one.
+
+Dates are stored as `YYYY-MM-DD` and shown as `DD-MM-YYYY`. They are plain
+text fields, not `<input type="date">`, because that control renders in the
+browser's own locale and a page cannot override it — the same page would
+show mm/dd/yyyy on one machine and dd/mm/yyyy on another.
 
 ## Travel Tracker
 

@@ -40,12 +40,11 @@
   // ---------- The money ----------
 
   const grossInput = document.getElementById("gross-income");
-  const grossCurrency = document.getElementById("gross-currency");
-  const grossConverted = document.getElementById("gross-converted");
   const moneyStatsEl = document.getElementById("money-stats");
+  const dkNote = document.getElementById("dk-note");
 
-  // Everything is STORED in EUR. The currency pickers only change what you
-  // type and read — payroll figures arrive in DKK, the reporting is in EUR.
+  // Every country row keeps its figures in its own currency, so the picker
+  // lives per row. This card is euro throughout.
   const CURRENCY_OPTIONS = ["EUR"].concat(CURRENCIES.map((c) => c.code).filter((c) => c !== "EUR"));
 
   function currencyOptionsHtml(selected) {
@@ -54,27 +53,44 @@
       .join("");
   }
 
-  /** EUR -> the display currency. Null when no rate is set for it. */
-  function fromEur(amountEur, code) {
-    if (!code || code === "EUR") return Number(amountEur) || 0;
-    const rate = Number(Store.getCurrencyRates()[code]);
-    if (!rate) return null;
-    return (Number(amountEur) || 0) * rate;
+  /** Denmark's row — the one country that withholds all year and refunds. */
+  function denmarkRow() {
+    return (reload().countries || []).find(
+      (c) => (c.country || "").trim().toLowerCase() === "denmark"
+    ) || null;
   }
 
-  /** The display currency -> EUR. Null when no rate is set for it. */
-  function intoEur(amount, code) {
-    return toEur(amount, code, Store.getCurrencyRates());
-  }
+  /** The three Danish lines, in EUR. Null where a rate is missing. */
+  function renderDenmarkLines() {
+    const row = denmarkRow();
+    const set = (id, value) => {
+      const el = document.getElementById(id);
+      el.textContent = value === null ? "—" : formatMoney(value, "€");
+    };
 
-  function missingRateNote(code) {
-    return `No exchange rate set for ${escapeHtml(code)} — add one under <a href="settings.html">Settings</a>.`;
+    if (!row) {
+      set("dk-paid", null);
+      set("dk-actual", null);
+      set("dk-refund", null);
+      dkNote.textContent = "Add Denmark under Countries and these fill in from it.";
+      return;
+    }
+
+    const paid = countryEur(row, "tax");
+    const refund = countryEur(row, "refunded");
+    set("dk-paid", paid);
+    set("dk-refund", refund);
+    set("dk-actual", paid === null || refund === null ? null : paid - refund);
+
+    dkNote.textContent = paid === null || refund === null
+      ? `No exchange rate set for ${row.currency} — add one under Settings.`
+      : "";
   }
 
   function renderMoneyStats() {
     const totals = taxYearTotals(reload());
     const tiles = [
-      { label: "Tax paid", value: formatMoney(totals.taxPaid, "€"), hint: "handed over during the year" },
+      { label: "Tax paid", value: formatMoney(totals.taxPaid, "€"), hint: "all countries, before refunds" },
       { label: "Refunded", value: formatMoney(totals.refunded, "€"), hint: "coming back to you" },
       {
         label: "Net tax",
@@ -94,6 +110,7 @@
         </div>
       `)
       .join("");
+    renderDenmarkLines();
     renderRefundWarning();
   }
 
@@ -113,42 +130,13 @@
       `so both numbers belong on its row.</span>`;
   }
 
-  function renderGrossField() {
-    const stored = Number(reload().grossIncomeEur) || 0;
-    const code = grossCurrency.value;
-    if (code === "EUR") {
-      grossInput.value = stored || "";
-      grossConverted.textContent = stored ? formatMoney(stored, "€") : "—";
-      return;
-    }
-    const shown = fromEur(stored, code);
-    if (shown === null) {
-      grossInput.value = "";
-      grossConverted.innerHTML = missingRateNote(code);
-      return;
-    }
-    grossInput.value = stored ? shown.toFixed(2) : "";
-    grossConverted.textContent = stored ? formatMoney(stored, "€") : "—";
-  }
-
-  grossCurrency.innerHTML = currencyOptionsHtml("EUR");
-  renderGrossField();
-
-  grossCurrency.addEventListener("change", renderGrossField);
+  grossInput.value = reload().grossIncomeEur || "";
 
   grossInput.addEventListener("change", () => {
-    const typed = Number(grossInput.value) || 0;
-    const eur = intoEur(typed, grossCurrency.value);
-    if (eur === null) {
-      grossConverted.innerHTML = missingRateNote(grossCurrency.value);
-      return;
-    }
-    Store.updateTaxYear(yearId, { grossIncomeEur: eur });
-    renderGrossField();
+    Store.updateTaxYear(yearId, { grossIncomeEur: Number(grossInput.value) || 0 });
     renderMoneyStats();
     renderFlow();
   });
-
 
   // ---------- Where the money went ----------
 
@@ -172,7 +160,7 @@
     // reported under the diagram rather than drawn, since they flow the
     // other way and would not balance here.
     const flows = (record.countries || [])
-      .map((c) => ({ label: c.country || "Unnamed", value: Number(c.taxEur) || 0, kind: "tax" }))
+      .map((c) => ({ label: `Tax ${c.country || "Unnamed"}`, value: countryEur(c, "tax") || 0, kind: "tax" }))
       .filter((f) => f.value > 0)
       .sort((a, b) => b.value - a.value);
 
@@ -320,7 +308,6 @@
   const countriesEmpty = document.getElementById("countries-empty-state");
   const newCountryInput = document.getElementById("new-country");
   const addCountryBtn = document.getElementById("add-country-btn");
-  const countriesCurrency = document.getElementById("countries-currency");
 
   /** Grouped for reading; the raw number comes back on focus for typing. */
   function moneyCell(value) {
@@ -334,19 +321,14 @@
     return Number(cleaned) || 0;
   }
 
-  /** The currency the table is being typed in. Storage stays EUR regardless. */
-  function tableCurrency() {
-    return countriesCurrency.value || "EUR";
-  }
-
-  /** An EUR figure rendered in the table's currency, or null with no rate. */
-  function cellDisplay(valueEur) {
-    return fromEur(valueEur, tableCurrency());
-  }
-
-  function moneyCellIn(valueEur) {
-    const shown = cellDisplay(valueEur);
-    return shown === null ? "" : moneyCell(shown);
+  /** The euro equivalent shown under a figure, or a nudge when no rate is set. */
+  function eurSub(row, field) {
+    if ((row.currency || "EUR") === "EUR") return "";
+    const value = countryEur(row, field);
+    if (!Number(row[field])) return "";
+    return value === null
+      ? `<div class="cell-sub warn-text">no ${escapeHtml(row.currency)} rate</div>`
+      : `<div class="cell-sub">${escapeHtml(formatMoney(value, "\u20ac"))}</div>`;
   }
 
   function countryRowHtml(row) {
@@ -356,15 +338,26 @@
       </td>`;
     const checks = COUNTRY_STATUS_FIELDS.map((f) => flagCell(f)).join("")
       + flagCell(COUNTRY_NOT_LIABLE_FIELD, " na-cell");
+
+    const moneyCellHtml = (field) => `
+      <td class="num">
+        <input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="${field}" value="${moneyCell(row[field])}" placeholder="0.00">
+        ${eurSub(row, field)}
+      </td>`;
+
     const net = countryNetTax(row);
-    const netShown = cellDisplay(net);
+    const netEur = toEur(net, row.currency, Store.getCurrencyRates());
     return `
       <tr>
         <td class="col-name"><input type="text" class="cell-input" list="country-list" data-row="${row.id}" data-field="country" value="${escapeHtml(row.country)}"></td>
-        <td class="num"><input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="incomeEur" value="${moneyCellIn(row.incomeEur)}" placeholder="0.00"></td>
-        <td class="num"><input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="taxEur" value="${moneyCellIn(row.taxEur)}" placeholder="0.00"></td>
-        <td class="num"><input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="refundedEur" value="${moneyCellIn(row.refundedEur)}" placeholder="0.00"></td>
-        <td class="num net-cell">${netShown === null ? "—" : escapeHtml(moneyCell(netShown))}</td>
+        <td><select class="cell-input" data-row="${row.id}" data-field="currency">${currencyOptionsHtml(row.currency || "EUR")}</select></td>
+        ${moneyCellHtml("income")}
+        ${moneyCellHtml("tax")}
+        ${moneyCellHtml("refunded")}
+        <td class="num net-cell">
+          ${net ? escapeHtml(moneyCell(net)) : "—"}
+          ${net && (row.currency || "EUR") !== "EUR" ? `<div class="cell-sub">${netEur === null ? "" : escapeHtml(formatMoney(netEur, "\u20ac"))}</div>` : ""}
+        </td>
         ${checks}
         <td class="col-grow"><input type="text" class="cell-input" data-row="${row.id}" data-field="comment" value="${escapeHtml(row.comment || "")}" title="${escapeHtml(row.comment || "")}" placeholder="—"></td>
         <td><button type="button" class="icon-btn small" data-remove="${row.id}" title="Remove country">✕</button></td>
@@ -388,20 +381,12 @@
     countriesBody.innerHTML = rows.map(countryRowHtml).join("");
 
     const totals = taxYearTotals(current);
-    const code = tableCurrency();
-    const symbol = code === "EUR" ? "€" : "";
-    const suffix = code === "EUR" ? "" : ` ${code}`;
-    const foot = (valueEur) => {
-      const shown = cellDisplay(valueEur);
-      return shown === null ? "—" : formatMoney(shown, symbol) + suffix;
-    };
     countriesFoot.innerHTML = `
       <tr class="total-row">
-        <td><strong>Total</strong></td>
-        <td></td>
-        <td class="num"><strong>${foot(totals.taxPaid)}</strong></td>
-        <td class="num"><strong>${foot(totals.refunded)}</strong></td>
-        <td class="num"><strong>${foot(totals.netTax)}</strong></td>
+        <td colspan="3"><strong>Total in EUR</strong></td>
+        <td class="num"><strong>${formatMoney(totals.taxPaid, "€")}</strong></td>
+        <td class="num"><strong>${formatMoney(totals.refunded, "€")}</strong></td>
+        <td class="num"><strong>${formatMoney(totals.netTax, "€")}</strong></td>
         <td colspan="6"></td>
       </tr>
     `;
@@ -423,23 +408,22 @@
 
       input.addEventListener("change", () => {
         const field = input.dataset.field;
-        if (!isMoney) {
-          Store.updateCountryRow(yearId, input.dataset.row, { [field]: input.value });
-          if (field === "comment") input.title = input.value;
-          if (field === "country") {
-            renderCountries();
-            renderFlow();
-          }
+        // Money is kept in the row's own currency; EUR is derived on render.
+        const value = isMoney ? parseMoney(input.value) : input.value;
+        Store.updateCountryRow(yearId, input.dataset.row, { [field]: value });
+        if (field === "comment") {
+          input.title = value;
           return;
         }
-        // Typed in the table's currency; stored in EUR.
-        const eur = intoEur(parseMoney(input.value), tableCurrency());
-        if (eur === null) {
-          notify(`No exchange rate set for ${tableCurrency()} — add one under Settings.`);
-          renderCountries();
-          return;
-        }
-        Store.updateCountryRow(yearId, input.dataset.row, { [field]: eur });
+        renderMoneyStats();
+        renderCountries();
+        renderFlow();
+      });
+    });
+
+    countriesBody.querySelectorAll("select.cell-input").forEach((select) => {
+      select.addEventListener("change", () => {
+        Store.updateCountryRow(yearId, select.dataset.row, { currency: select.value });
         renderMoneyStats();
         renderCountries();
         renderFlow();
@@ -470,9 +454,6 @@
     renderMoneyStats();
   }
 
-  countriesCurrency.innerHTML = currencyOptionsHtml("EUR");
-  countriesCurrency.addEventListener("change", renderCountries);
-
   addCountryBtn.addEventListener("click", () => {
     const country = newCountryInput.value.trim();
     if (!country) return;
@@ -481,7 +462,10 @@
       notify(`${country} is already listed for this year.`);
       return;
     }
-    Store.addCountryRow(yearId, { country });
+    Store.addCountryRow(yearId, {
+      country,
+      currency: COUNTRY_CURRENCY_HINTS[country.toLowerCase()] || "EUR",
+    });
     newCountryInput.value = "";
     renderCountries();
     renderFlow();
@@ -510,7 +494,7 @@
       .map((p) => `
         <tr>
           <td>${escapeHtml(p.action)}</td>
-          <td>${p.date || "—"}</td>
+          <td>${formatDate(p.date) || "—"}</td>
           <td class="num">${formatMoney(p.amount, currencySymbolFor(p.currency))}${p.currency && p.currency !== "EUR" ? " " + escapeHtml(p.currency) : ""}</td>
           <td>${escapeHtml(p.country || "")}</td>
           <td><button type="button" class="icon-btn small" data-delete="${p.id}" title="Delete">✕</button></td>
@@ -528,11 +512,16 @@
 
   paymentForm.addEventListener("submit", (event) => {
     event.preventDefault();
+    const typedDate = document.getElementById("payment-date").value.trim();
+    if (typedDate && !parseDateInput(typedDate)) {
+      notify("Enter the date as DD-MM-YYYY.");
+      return;
+    }
     const action = document.getElementById("payment-action").value.trim();
     if (!action) return;
     Store.addPayment(yearId, {
       action,
-      date: document.getElementById("payment-date").value || "",
+      date: parseDateInput(document.getElementById("payment-date").value),
       amount: Number(document.getElementById("payment-amount").value) || 0,
       currency: paymentCurrency.value,
       country: document.getElementById("payment-country").value.trim(),
@@ -572,12 +561,12 @@
     corrList.innerHTML = entries
       .map((e) => {
         const meta = [
-          e.date ? `<time>${escapeHtml(e.date)}</time>` : "",
+          e.date ? `<time>${escapeHtml(formatDate(e.date))}</time>` : "",
           escapeHtml(e.counterparty || ""),
           escapeHtml(e.category || ""),
           escapeHtml(e.country || ""),
           e.channel ? escapeHtml(e.channel) : "",
-          e.followUp ? `follow up ${escapeHtml(e.followUp)}` : "",
+          e.followUp ? `follow up ${escapeHtml(formatDate(e.followUp))}` : "",
         ].filter(Boolean).join('<span class="sep">·</span>');
         const resolved = e.status === "Resolved";
         return `
@@ -617,15 +606,22 @@
     event.preventDefault();
     const counterparty = document.getElementById("corr-counterparty").value.trim();
     if (!counterparty) return;
+    for (const id of ["corr-date", "corr-followup"]) {
+      const typed = document.getElementById(id).value.trim();
+      if (typed && !parseDateInput(typed)) {
+        notify("Enter dates as DD-MM-YYYY.");
+        return;
+      }
+    }
     Store.addCorrespondence(yearId, {
-      date: document.getElementById("corr-date").value || new Date().toISOString().slice(0, 10),
+      date: parseDateInput(document.getElementById("corr-date").value) || todayIso(),
       counterparty,
       channel: document.getElementById("corr-channel").value,
       category: document.getElementById("corr-category").value,
       subject: document.getElementById("corr-subject").value.trim(),
       country: document.getElementById("corr-country").value.trim(),
       notes: document.getElementById("corr-notes").value.trim(),
-      followUp: document.getElementById("corr-followup").value || "",
+      followUp: parseDateInput(document.getElementById("corr-followup").value),
       status: "Open",
     });
     corrForm.reset();

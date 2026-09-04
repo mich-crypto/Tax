@@ -43,21 +43,26 @@
     <!-- ============ THE MONEY ============ -->
     <div class="card">
       <div class="card-header"><h2>The money</h2></div>
-      <p class="hint">Gross income is the one salary you earned that year (your Danish payroll) — not a per-country total. The same salary gets taxed in several countries, so adding those up would count it twice. Below it: what you handed over, what comes back, and what the year really cost.</p>
-      <div class="field-row">
-        <div class="field" style="max-width:130px;">
-          <label for="gross-currency">Enter in</label>
-          <select id="gross-currency"></select>
+      <p class="hint">All figures in euro. Gross income is the one salary you earned that year (your Danish payroll) — not a per-country total; the same salary gets taxed in several countries, so adding those up would count it twice. The Danish lines are read from the Denmark row under Countries.</p>
+      <dl class="money-lines">
+        <div class="money-line">
+          <dt><label for="gross-income">Gross income</label></dt>
+          <dd><input type="number" id="gross-income" min="0" step="0.01" placeholder="0.00"></dd>
         </div>
-        <div class="field" style="max-width:260px;">
-          <label for="gross-income">Gross income for the year</label>
-          <input type="number" id="gross-income" min="0" step="0.01" placeholder="0.00">
+        <div class="money-line">
+          <dt>Already payed taxes in DK</dt>
+          <dd id="dk-paid">—</dd>
         </div>
-        <div class="field">
-          <label>Stored as</label>
-          <p class="converted" id="gross-converted">—</p>
+        <div class="money-line">
+          <dt>Actual taxes in DK</dt>
+          <dd id="dk-actual">—</dd>
         </div>
-      </div>
+        <div class="money-line">
+          <dt>Tax return from DK</dt>
+          <dd id="dk-refund">—</dd>
+        </div>
+      </dl>
+      <p class="hint" id="dk-note"></p>
     </div>
 
     <div class="stat-grid" id="money-stats"></div>
@@ -105,18 +110,17 @@
       <div class="toolbar">
         <h2 style="margin:0;">Countries</h2>
         <span class="spacer"></span>
-        <label for="countries-currency">Amounts in</label>
-        <select id="countries-currency" style="max-width:104px;"></select>
         <input type="text" id="new-country" list="country-list" placeholder="Add a country…" style="max-width:180px;">
         <datalist id="country-list"></datalist>
         <button type="button" id="add-country-btn" class="small">+ Add</button>
       </div>
-      <p class="hint"><strong>Tax paid</strong> is everything handed over that year, before any of it came back. <strong>Refunded</strong> is how much came back — Denmark withholds all year and returns most of it. <strong>Net</strong> is what the country actually cost you.</p>
+      <p class="hint">Enter each country's figures in <strong>its own currency</strong> — Danish kroner for Denmark, złoty for Poland — and the euro equivalent is shown underneath, at the rate under <a href="settings.html">Settings</a>. <strong>Tax paid</strong> is everything handed over that year, before any of it came back; <strong>Refunded</strong> is how much came back; <strong>Net</strong> is what the country actually cost you.</p>
       <div class="table-scroll">
         <table id="countries-table">
           <thead>
             <tr>
               <th>Country</th>
+              <th>Currency</th>
               <th class="num">Income</th>
               <th class="num">Tax paid</th>
               <th class="num">Refunded</th>
@@ -149,7 +153,7 @@
           </div>
           <div class="field">
             <label>Date</label>
-            <input type="date" id="payment-date">
+            <input type="text" id="payment-date" inputmode="numeric" placeholder="DD-MM-YYYY" maxlength="10">
           </div>
           <div class="field">
             <label>Amount</label>
@@ -187,7 +191,7 @@
         <div class="field-row">
           <div class="field">
             <label>Date</label>
-            <input type="date" id="corr-date">
+            <input type="text" id="corr-date" inputmode="numeric" placeholder="DD-MM-YYYY" maxlength="10">
           </div>
           <div class="field">
             <label>Counterparty</label>
@@ -218,7 +222,7 @@
         <div class="field-row">
           <div class="field">
             <label>Follow-up due (optional)</label>
-            <input type="date" id="corr-followup">
+            <input type="text" id="corr-followup" inputmode="numeric" placeholder="DD-MM-YYYY" maxlength="10">
           </div>
         </div>
         <button type="submit" class="primary small">Add entry</button>

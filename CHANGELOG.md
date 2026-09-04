@@ -3,6 +3,31 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.7.0 — 2026-09-04
+
+- **Country figures are stored in the country's own currency.** Denmark in
+  kroner, Poland in złoty, Belgium in euro, with the euro equivalent shown
+  underneath each figure. They used to be converted to EUR on the way in,
+  which meant a wrong exchange rate was baked in permanently; correcting a
+  rate now restates every figure that depends on it. The table-wide
+  "Amounts in" picker is replaced by a currency per row.
+- **Rates can be fetched from the ECB** (via Frankfurter, no key, straight
+  from the browser): today's published reference rates, or the average
+  across a calendar year's publication days — the figure tax authorities
+  generally expect for converting a year's income. Hand-entered rates
+  still work, and are the fallback wherever the request can't get out.
+  Every currency has a field now, not just the ones payslips use.
+- **The money** card is euro throughout and reads: Gross income (entered),
+  **Already payed taxes in DK**, **Actual taxes in DK**, **Tax return from
+  DK** — the last three read from the Denmark row under Countries.
+- **Dates are DD-MM-YYYY**, entered and displayed. They were
+  `<input type="date">`, which renders in the browser's own locale — the
+  same page showed mm/dd/yyyy on one machine and dd/mm/yyyy on another,
+  and a page cannot override that. Stored as YYYY-MM-DD; a date that
+  isn't real is refused rather than dropped.
+- The flow diagram labels tax destinations **Tax <country>** so a band
+  can't be mistaken for money kept.
+
 ## v2.6.0 — 2026-09-04
 
 - **A tax year is named by the year the income was earned**, not the year

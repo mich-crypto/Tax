@@ -75,12 +75,34 @@ function migrateTaxYears() {
   );
 }
 
+/**
+ * Country figures used to be stored already converted to EUR. They are kept
+ * in the country's own currency now, so a corrected exchange rate restates
+ * them. An older record is read forward here rather than rewritten, so an
+ * export taken before the change still imports.
+ */
+function normalizeCountryRow(row) {
+  if (row.currency !== undefined) return row;
+  return {
+    ...row,
+    currency: "EUR",
+    income: Number(row.incomeEur) || 0,
+    tax: Number(row.taxEur) || 0,
+    refunded: Number(row.refundedEur) || 0,
+  };
+}
+
+function normalizeTaxYear(year) {
+  if (!year.countries || !year.countries.length) return year;
+  return { ...year, countries: year.countries.map(normalizeCountryRow) };
+}
+
 const Store = {
   // ---------- Tax years ----------
 
   getTaxYears() {
     migrateTaxYears();
-    return readJSON(STORAGE_KEYS.taxYears, []);
+    return readJSON(STORAGE_KEYS.taxYears, []).map(normalizeTaxYear);
   },
 
   saveTaxYears(years) {
@@ -142,9 +164,13 @@ const Store = {
     return {
       id: uid(),
       country,
-      incomeEur: 0,
-      taxEur: 0,
-      refundedEur: 0,
+      // Figures are stored in the country's OWN currency, with EUR derived
+      // at the current rate — so correcting a rate restates the numbers
+      // instead of leaving a stale conversion behind.
+      currency: COUNTRY_CURRENCY_HINTS[(country || "").trim().toLowerCase()] || "EUR",
+      income: 0,
+      tax: 0,
+      refunded: 0,
       questionnaireDone: false,
       returnFiled: false,
       paidReturned: false,

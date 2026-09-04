@@ -50,8 +50,22 @@ function currentYear() {
 function taxYearTotals(record) {
   const gross = Number(record.grossIncomeEur) || 0;
   const countries = record.countries || [];
-  const taxPaid = countries.reduce((sum, c) => sum + (Number(c.taxEur) || 0), 0);
-  const refunded = countries.reduce((sum, c) => sum + (Number(c.refundedEur) || 0), 0);
+  const rates = Store.getCurrencyRates();
+
+  // Each country holds its figures in its own currency; a country whose
+  // rate isn't set is named rather than counted as zero.
+  const missingRates = [];
+  const eur = (amount, code) => {
+    const value = toEur(amount, code, rates);
+    if (value === null) {
+      if (!missingRates.includes(code)) missingRates.push(code);
+      return 0;
+    }
+    return value;
+  };
+
+  const taxPaid = countries.reduce((sum, c) => sum + eur(c.tax, c.currency), 0);
+  const refunded = countries.reduce((sum, c) => sum + eur(c.refunded, c.currency), 0);
   const netTax = taxPaid - refunded;
   return {
     gross,
@@ -65,6 +79,7 @@ function taxYearTotals(record) {
     // income ABOVE the gross salary. incompleteRefunds flags exactly that.
     netIncome: gross - taxPaid,
     rate: gross ? taxPaid / gross : 0,
+    missingRates,
   };
 }
 
@@ -76,13 +91,18 @@ function taxYearTotals(record) {
  */
 function incompleteRefunds(record) {
   return (record.countries || []).filter(
-    (c) => (Number(c.refundedEur) || 0) > (Number(c.taxEur) || 0)
+    (c) => (Number(c.refunded) || 0) > (Number(c.tax) || 0)
   );
 }
 
-/** What one country's row actually cost: paid there, less what came back. */
+/** What one country's row cost, in its own currency: paid less refunded. */
 function countryNetTax(row) {
-  return (Number(row.taxEur) || 0) - (Number(row.refundedEur) || 0);
+  return (Number(row.tax) || 0) - (Number(row.refunded) || 0);
+}
+
+/** A country row's figure in EUR, or null when its rate isn't set. */
+function countryEur(row, field) {
+  return toEur(row[field], row.currency, Store.getCurrencyRates());
 }
 
 /**
@@ -147,6 +167,53 @@ function renderVersionFooter() {
 }
 
 
+
+
+/**
+ * Dates are STORED as YYYY-MM-DD (sortable, unambiguous) and SHOWN as
+ * DD-MM-YYYY.
+ *
+ * These are plain text fields rather than <input type="date"> because that
+ * control renders in the browser's own locale — the same page shows
+ * mm/dd/yyyy on a US machine and dd/mm/yyyy on a Belgian one, and the page
+ * cannot override it. Parsing it here is the only way the format is the
+ * same for everyone.
+ */
+function formatDate(iso) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : "";
+}
+
+/** Reads DD-MM-YYYY (also DD/MM/YYYY, and YYYY-MM-DD) into storage form. */
+function parseDateInput(text) {
+  const value = String(text || "").trim();
+  if (!value) return "";
+
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value);
+  if (iso) return isoOrEmpty(iso[1], iso[2], iso[3]);
+
+  const dmy = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/.exec(value);
+  if (dmy) return isoOrEmpty(dmy[3], dmy[2], dmy[1]);
+
+  return "";
+}
+
+/** Builds YYYY-MM-DD, or "" if those parts aren't a real calendar date. */
+function isoOrEmpty(year, month, day) {
+  const y = Number(year);
+  const m = Number(month);
+  const d = Number(day);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) {
+    return "";
+  }
+  return `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+/** Today, in storage form. */
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 /**
  * Confirmations and notices the page draws itself.

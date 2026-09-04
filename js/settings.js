@@ -7,11 +7,7 @@
   const ratesStatus = document.getElementById("rates-status");
 
   function currenciesNeedingRates() {
-    const set = new Set(["DKK"]);
-    Store.getPayslips().forEach((p) => {
-      if (p.currency && p.currency !== "EUR") set.add(p.currency);
-    });
-    return Array.from(set).sort();
+    return CURRENCIES.map((c) => c.code).filter((code) => code !== "EUR").sort();
   }
 
   function renderRateFields() {
@@ -37,6 +33,63 @@
       });
     });
   }
+
+  // --- Fetching rates from the ECB ---
+
+  const fetchLatestBtn = document.getElementById("fetch-latest-rates");
+  const fetchYearBtn = document.getElementById("fetch-year-rates");
+  const rateYear = document.getElementById("rate-year");
+
+  const thisYear = new Date().getFullYear();
+  rateYear.innerHTML = Array.from({ length: 8 }, (_, i) => thisYear - i)
+    .map((y) => `<option value="${y}">${y}</option>`)
+    .join("");
+  rateYear.value = String(thisYear - 1);
+
+  /** Merges fetched rates in, leaving any currency the service didn't return. */
+  function applyRates(fetched, description) {
+    const current = Store.getCurrencyRates();
+    Object.entries(fetched).forEach(([code, rate]) => {
+      if (rate > 0) current[code] = rate;
+    });
+    Store.saveCurrencyRates(current);
+    renderRateFields();
+    ratesStatus.textContent = description;
+  }
+
+  async function withButton(button, work) {
+    button.disabled = true;
+    fetchLatestBtn.disabled = true;
+    fetchYearBtn.disabled = true;
+    ratesStatus.textContent = "Asking the ECB…";
+    try {
+      await work();
+    } catch (e) {
+      // A blocked request (offline, or a preview whose sandbox forbids it)
+      // surfaces as a bare TypeError — say what to do instead of relaying it.
+      const reason = e instanceof TypeError
+        ? "Couldn't reach the rate service from here."
+        : e.message;
+      ratesStatus.textContent = `${reason} Type the rates in by hand below.`;
+    }
+    fetchLatestBtn.disabled = false;
+    fetchYearBtn.disabled = false;
+  }
+
+  fetchLatestBtn.addEventListener("click", () =>
+    withButton(fetchLatestBtn, async () => {
+      const { date, rates } = await fetchLatestRates();
+      applyRates(rates, `Using the ECB reference rates published on ${formatDate(date) || date}.`);
+    })
+  );
+
+  fetchYearBtn.addEventListener("click", () =>
+    withButton(fetchYearBtn, async () => {
+      const year = rateYear.value;
+      const { rates, days } = await fetchYearAverageRates(year);
+      applyRates(rates, `Using the ${year} average of ${days} ECB publication days.`);
+    })
+  );
 
   // --- TEMPORARY: AI provider toggle (testing only — see js/claude-vision.js) ---
   const providerSelect = document.getElementById("ai-provider-select");

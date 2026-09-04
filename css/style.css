@@ -930,3 +930,47 @@ button.danger-solid:hover { background: var(--neg); filter: brightness(1.08); }
 /* "Not liable" sits apart from the three progress flags it overrides. */
 td.na-cell, th.na-cell { border-left: 1px solid var(--line); }
 tbody tr:has(input[data-field="notLiable"]:checked) { color: var(--ink-faint); }
+
+.warn-text { color: var(--warn); }
+
+/* ---------- The money: labelled figures, euro throughout ---------- */
+
+.money-lines {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 4px 26px;
+  margin: 16px 0 0;
+}
+
+.money-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.money-line dt {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+.money-line dt label { margin: 0; font-size: inherit; font-weight: inherit; letter-spacing: 0; color: inherit; }
+
+.money-line dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.money-line dd input {
+  width: 150px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
