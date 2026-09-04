@@ -43,20 +43,25 @@
     <!-- ============ THE MONEY ============ -->
     <div class="card">
       <div class="card-header"><h2>The money</h2></div>
-      <p class="hint">Gross income is the one salary you earned that year (your Danish payroll) — not a per-country total. The same salary gets taxed in several countries, so adding those up would count it twice.</p>
+      <p class="hint">Gross income is the one salary you earned that year (your Danish payroll) — not a per-country total. The same salary gets taxed in several countries, so adding those up would count it twice. Below it: what you handed over, what comes back, and what the year really cost.</p>
       <div class="field-row">
-        <div class="field">
-          <label for="gross-income">Gross income for the year (EUR)</label>
+        <div class="field" style="max-width:130px;">
+          <label for="gross-currency">Enter in</label>
+          <select id="gross-currency"></select>
+        </div>
+        <div class="field" style="max-width:260px;">
+          <label for="gross-income">Gross income for the year</label>
           <input type="number" id="gross-income" min="0" step="0.01" placeholder="0.00">
         </div>
         <div class="field">
-          <label for="refunded-dk">Refunded from Denmark (EUR)</label>
-          <input type="number" id="refunded-dk" min="0" step="0.01" placeholder="0.00">
+          <label>Stored as</label>
+          <p class="converted" id="gross-converted">—</p>
         </div>
       </div>
     </div>
 
     <div class="stat-grid" id="money-stats"></div>
+    <div class="disclaimer" id="refund-warning" hidden></div>
 
     <!-- ============ WHERE THE MONEY WENT ============ -->
     <div class="card">
@@ -65,9 +70,33 @@
       <div id="flow-diagram"></div>
     </div>
 
+    <!-- ============ WHERE YOU WERE ============ -->
+    <div class="card" id="travel-card" hidden>
+      <div class="card-header"><h2>Where you were — <span id="travel-year"></span></h2></div>
+      <p class="hint">Days spent in each country during the calendar year this return covers, from your Travel Tracker report. Transit days aren't counted as presence, matching the report's own summary.</p>
+      <div class="table-scroll">
+        <table id="travel-table">
+          <thead>
+            <tr>
+              <th>Country</th>
+              <th class="num">Days present</th>
+              <th class="num">Working</th>
+              <th class="num">Not working</th>
+              <th class="num">Vacation</th>
+              <th class="num">Sick</th>
+              <th class="num">In transit</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+    </div>
+
     <!-- ============ PROGRESS ============ -->
     <div class="card">
       <div class="card-header"><h2>Progress</h2></div>
+      <p class="hint" style="margin-top:0;">Read off the country rows below — a year is done when every country in it is.</p>
       <div class="check-grid" id="status-checks"></div>
     </div>
 
@@ -76,21 +105,26 @@
       <div class="toolbar">
         <h2 style="margin:0;">Countries</h2>
         <span class="spacer"></span>
+        <label for="countries-currency">Amounts in</label>
+        <select id="countries-currency" style="max-width:104px;"></select>
         <input type="text" id="new-country" list="country-list" placeholder="Add a country…" style="max-width:180px;">
         <datalist id="country-list"></datalist>
         <button type="button" id="add-country-btn" class="small">+ Add</button>
       </div>
-      <p class="hint">Income is the slice of your salary taxable in that country; Tax is what was actually paid there. Denmark's refund lives up top, not here.</p>
+      <p class="hint"><strong>Tax paid</strong> is everything handed over that year, before any of it came back. <strong>Refunded</strong> is how much came back — Denmark withholds all year and returns most of it. <strong>Net</strong> is what the country actually cost you.</p>
       <div class="table-scroll">
         <table id="countries-table">
           <thead>
             <tr>
               <th>Country</th>
-              <th class="num">Income €</th>
-              <th class="num">Tax paid €</th>
+              <th class="num">Income</th>
+              <th class="num">Tax paid</th>
+              <th class="num">Refunded</th>
+              <th class="num">Net</th>
               <th>Questionnaire</th>
               <th>Return filed</th>
               <th>Payed / returned</th>
+              <th class="center" title="Not tax liable in this country">N/A</th>
               <th>Comment</th>
               <th></th>
             </tr>
@@ -202,6 +236,7 @@
 <script src="js/tax-data.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/app.js"></script>
+<script src="js/travel.js"></script>
 <script src="js/year.js"></script>
 </body>
 </html>

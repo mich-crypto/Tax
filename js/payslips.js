@@ -171,10 +171,10 @@
     yearFilter.value = previous && years.some((y) => String(y) === previous) ? previous : String(currentYear());
   }
 
-  tbody.addEventListener("click", (event) => {
+  tbody.addEventListener("click", async (event) => {
     const id = event.target.dataset.delete;
     if (!id) return;
-    if (!confirm("Delete this payslip entry?")) return;
+    if (!(await confirmAction("Delete this payslip entry?"))) return;
     Store.deletePayslip(id);
     populateYearFilter();
     renderTable();

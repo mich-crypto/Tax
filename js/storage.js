@@ -7,11 +7,13 @@
  *   - ONE gross income for the year (the Danish payroll salary). Countries
  *     don't each add income — the same salary is taxed in several places,
  *     so summing per-country income would double-count it.
- *   - Refunded from Denmark is its own field (money coming back).
- *   - Each country row carries the tax actually paid there, plus that
- *     country's own progress flags.
- * Everything else (balance, net income, effective rate) is derived — see
- * taxYearTotals() in app.js.
+ *   - Each country row carries the tax paid there AND how much of it came
+ *     back, so "paid 43,119 in Denmark, 28,637 of it refunded" is one row
+ *     rather than a single figure that can only mean one of the two.
+ *   - That country's own progress flags live on the same row.
+ * Everything else — the year's refund total, net tax, net income, rate and
+ * its overall status — is derived from those rows. See taxYearTotals() and
+ * taxYearStatus() in app.js.
  */
 
 const STORAGE_KEYS = {
@@ -19,6 +21,7 @@ const STORAGE_KEYS = {
   taxYears: "taxtracker_taxyears_v2",
   payslips: "taxtracker_payslips_v1",
   currencyRates: "taxtracker_currency_rates_v1",
+  travel: "taxtracker_travel_v1",
   // Deliberately separate: never touched by exportAll/importAll, so an API
   // key can never end up inside a shared/exported JSON backup.
   geminiSettings: "taxtracker_gemini_settings_v1",
@@ -75,13 +78,6 @@ const Store = {
       id: uid(),
       taxYear,
       grossIncomeEur: 0,
-      refundedFromDkEur: 0,
-      status: {
-        yearCompleted: false,
-        questionnairesDone: false,
-        returnsFiled: false,
-        paidAndReturned: false,
-      },
       countries: [],
       payments: [],
       correspondence: [],
@@ -108,7 +104,7 @@ const Store = {
     this.saveTaxYears(this.getTaxYears().filter((y) => y.id !== id));
   },
 
-  /** Merges top-level fields (grossIncomeEur, refundedFromDkEur, status...) into one record. */
+  /** Merges top-level fields (grossIncomeEur...) into one record. */
   updateTaxYear(id, fields) {
     const record = this.getTaxYearById(id);
     if (!record) return;
@@ -124,9 +120,13 @@ const Store = {
       country,
       incomeEur: 0,
       taxEur: 0,
+      refundedEur: 0,
       questionnaireDone: false,
       returnFiled: false,
       paidReturned: false,
+      // Listed for the record but nothing is owed there (Taiwan, here), so
+      // it never gates the year's status.
+      notLiable: false,
       comment: "",
     };
   },
@@ -228,6 +228,20 @@ const Store = {
     writeJSON(STORAGE_KEYS.currencyRates, rates);
   },
 
+  // ---------- Travel Tracker (year -> country -> activity -> days) ----------
+
+  getTravel() {
+    return readJSON(STORAGE_KEYS.travel, null);
+  },
+
+  saveTravel(travel) {
+    writeJSON(STORAGE_KEYS.travel, travel);
+  },
+
+  clearTravel() {
+    localStorage.removeItem(STORAGE_KEYS.travel);
+  },
+
   // ---------- AI settings (never exported/imported/backed up) ----------
 
   getGeminiSettings() {
@@ -276,6 +290,7 @@ const Store = {
       taxYears: this.getTaxYears(),
       payslips: this.getPayslips(),
       currencyRates: this.getCurrencyRates(),
+      travel: this.getTravel(),
     };
   },
 
@@ -283,6 +298,7 @@ const Store = {
     if (data.taxYears) this.saveTaxYears(data.taxYears);
     if (data.payslips) this.savePayslips(data.payslips);
     if (data.currencyRates) this.saveCurrencyRates(data.currencyRates);
+    if (data.travel) this.saveTravel(data.travel);
   },
 
   wipeAll() {

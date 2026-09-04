@@ -3,6 +3,49 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.5.0 — 2026-09-04
+
+- **Travel Tracker import.** Settings takes your Travel Tracker report
+  (.xlsx) and each tax year gains a **Where you were** card: days of
+  presence and days worked per country for the calendar year that return
+  covers. Day counts are what the residence and treaty thresholds turn
+  on, so they belong next to the figures they drive.
+- Transit days are excluded from days-of-presence, matching the report's
+  own summary — a day spent crossing a border appears twice in the
+  detailed sheet, once per country.
+- Only the totals are kept (year → country → activity → days), not the
+  two thousand daily rows. Settings shows a country-by-year matrix of
+  what was loaded, and the import is included in Export/Import.
+- The spreadsheet is read in your browser by SheetJS, loaded from a CDN;
+  the file itself is never uploaded anywhere.
+
+## v2.4.0 — 2026-09-04
+
+- **A country records what it cost, not one ambiguous number.** Each row
+  now has **Tax paid** (everything handed over that year), **Refunded**
+  (how much came back) and a derived **Net**. Denmark withholds tax all
+  year and returns most of it, so a single "tax" figure there could only
+  ever mean one of the two — which is exactly what made the source
+  spreadsheet's Denmark column flip meaning between years.
+- **The year shows Tax paid / Refunded / Net tax** alongside net income
+  and the effective rate. Net income and the rate still use *gross* tax
+  paid, matching the spreadsheet, rather than netting the refund off.
+- **A refund without a matching payment is flagged.** Where a country
+  refunds more than it records as paid, the year says so: it means the
+  tax paid there was never entered. Two of the imported years are in
+  exactly that state.
+- **Progress is derived, not ticked.** The four year-level checks are now
+  read off the country rows — a year is done when every country in it is
+  — instead of a second set of boxes that could disagree with them. A new
+  **N/A** flag marks a country listed for the record but not liable
+  (Taiwan), so it doesn't hold the year open.
+- **Amounts can be typed in DKK.** "Enter in" beside gross income and
+  "Amounts in" above the countries table convert on the way in and out;
+  everything is still stored and reported in EUR, using the rate under
+  Settings.
+- Fixed `[hidden]` being overridden by any rule that sets `display`, which
+  left elements on screen after they were hidden.
+
 ## v2.3.0 — 2026-09-04
 
 - **Removed the social-security and insurance paperwork checks** (A1

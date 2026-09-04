@@ -31,10 +31,18 @@ plus the tax on each country row — see `taxYearTotals()` in `js/app.js`:
 
 | Figure | How it's derived |
 | --- | --- |
-| Tax paid | sum of `taxEur` across the year's country rows |
-| Balance | refunded − tax paid — positive means the Danish refund covers what you owe elsewhere, negative means it falls short |
+| Tax paid | sum of `taxEur` across the year's country rows — everything handed over |
+| Refunded | sum of `refundedEur` — how much came back |
+| Net tax | tax paid − refunded — what the year really cost |
 | Net income | gross − tax paid |
 | Effective rate | tax paid ÷ gross |
+
+Net income and the rate deliberately use **gross** tax paid, not net tax.
+Where a country's refund is recorded but the tax paid there is not — the
+source spreadsheet only ever recorded Denmark's refund — netting them
+would report a net income *above* the gross salary. The app flags that
+case instead: a country refunding more than it records as paid means the
+paid figure is still missing.
 
 Nothing derived is ever stored, so the numbers can't drift out of sync
 with what they're computed from.
@@ -58,22 +66,31 @@ the logo in the header, with a gear icon on the right for shared settings:
   entered and derived on the year's own page.
 - **One tax year** (`year.html?id=…`) — everything about a single year on
   one page, no tabs:
-  - **The money** — the two figures you enter (gross income, refunded
-    from Denmark), with tax paid / balance / net income / effective rate
-    derived live beside them.
+  - **The money** — the one figure you enter (gross income), with tax
+    paid / refunded / net tax / net income / effective rate derived live
+    beside it. "Enter in" lets you type the figure in DKK; it is stored
+    and reported in EUR.
   - **Where the money went** — a flow diagram: the year's gross income on
     the left splitting into what you kept and the tax paid in each
     country on the right, sized to the real figures and redrawn as you
     edit them. Green is money kept, red is money out, matching the
     semantic colors used everywhere else.
-  - **Progress** — the four completion checks: year completed,
-    questionnaires done, returns prepared & filed, tax payed & returned.
-  - **Countries** — one editable row per country you were tax liable in:
-    the income taxable there, the tax actually paid, its own
-    Questionnaire / Return filed / Payed-returned flags, and a free-text
-    comment. Edited inline; the footer totals the tax paid, which is the
-    figure the whole year hangs off. Country names are free text with
-    suggestions — never blocked waiting on a managed list.
+  - **Progress** — the four completion checks (year completed,
+    questionnaires done, returns prepared & filed, tax payed & returned),
+    **read off the country rows** rather than ticked separately: a year is
+    done when every country in it is. A country marked **N/A** — listed
+    for the record but not liable there — sits the year out.
+  - **Countries** — one editable row per country: the income taxable
+    there, the **tax paid**, the amount **refunded**, a derived **net**,
+    its own Questionnaire / Return filed / Payed-returned flags, an
+    **N/A** flag, and a free-text comment. Edited inline, with an
+    "Amounts in" picker so the whole table can be typed in DKK. Country
+    names are free text with suggestions — never blocked waiting on a
+    managed list.
+  - **Where you were** — days of presence and days worked per country for
+    the calendar year this return covers, from the Travel Tracker report
+    loaded under Settings. Hidden until a report is loaded. Transit days
+    are excluded from presence, matching the report's own summary.
   - **Payments & refunds** — a dated ledger of what actually moved
     (action, date, amount, currency, country). Deliberately separate
     from the totals above, which are the year's final position rather
@@ -99,8 +116,8 @@ the logo in the header, with a gear icon on the right for shared settings:
   no salary payslip logged yet (holiday pay doesn't count — it isn't
   expected every month). Needs an API key for whichever AI provider is
   active, set once under Settings.
-- **Settings** (`settings.html`) — exchange rates, the AI provider and
-  its API key/model, and Export/Import/Wipe. Shared across both
+- **Settings** (`settings.html`) — exchange rates, the **Travel Tracker**
+  import, the AI provider and its API key/model, and Export/Import/Wipe. Shared across both
   trackers, so it lives outside either one. **Exchange rates** are set
   by hand ("1 EUR = ? DKK") — there's no live rate feed; a payslip in a
   currency with no rate set is flagged and excluded from the EUR figures
@@ -153,6 +170,20 @@ lives only in `localStorage`, excluded from Export/Import.
   Studio's standard tier as of this writing — check current limits and
   rates at [ai.google.dev/gemini-api/docs/pricing](https://ai.google.dev/gemini-api/docs/pricing),
   since this changes over time.
+
+## Travel Tracker
+
+The Travel Tracker report's "Detailed" sheet is one row per day: date,
+activity (Working / Not Working / On Vacation / Sick / In Transit) and
+country. `js/travel.js` reads it in the browser with
+[SheetJS](https://sheetjs.com) — loaded from cdnjs, pinned — and keeps
+only the totals: year → country → activity → days. The daily rows are not
+stored, and the file is never uploaded anywhere.
+
+A day spent crossing a border appears twice, once per country, so transit
+days are excluded from days-of-presence exactly as the report's own
+summary does it. A tax year shows the calendar year before it: the 2025
+return covers where you were in 2024.
 
 ## Script load order
 

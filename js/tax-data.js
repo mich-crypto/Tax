@@ -98,6 +98,9 @@ const TAX_YEAR_STATUS_FIELDS = [
   { key: "paidAndReturned", label: "Tax payed & returned" },
 ];
 
+/** Marks a country listed for the record but with nothing owed there. */
+const COUNTRY_NOT_LIABLE_FIELD = { key: "notLiable", label: "Not tax liable here", short: "N/A" };
+
 /** Per-country progress, tracked separately for every country in a tax year. */
 const COUNTRY_STATUS_FIELDS = [
   { key: "questionnaireDone", label: "Questionnaire", short: "Q" },
@@ -143,11 +146,13 @@ const CORRESPONDENCE_CATEGORIES = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "2.3.0";
+const APP_VERSION = "2.5.0";
 const APP_VERSION_DATE = "2026-09-04";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "2.5.0", summary: "Upload your Travel Tracker report under Settings and each tax year shows where you actually were — days of presence and days worked per country for the calendar year that return covers. Transit days are excluded from presence, matching the report's own summary. Only the totals are stored, not the daily rows." },
+  { version: "2.4.0", summary: "A country now records the tax paid there AND how much came back, so Denmark's \"pay all year, get most of it back\" is two numbers instead of one ambiguous figure — with Tax paid / Refunded / Net tax on the year, and a warning when a refund is recorded without the tax paid alongside it. Progress is read off the country rows rather than ticked separately, with a Not-liable flag for countries listed but not owed. Amounts can be typed in DKK and are stored in EUR." },
   { version: "2.3.0", summary: "Removed the A1 certificate / S1 form / blue insurance card checks from a tax year — no health-insurance paperwork tracking. Progress is now just the four tax completion checks." },
   { version: "2.2.0", summary: "Income year is gone — a year is named by its tax year alone. The Tax years list drops its headline figure bar and the Refunded from DK and Balance columns; both figures still live on each year's own page. New on that page: a flow diagram showing gross income splitting into what you kept and the tax paid in each country." },
   { version: "2.1.0", summary: "Visual rework. Figures are set in a monospace so money lines up on the digit, page titles in a serif, and summary numbers sit in one hairline-divided band instead of a row of cards — which is what made the leftmost figure sit higher than the rest. Fixed checkbox labels being shoved to the far edge of their box, unified the section-heading sizes, and rebuilt Correspondence as stacked entries so a real note no longer clips. Adding a payslip moved into a dialog behind a + button on the Monthly log, with a manual-entry tab." },

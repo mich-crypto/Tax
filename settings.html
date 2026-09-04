@@ -107,6 +107,20 @@
   </div>
 
   <div class="card">
+    <div class="card-header"><h2>Travel tracker</h2></div>
+    <p class="hint">Upload your Travel Tracker report (.xlsx) and each tax year shows where you actually were — days of presence and days worked per country, which is what the day-count rules turn on. Only the totals are kept; the daily rows are not stored.</p>
+    <div class="actions-row" style="margin-top:14px;">
+      <label class="btn" style="margin:0;">
+        Choose report…
+        <input type="file" id="travel-file" accept=".xlsx" style="display:none;">
+      </label>
+      <button type="button" id="clear-travel-btn" class="danger-outline small" hidden>Remove</button>
+      <span class="hint" id="travel-status" style="margin:0;"></span>
+    </div>
+    <div class="table-scroll" id="travel-summary"></div>
+  </div>
+
+  <div class="card">
     <div class="card-header"><h2>Data</h2></div>
     <p class="hint">Everything lives in this browser's local storage — clearing site data wipes it. Back it up as a JSON file, restore from one, or wipe everything and start over. API keys are never part of a backup.</p>
     <div class="toolbar" style="margin-bottom:0;">
@@ -123,9 +137,11 @@
 
 <footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere. · <span id="app-version"></span></footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="js/tax-data.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/app.js"></script>
+<script src="js/travel.js"></script>
 <script src="js/settings.js"></script>
 </body>
 </html>

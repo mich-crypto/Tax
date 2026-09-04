@@ -102,6 +102,80 @@
     clearKey: () => Store.clearClaudeApiKey(),
   });
 
+  // --- Travel tracker ---
+
+  const travelFile = document.getElementById("travel-file");
+  const travelStatus = document.getElementById("travel-status");
+  const travelSummary = document.getElementById("travel-summary");
+  const clearTravelBtn = document.getElementById("clear-travel-btn");
+
+  function renderTravel() {
+    const travel = Store.getTravel();
+    if (!travel) {
+      travelSummary.innerHTML = "";
+      clearTravelBtn.hidden = true;
+      return;
+    }
+    clearTravelBtn.hidden = false;
+
+    const years = travelYears(travel);
+    const countries = Array.from(
+      new Set(years.flatMap((y) => Object.keys(travel.years[y])))
+    ).sort();
+
+    travelSummary.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Country</th>
+            ${years.map((y) => `<th class="num">${y}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${countries.map((country) => `
+            <tr>
+              <td>${escapeHtml(country)}</td>
+              ${years.map((y) => {
+                const summary = travelYearSummary(travel, y);
+                const row = summary.countries.find((c) => c.country === country);
+                return `<td class="num">${row && row.presence ? row.presence : "—"}</td>`;
+              }).join("")}
+            </tr>
+          `).join("")}
+        </tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td><strong>Days of presence</strong></td>
+            ${years.map((y) => `<td class="num"><strong>${travelYearSummary(travel, y).totalPresence}</strong></td>`).join("")}
+          </tr>
+        </tfoot>
+      </table>`;
+
+    travelStatus.textContent = `${travel.fileName || "Report"} — ${travel.days} days, ${travel.from} to ${travel.to}.`;
+  }
+
+  travelFile.addEventListener("change", async () => {
+    const file = travelFile.files[0];
+    if (!file) return;
+    travelStatus.textContent = `Reading ${file.name}…`;
+    try {
+      const travel = await parseTravelWorkbook(file);
+      Store.saveTravel(travel);
+      renderTravel();
+      notify(`Travel tracker loaded — ${travel.days} days across ${travelYears(travel).length} years.`);
+    } catch (e) {
+      travelStatus.textContent = e.message;
+    }
+    travelFile.value = "";
+  });
+
+  clearTravelBtn.addEventListener("click", async () => {
+    if (!(await confirmAction("Remove the imported travel tracker? Your tax years keep everything else.", "Remove"))) return;
+    Store.clearTravel();
+    travelStatus.textContent = "";
+    renderTravel();
+  });
+
   // --- Data export / import / wipe ---
   const exportBtn = document.getElementById("export-data-btn");
   const importInput = document.getElementById("import-data-input");
@@ -129,22 +203,28 @@
         const data = JSON.parse(reader.result);
         Store.importAll(data);
         renderRateFields();
-        alert("Import complete.");
+        renderTravel();
+        notify("Import complete.");
       } catch (e) {
-        alert("That file doesn't look like a valid export (invalid JSON).");
+        notify("That file doesn't look like a valid export (invalid JSON).");
       }
       importInput.value = "";
     };
     reader.readAsText(file);
   });
 
-  wipeBtn.addEventListener("click", () => {
-    if (!confirm("This deletes ALL data (tax years, countries, payments, correspondence, payslips and exchange rates) stored in this browser. This cannot be undone. Continue?")) {
-      return;
-    }
+  wipeBtn.addEventListener("click", async () => {
+    const sure = await confirmAction(
+      "This deletes ALL data stored in this browser — tax years, countries, payments, correspondence, payslips and exchange rates. This cannot be undone.",
+      "Wipe everything"
+    );
+    if (!sure) return;
     Store.wipeAll();
     renderRateFields();
+    renderTravel();
+    notify("All data wiped.");
   });
 
   renderRateFields();
+  renderTravel();
 })();

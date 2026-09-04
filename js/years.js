@@ -60,14 +60,11 @@
   addYearBtn.addEventListener("click", () => {
     const taxYear = Number(newTaxYear.value);
     if (!Number.isInteger(taxYear)) {
-      alert("Enter the tax year.");
+      notify("Enter the tax year.");
       return;
     }
     const existing = Store.getTaxYears().find((y) => y.taxYear === taxYear);
     const record = Store.ensureTaxYear(taxYear);
-    if (existing) {
-      alert(`${yearLabel(record)} already exists — opening it.`);
-    }
     window.location.href = `year.html?id=${encodeURIComponent(record.id)}`;
   });
 

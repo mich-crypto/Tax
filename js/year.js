@@ -27,8 +27,12 @@
   document.getElementById("year-subheading").textContent = "Everything filed, paid and refunded for this tax year.";
   document.title = `Tax year ${record.taxYear} — Multi-Country Tax Tracker`;
 
-  document.getElementById("delete-year-btn").addEventListener("click", () => {
-    if (!confirm(`Delete ${yearLabel(record)} entirely? Countries, payments and correspondence for this year go with it. This can't be undone.`)) return;
+  document.getElementById("delete-year-btn").addEventListener("click", async () => {
+    const sure = await confirmAction(
+      `Delete ${yearLabel(record)} entirely? Countries, payments and correspondence for this year go with it. This can't be undone.`,
+      "Delete year"
+    );
+    if (!sure) return;
     Store.deleteTaxYearRecord(yearId);
     window.location.href = "index.html";
   });
@@ -36,44 +40,113 @@
   // ---------- The money ----------
 
   const grossInput = document.getElementById("gross-income");
-  const refundedInput = document.getElementById("refunded-dk");
+  const grossCurrency = document.getElementById("gross-currency");
+  const grossConverted = document.getElementById("gross-converted");
   const moneyStatsEl = document.getElementById("money-stats");
+
+  // Everything is STORED in EUR. The currency pickers only change what you
+  // type and read — payroll figures arrive in DKK, the reporting is in EUR.
+  const CURRENCY_OPTIONS = ["EUR"].concat(CURRENCIES.map((c) => c.code).filter((c) => c !== "EUR"));
+
+  function currencyOptionsHtml(selected) {
+    return CURRENCY_OPTIONS
+      .map((code) => `<option value="${code}"${code === selected ? " selected" : ""}>${code}</option>`)
+      .join("");
+  }
+
+  /** EUR -> the display currency. Null when no rate is set for it. */
+  function fromEur(amountEur, code) {
+    if (!code || code === "EUR") return Number(amountEur) || 0;
+    const rate = Number(Store.getCurrencyRates()[code]);
+    if (!rate) return null;
+    return (Number(amountEur) || 0) * rate;
+  }
+
+  /** The display currency -> EUR. Null when no rate is set for it. */
+  function intoEur(amount, code) {
+    return toEur(amount, code, Store.getCurrencyRates());
+  }
+
+  function missingRateNote(code) {
+    return `No exchange rate set for ${escapeHtml(code)} — add one under <a href="settings.html">Settings</a>.`;
+  }
 
   function renderMoneyStats() {
     const totals = taxYearTotals(reload());
     const tiles = [
-      { label: "Tax paid", value: formatMoney(totals.taxPaid, "€"), hint: "sum of the countries below" },
+      { label: "Tax paid", value: formatMoney(totals.taxPaid, "€"), hint: "handed over during the year" },
+      { label: "Refunded", value: formatMoney(totals.refunded, "€"), hint: "coming back to you" },
       {
-        label: "Balance",
-        value: formatSigned(totals.balance, "€"),
-        hint: totals.balance >= 0 ? "refund covers what you owe" : "you're short by this much",
-        tone: totals.balance >= 0 ? "ok" : "danger",
+        label: "Net tax",
+        value: totals.netTax < 0 ? formatSigned(totals.netTax, "€") : formatMoney(totals.netTax, "€"),
+        hint: "what the year really cost",
+        tone: totals.netTax > 0 ? "danger" : "ok",
       },
       { label: "Net income", value: formatMoney(totals.netIncome, "€"), hint: "gross minus tax paid" },
       { label: "Effective rate", value: totals.gross ? formatPercent(totals.rate) : "—", hint: "tax paid ÷ gross income" },
     ];
     moneyStatsEl.innerHTML = tiles
       .map((t) => `
-        <div class="card stat-tile">
+        <div class="stat-tile">
           <div class="stat-label">${escapeHtml(t.label)}</div>
           <div class="stat-value${t.tone ? " tone-" + t.tone : ""}">${escapeHtml(t.value)}</div>
           <div class="stat-hint">${escapeHtml(t.hint)}</div>
         </div>
       `)
       .join("");
+    renderRefundWarning();
   }
 
-  grossInput.value = record.grossIncomeEur || "";
-  refundedInput.value = record.refundedFromDkEur || "";
+  const refundWarningEl = document.getElementById("refund-warning");
+
+  function renderRefundWarning() {
+    const incomplete = incompleteRefunds(reload());
+    if (!incomplete.length) {
+      refundWarningEl.hidden = true;
+      return;
+    }
+    const names = incomplete.map((c) => c.country || "a country").join(", ");
+    refundWarningEl.hidden = false;
+    refundWarningEl.innerHTML =
+      `⚠️ <span>${escapeHtml(names)} refunded more than the tax recorded as paid there. ` +
+      `That normally means the tax paid figure is still missing — Denmark withholds all year and returns part of it, ` +
+      `so both numbers belong on its row.</span>`;
+  }
+
+  function renderGrossField() {
+    const stored = Number(reload().grossIncomeEur) || 0;
+    const code = grossCurrency.value;
+    if (code === "EUR") {
+      grossInput.value = stored || "";
+      grossConverted.textContent = stored ? formatMoney(stored, "€") : "—";
+      return;
+    }
+    const shown = fromEur(stored, code);
+    if (shown === null) {
+      grossInput.value = "";
+      grossConverted.innerHTML = missingRateNote(code);
+      return;
+    }
+    grossInput.value = stored ? shown.toFixed(2) : "";
+    grossConverted.textContent = stored ? formatMoney(stored, "€") : "—";
+  }
+
+  grossCurrency.innerHTML = currencyOptionsHtml("EUR");
+  renderGrossField();
+
+  grossCurrency.addEventListener("change", renderGrossField);
 
   grossInput.addEventListener("change", () => {
-    Store.updateTaxYear(yearId, { grossIncomeEur: Number(grossInput.value) || 0 });
+    const typed = Number(grossInput.value) || 0;
+    const eur = intoEur(typed, grossCurrency.value);
+    if (eur === null) {
+      grossConverted.innerHTML = missingRateNote(grossCurrency.value);
+      return;
+    }
+    Store.updateTaxYear(yearId, { grossIncomeEur: eur });
+    renderGrossField();
     renderMoneyStats();
     renderFlow();
-  });
-  refundedInput.addEventListener("change", () => {
-    Store.updateTaxYear(yearId, { refundedFromDkEur: Number(refundedInput.value) || 0 });
-    renderMoneyStats();
   });
 
 
@@ -94,13 +167,16 @@
     const record = reload();
     const totals = taxYearTotals(record);
 
+    // Gross tax paid, so the parts add back up to the bar they leave:
+    // gross = net income + the tax paid in every country. Refunds are
+    // reported under the diagram rather than drawn, since they flow the
+    // other way and would not balance here.
     const flows = (record.countries || [])
-      .filter((c) => (Number(c.taxEur) || 0) > 0)
       .map((c) => ({ label: c.country || "Unnamed", value: Number(c.taxEur) || 0, kind: "tax" }))
+      .filter((f) => f.value > 0)
       .sort((a, b) => b.value - a.value);
 
-    const kept = totals.gross - totals.taxPaid;
-    if (kept > 0) flows.unshift({ label: "Net income", value: kept, kind: "kept" });
+    if (totals.netIncome > 0) flows.unshift({ label: "Net income", value: totals.netIncome, kind: "kept" });
 
     if (!totals.gross || !flows.length) {
       flowEl.innerHTML = `<p class="hint">Enter this year's gross income above, and the tax paid against at least one country below, and the split appears here.</p>`;
@@ -110,6 +186,7 @@
     // Tax can exceed gross in a bad year; scale to whatever is larger so the
     // ribbons still add up to the bar they leave.
     const scaleTotal = Math.max(totals.gross, flows.reduce((s, f) => s + f.value, 0));
+    const overspent = totals.taxPaid > totals.gross;
 
     const W = 800;
     const NODE = 14;
@@ -171,30 +248,72 @@
         <text x="${leftX - 12}" y="${PAD + grossHeight / 2 - 2}" class="flow-name" text-anchor="end">Gross income</text>
         <text x="${leftX - 12}" y="${PAD + grossHeight / 2 + 13}" class="flow-value" text-anchor="end">${escapeHtml(formatMoney(totals.gross, "\u20ac"))}</text>
       </svg>
-      ${totals.taxPaid > totals.gross ? `<p class="hint">Tax paid is more than the gross income entered for this year — check the figures above.</p>` : ""}`;
+      ${totals.refunded ? `<p class="hint">${escapeHtml(formatMoney(totals.refunded, "\u20ac"))} of that came back as refunds${totals.netTax >= 0 ? `, so the year cost ${escapeHtml(formatMoney(totals.netTax, "\u20ac"))} in tax` : ""}.</p>` : ""}
+      ${overspent ? `<p class="hint">Tax paid is more than the gross income entered for this year — check the figures above.</p>` : ""}`;
+  }
+
+  // ---------- Where you were ----------
+
+  const travelCard = document.getElementById("travel-card");
+  const travelBody = document.querySelector("#travel-table tbody");
+  const travelFoot = document.querySelector("#travel-table tfoot");
+
+  /**
+   * A tax year reports on the calendar year before it — the 2025 return
+   * covers what you earned and where you were in 2024.
+   */
+  function travelCalendarYear() {
+    return reload().taxYear - 1;
+  }
+
+  function renderTravel() {
+    const summary = travelYearSummary(Store.getTravel(), travelCalendarYear());
+    if (!summary || !summary.countries.length) {
+      travelCard.hidden = true;
+      return;
+    }
+    travelCard.hidden = false;
+    document.getElementById("travel-year").textContent = summary.year;
+
+    const cell = (n) => (n ? String(n) : "—");
+    travelBody.innerHTML = summary.countries
+      .map((c) => `
+        <tr>
+          <td>${escapeHtml(c.country)}</td>
+          <td class="num"><strong>${c.presence}</strong></td>
+          <td class="num">${cell(c.activities.Working)}</td>
+          <td class="num">${cell(c.activities["Not Working"])}</td>
+          <td class="num">${cell(c.activities["On Vacation"])}</td>
+          <td class="num">${cell(c.activities.Sick)}</td>
+          <td class="num">${cell(c.transit)}</td>
+        </tr>
+      `)
+      .join("");
+
+    travelFoot.innerHTML = `
+      <tr class="total-row">
+        <td><strong>Total</strong></td>
+        <td class="num"><strong>${summary.totalPresence}</strong></td>
+        <td class="num"><strong>${summary.totalWorking}</strong></td>
+        <td colspan="4"></td>
+      </tr>`;
   }
 
   // ---------- Progress ----------
 
-  function renderChecks(containerId, fields, bucket) {
-    const el = document.getElementById(containerId);
-    const current = reload();
-    el.innerHTML = fields
+  const statusEl = document.getElementById("status-checks");
+
+  /** Derived from the country rows — nothing to tick here. */
+  function renderStatus() {
+    const status = taxYearStatus(reload());
+    statusEl.innerHTML = TAX_YEAR_STATUS_FIELDS
       .map((f) => `
-        <label class="check">
-          <input type="checkbox" data-bucket="${bucket}" data-key="${f.key}"${(current[bucket] || {})[f.key] ? " checked" : ""}>
+        <div class="check state${status[f.key] ? " done" : ""}">
+          <span class="check-mark" aria-hidden="true">${status[f.key] ? "✓" : "○"}</span>
           <span>${escapeHtml(f.label)}</span>
-        </label>
+        </div>
       `)
       .join("");
-    el.querySelectorAll("input[type=checkbox]").forEach((box) => {
-      box.addEventListener("change", () => {
-        const fresh = reload();
-        const group = { ...(fresh[bucket] || {}) };
-        group[box.dataset.key] = box.checked;
-        Store.updateTaxYear(yearId, { [bucket]: group });
-      });
-    });
   }
 
   // ---------- Countries ----------
@@ -205,6 +324,7 @@
   const countriesEmpty = document.getElementById("countries-empty-state");
   const newCountryInput = document.getElementById("new-country");
   const addCountryBtn = document.getElementById("add-country-btn");
+  const countriesCurrency = document.getElementById("countries-currency");
 
   /** Grouped for reading; the raw number comes back on focus for typing. */
   function moneyCell(value) {
@@ -218,17 +338,37 @@
     return Number(cleaned) || 0;
   }
 
+  /** The currency the table is being typed in. Storage stays EUR regardless. */
+  function tableCurrency() {
+    return countriesCurrency.value || "EUR";
+  }
+
+  /** An EUR figure rendered in the table's currency, or null with no rate. */
+  function cellDisplay(valueEur) {
+    return fromEur(valueEur, tableCurrency());
+  }
+
+  function moneyCellIn(valueEur) {
+    const shown = cellDisplay(valueEur);
+    return shown === null ? "" : moneyCell(shown);
+  }
+
   function countryRowHtml(row) {
-    const checks = COUNTRY_STATUS_FIELDS.map((f) => `
-      <td class="center">
-        <input type="checkbox" data-row="${row.id}" data-field="${f.key}"${row[f.key] ? " checked" : ""} title="${escapeHtml(f.label)}">
-      </td>
-    `).join("");
+    const flagCell = (f, extraClass) => `
+      <td class="center${extraClass || ""}">
+        <input type="checkbox" data-row="${row.id}" data-field="${f.key}"${row[f.key] ? " checked" : ""}${row.notLiable && f.key !== "notLiable" ? " disabled" : ""} title="${escapeHtml(f.label)}">
+      </td>`;
+    const checks = COUNTRY_STATUS_FIELDS.map((f) => flagCell(f)).join("")
+      + flagCell(COUNTRY_NOT_LIABLE_FIELD, " na-cell");
+    const net = countryNetTax(row);
+    const netShown = cellDisplay(net);
     return `
       <tr>
         <td class="col-name"><input type="text" class="cell-input" list="country-list" data-row="${row.id}" data-field="country" value="${escapeHtml(row.country)}"></td>
-        <td class="num"><input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="incomeEur" value="${moneyCell(row.incomeEur)}" placeholder="0.00"></td>
-        <td class="num"><input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="taxEur" value="${moneyCell(row.taxEur)}" placeholder="0.00"></td>
+        <td class="num"><input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="incomeEur" value="${moneyCellIn(row.incomeEur)}" placeholder="0.00"></td>
+        <td class="num"><input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="taxEur" value="${moneyCellIn(row.taxEur)}" placeholder="0.00"></td>
+        <td class="num"><input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="refundedEur" value="${moneyCellIn(row.refundedEur)}" placeholder="0.00"></td>
+        <td class="num net-cell">${netShown === null ? "—" : escapeHtml(moneyCell(netShown))}</td>
         ${checks}
         <td class="col-grow"><input type="text" class="cell-input" data-row="${row.id}" data-field="comment" value="${escapeHtml(row.comment || "")}" title="${escapeHtml(row.comment || "")}" placeholder="—"></td>
         <td><button type="button" class="icon-btn small" data-remove="${row.id}" title="Remove country">✕</button></td>
@@ -251,13 +391,22 @@
     countriesEmpty.style.display = "none";
     countriesBody.innerHTML = rows.map(countryRowHtml).join("");
 
-    const totalTax = rows.reduce((s, r) => s + (Number(r.taxEur) || 0), 0);
+    const totals = taxYearTotals(current);
+    const code = tableCurrency();
+    const symbol = code === "EUR" ? "€" : "";
+    const suffix = code === "EUR" ? "" : ` ${code}`;
+    const foot = (valueEur) => {
+      const shown = cellDisplay(valueEur);
+      return shown === null ? "—" : formatMoney(shown, symbol) + suffix;
+    };
     countriesFoot.innerHTML = `
       <tr class="total-row">
-        <td><strong>Total tax paid</strong></td>
+        <td><strong>Total</strong></td>
         <td></td>
-        <td class="num"><strong>${formatMoney(totalTax, "€")}</strong></td>
-        <td colspan="5"></td>
+        <td class="num"><strong>${foot(totals.taxPaid)}</strong></td>
+        <td class="num"><strong>${foot(totals.refunded)}</strong></td>
+        <td class="num"><strong>${foot(totals.netTax)}</strong></td>
+        <td colspan="6"></td>
       </tr>
     `;
 
@@ -278,48 +427,69 @@
 
       input.addEventListener("change", () => {
         const field = input.dataset.field;
-        const value = isMoney ? parseMoney(input.value) : input.value;
-        Store.updateCountryRow(yearId, input.dataset.row, { [field]: value });
-        if (field === "comment") input.title = value;
-        if (field === "taxEur" || field === "country") {
-          renderMoneyStats();
-          renderCountries();
-          renderFlow();
+        if (!isMoney) {
+          Store.updateCountryRow(yearId, input.dataset.row, { [field]: input.value });
+          if (field === "comment") input.title = input.value;
+          if (field === "country") {
+            renderCountries();
+            renderFlow();
+          }
+          return;
         }
+        // Typed in the table's currency; stored in EUR.
+        const eur = intoEur(parseMoney(input.value), tableCurrency());
+        if (eur === null) {
+          notify(`No exchange rate set for ${tableCurrency()} — add one under Settings.`);
+          renderCountries();
+          return;
+        }
+        Store.updateCountryRow(yearId, input.dataset.row, { [field]: eur });
+        renderMoneyStats();
+        renderCountries();
+        renderFlow();
       });
     });
 
     countriesBody.querySelectorAll("input[type=checkbox]").forEach((box) => {
       box.addEventListener("change", () => {
         Store.updateCountryRow(yearId, box.dataset.row, { [box.dataset.field]: box.checked });
+        // A year's status is read off these, so it moves with them.
+        if (box.dataset.field === "notLiable") renderCountries();
+        renderStatus();
       });
     });
 
     countriesBody.querySelectorAll("[data-remove]").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const row = (reload().countries || []).find((c) => c.id === btn.dataset.remove);
-        if (!confirm(`Remove ${row ? row.country : "this country"} from ${yearLabel(record)}?`)) return;
+        const sure = await confirmAction(`Remove ${row ? row.country : "this country"} from ${yearLabel(record)}?`, "Remove");
+        if (!sure) return;
         Store.deleteCountryRow(yearId, btn.dataset.remove);
         renderCountries();
         renderFlow();
+        renderStatus();
       });
     });
 
     renderMoneyStats();
   }
 
+  countriesCurrency.innerHTML = currencyOptionsHtml("EUR");
+  countriesCurrency.addEventListener("change", renderCountries);
+
   addCountryBtn.addEventListener("click", () => {
     const country = newCountryInput.value.trim();
     if (!country) return;
     const existing = (reload().countries || []).some((c) => c.country.toLowerCase() === country.toLowerCase());
     if (existing) {
-      alert(`${country} is already listed for this year.`);
+      notify(`${country} is already listed for this year.`);
       return;
     }
     Store.addCountryRow(yearId, { country });
     newCountryInput.value = "";
     renderCountries();
     renderFlow();
+    renderStatus();
   });
 
   // ---------- Payments ----------
@@ -352,8 +522,8 @@
       `)
       .join("");
     paymentsBody.querySelectorAll("[data-delete]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        if (!confirm("Delete this payment?")) return;
+      btn.addEventListener("click", async () => {
+        if (!(await confirmAction("Delete this payment?"))) return;
         Store.deletePayment(yearId, btn.dataset.delete);
         renderPayments();
       });
@@ -439,8 +609,8 @@
       });
     });
     corrList.querySelectorAll("[data-delete]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        if (!confirm("Delete this correspondence entry?")) return;
+      btn.addEventListener("click", async () => {
+        if (!(await confirmAction("Delete this correspondence entry?"))) return;
         Store.deleteCorrespondence(yearId, btn.dataset.delete);
         renderCorrespondence();
       });
@@ -482,7 +652,8 @@
   document.getElementById("corr-category").innerHTML = CORRESPONDENCE_CATEGORIES
     .map((c) => `<option value="${c}">${c}</option>`).join("");
 
-  renderChecks("status-checks", TAX_YEAR_STATUS_FIELDS, "status");
+  renderStatus();
+  renderTravel();
   renderCountries();
   renderFlow();
   renderPayments();
