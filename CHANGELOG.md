@@ -3,6 +3,20 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.7.1 — 2026-09-04
+
+- **One figure per cell**, in the row's own currency — the small euro line
+  under each amount is gone. Euro appears where it's a total: the countries
+  footer, the money card, the year's summary figures and the flow diagram.
+- **Switching a row's currency converts it.** Denmark from DKK to EUR turns
+  575,597.00 into 76,996.76, rather than relabelling the same digits as
+  euro. If the target currency has no rate, the switch is refused and the
+  row is left exactly as it was.
+- Fixed: the currency picker carries `.cell-input` for styling, so the
+  generic cell handler matched it too and wrote the currency code straight
+  to storage — bypassing the conversion entirely, and on a failed switch
+  leaving the new currency next to the old amounts.
+
 ## v2.7.0 — 2026-09-04
 
 - **Country figures are stored in the country's own currency.** Denmark in

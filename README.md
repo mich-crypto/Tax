@@ -179,10 +179,13 @@ lives only in `localStorage`, excluded from Export/Import.
 ## Currencies
 
 Every country's figures are stored in **that country's own currency** —
-Denmark in DKK, Poland in PLN, Belgium in EUR — with the euro equivalent
-derived at render time from the rate under Settings. Storing the converted
-euro instead would bake a wrong rate in permanently; this way, correcting a
-rate restates every figure that depends on it.
+Denmark in DKK, Poland in PLN, Belgium in EUR — so they match the documents
+they come from. Storing the converted euro instead would bake a wrong rate
+in permanently; this way, correcting a rate restates every euro figure
+derived from them: the countries totals, the money card, the year summary
+and the flow diagram. A row shows one figure, in its own currency;
+switching a row's currency converts it at the current rate, and is refused
+if that currency has no rate set.
 
 `js/rates.js` fetches ECB reference rates from
 [Frankfurter](https://frankfurter.dev) — no key, straight from the browser,

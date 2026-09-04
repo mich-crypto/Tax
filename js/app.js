@@ -146,6 +146,14 @@ function toEur(amount, currencyCode, rates) {
   return (Number(amount) || 0) / rate;
 }
 
+/** EUR into a local currency ("1 EUR = ? code"). Null if the rate is unknown. */
+function fromEur(amountEur, currencyCode, rates) {
+  if (!currencyCode || currencyCode === "EUR") return Number(amountEur) || 0;
+  const rate = Number(rates[currencyCode]);
+  if (!rate) return null;
+  return (Number(amountEur) || 0) * rate;
+}
+
 /** Builds a list of years covering any data present, plus the current year. */
 function collectYearsFromDates(dates) {
   const years = new Set([currentYear()]);

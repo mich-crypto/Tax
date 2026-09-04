@@ -321,16 +321,6 @@
     return Number(cleaned) || 0;
   }
 
-  /** The euro equivalent shown under a figure, or a nudge when no rate is set. */
-  function eurSub(row, field) {
-    if ((row.currency || "EUR") === "EUR") return "";
-    const value = countryEur(row, field);
-    if (!Number(row[field])) return "";
-    return value === null
-      ? `<div class="cell-sub warn-text">no ${escapeHtml(row.currency)} rate</div>`
-      : `<div class="cell-sub">${escapeHtml(formatMoney(value, "\u20ac"))}</div>`;
-  }
-
   function countryRowHtml(row) {
     const flagCell = (f, extraClass) => `
       <td class="center${extraClass || ""}">
@@ -342,22 +332,17 @@
     const moneyCellHtml = (field) => `
       <td class="num">
         <input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="${field}" value="${moneyCell(row[field])}" placeholder="0.00">
-        ${eurSub(row, field)}
       </td>`;
 
     const net = countryNetTax(row);
-    const netEur = toEur(net, row.currency, Store.getCurrencyRates());
     return `
       <tr>
         <td class="col-name"><input type="text" class="cell-input" list="country-list" data-row="${row.id}" data-field="country" value="${escapeHtml(row.country)}"></td>
-        <td><select class="cell-input" data-row="${row.id}" data-field="currency">${currencyOptionsHtml(row.currency || "EUR")}</select></td>
+        <td><select class="cell-input" data-row="${row.id}" data-field="currency" data-currency="${row.currency || "EUR"}">${currencyOptionsHtml(row.currency || "EUR")}</select></td>
         ${moneyCellHtml("income")}
         ${moneyCellHtml("tax")}
         ${moneyCellHtml("refunded")}
-        <td class="num net-cell">
-          ${net ? escapeHtml(moneyCell(net)) : "—"}
-          ${net && (row.currency || "EUR") !== "EUR" ? `<div class="cell-sub">${netEur === null ? "" : escapeHtml(formatMoney(netEur, "\u20ac"))}</div>` : ""}
-        </td>
+        <td class="num net-cell">${net ? escapeHtml(moneyCell(net)) : "—"}</td>
         ${checks}
         <td class="col-grow"><input type="text" class="cell-input" data-row="${row.id}" data-field="comment" value="${escapeHtml(row.comment || "")}" title="${escapeHtml(row.comment || "")}" placeholder="—"></td>
         <td><button type="button" class="icon-btn small" data-remove="${row.id}" title="Remove country">✕</button></td>
@@ -391,7 +376,7 @@
       </tr>
     `;
 
-    countriesBody.querySelectorAll(".cell-input").forEach((input) => {
+    countriesBody.querySelectorAll("input.cell-input").forEach((input) => {
       const isMoney = input.classList.contains("money");
 
       if (isMoney) {
@@ -422,8 +407,29 @@
     });
 
     countriesBody.querySelectorAll("select.cell-input").forEach((select) => {
+      const from = select.dataset.currency;
       select.addEventListener("change", () => {
-        Store.updateCountryRow(yearId, select.dataset.row, { currency: select.value });
+        const to = select.value;
+        const rates = Store.getCurrencyRates();
+        const row = (reload().countries || []).find((c) => c.id === select.dataset.row);
+        if (!row) return;
+
+        // Convert through EUR so 575,597 DKK becomes €76,996.76 rather than
+        // €575,597 — the row means the same money, said differently.
+        const changes = { currency: to };
+        for (const field of ["income", "tax", "refunded"]) {
+          const amount = Number(row[field]) || 0;
+          if (!amount) continue;
+          const eur = toEur(amount, from, rates);
+          const converted = eur === null ? null : fromEur(eur, to, rates);
+          if (converted === null) {
+            notify(`No exchange rate set for ${eur === null ? from : to} — add one under Settings.`);
+            renderCountries();
+            return;
+          }
+          changes[field] = Number(converted.toFixed(2));
+        }
+        Store.updateCountryRow(yearId, select.dataset.row, changes);
         renderMoneyStats();
         renderCountries();
         renderFlow();
