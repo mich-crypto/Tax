@@ -32,18 +32,22 @@ plus the tax on each country row — see `taxYearTotals()` in `js/app.js`:
 
 | Figure | How it's derived |
 | --- | --- |
-| Tax paid | sum of each country's `tax`, converted to EUR — everything handed over |
+| Gross income | sum of each country's `income`, converted to EUR |
+| Tax paid | sum of each country's `tax`, converted — everything handed over |
 | Refunded | sum of each country's `refunded`, converted — how much came back |
-| Net tax | tax paid − refunded — what the year really cost |
-| Net income | gross − tax paid |
-| Effective rate | tax paid ÷ gross |
+| Tax | tax paid − refunded — what the year really, finally cost |
+| Net income | gross − tax |
+| Effective rate | tax ÷ gross |
 
-Net income and the rate deliberately use **gross** tax paid, not net tax.
-Where a country's refund is recorded but the tax paid there is not — the
-source spreadsheet only ever recorded Denmark's refund — netting them
-would report a net income *above* the gross salary. The app flags that
-case instead: a country refunding more than it records as paid means the
-paid figure is still missing.
+There is no manual gross-income entry any more — every figure above comes
+from the Countries table. That makes gross only as reliable as the rows
+that feed it: summing taxable income across countries tells the truth
+when each row is a genuine slice of the year (work done in Denmark,
+Polish-source income, ...), and overstates it when a row repeats the
+whole salary again. `incompleteRefunds()` still catches a refund recorded
+with no matching paid figure; there is no equivalent check for a doubled
+income row — a gross that looks too large or small for the year is the
+sign to look at.
 
 Nothing derived is ever stored, so the numbers can't drift out of sync
 with what they're computed from.
@@ -67,11 +71,11 @@ the logo in the header, with a gear icon on the right for shared settings:
   entered and derived on the year's own page.
 - **One tax year** (`year.html?id=…`) — everything about a single year on
   one page, no tabs:
-  - **The money** — gross income (the one figure you enter, in whichever
-    currency you like), then three lines for each country that paid tax:
-    pre-paid, actual, and returned. Underneath, the year's own figures:
-    tax prepaid / refunded / net tax / net income / effective rate, across
-    every country.
+  - **The money** — four figures, all calculated from the Countries table
+    below: **Gross income** (sum of taxable income, every country),
+    **Net income** (gross minus tax), **Tax** (pre-paid minus tax
+    returned, every country), **Tax rate** (tax ÷ gross). Nothing here is
+    entered directly.
   - **Where the money went** — a flow diagram: the year's gross income on
     the left splitting into what you kept and the tax paid in each
     country on the right, sized to the real figures and redrawn as you

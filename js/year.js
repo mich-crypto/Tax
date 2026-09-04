@@ -39,13 +39,11 @@
 
   // ---------- The money ----------
 
-  const grossInput = document.getElementById("gross-income");
   const moneyStatsEl = document.getElementById("money-stats");
-  const dkNote = document.getElementById("dk-note");
-  const moneyLinesEl = document.getElementById("money-lines");
+  const moneyNoteEl = document.getElementById("money-note");
 
   // Every country row keeps its figures in its own currency, so the picker
-  // lives per row. This card is euro throughout.
+  // lives per row.
   const CURRENCY_OPTIONS = ["EUR"].concat(CURRENCIES.map((c) => c.code).filter((c) => c !== "EUR"));
 
   function currencyOptionsHtml(selected) {
@@ -55,57 +53,21 @@
   }
 
   /**
-   * One set of lines per country that actually paid tax: what was handed
-   * over, what it really cost, and what came back. Read from the Countries
-   * table so they can't drift from it.
+   * The year's headline: everything derived from the Countries table below
+   * — nothing entered separately here.
    */
-  function renderMoneyLines() {
-    const record = reload();
-    const rows = (record.countries || []).filter(
-      (c) => !c.notLiable && ((Number(c.tax) || 0) !== 0 || (Number(c.refunded) || 0) !== 0)
-    );
-
-    // Everything after the gross-income line is rebuilt; the input stays put.
-    moneyLinesEl.querySelectorAll(".money-line.derived").forEach((el) => el.remove());
-
-    const missing = [];
-    const html = rows.map((row) => {
-      const name = escapeHtml(row.country || "Unnamed");
-      const paid = countryEur(row, "tax");
-      const refund = countryEur(row, "refunded");
-      if (paid === null || refund === null) {
-        if (!missing.includes(row.currency)) missing.push(row.currency);
-      }
-      const money = (value) => (value === null ? "—" : formatMoney(value, "€"));
-      const actual = paid === null || refund === null ? null : paid - refund;
-      return `
-        <div class="money-line derived"><dt>Pre-paid tax in ${name}</dt><dd>${money(paid)}</dd></div>
-        <div class="money-line derived"><dt>Actual tax in ${name}</dt><dd>${money(actual)}</dd></div>
-        <div class="money-line derived"><dt>Tax return from ${name}</dt><dd>${money(refund)}</dd></div>`;
-    }).join("");
-
-    moneyLinesEl.insertAdjacentHTML("beforeend", html);
-
-    dkNote.textContent = !rows.length
-      ? "Add a country under Countries with the tax paid there, and its lines appear here."
-      : missing.length
-        ? `No exchange rate set for ${missing.join(", ")} — add one under Settings.`
-        : "";
-  }
-
   function renderMoneyStats() {
     const totals = taxYearTotals(reload());
     const tiles = [
-      { label: "Tax prepaid", value: formatMoney(totals.taxPaid, "€"), hint: "every country, before refunds" },
-      { label: "Tax refunded", value: formatMoney(totals.refunded, "€"), hint: "coming back to you" },
+      { label: "Gross income", value: formatMoney(totals.gross, "€"), hint: "sum of taxable income, all countries" },
+      { label: "Net income", value: formatMoney(totals.netIncome, "€"), hint: "gross minus tax" },
       {
-        label: "Net tax",
-        value: totals.netTax < 0 ? formatSigned(totals.netTax, "€") : formatMoney(totals.netTax, "€"),
-        hint: "what the year really cost",
-        tone: totals.netTax > 0 ? "danger" : "ok",
+        label: "Tax",
+        value: totals.tax < 0 ? formatSigned(totals.tax, "€") : formatMoney(totals.tax, "€"),
+        hint: "pre-paid minus tax returned",
+        tone: totals.tax > 0 ? "danger" : "ok",
       },
-      { label: "Net income", value: formatMoney(totals.netIncome, "€"), hint: "gross minus tax paid" },
-      { label: "Effective rate", value: totals.gross ? formatPercent(totals.rate) : "—", hint: "tax paid ÷ gross income" },
+      { label: "Tax rate", value: totals.gross ? formatPercent(totals.rate) : "—", hint: "tax ÷ gross income" },
     ];
     moneyStatsEl.innerHTML = tiles
       .map((t) => `
@@ -116,7 +78,9 @@
         </div>
       `)
       .join("");
-    renderMoneyLines();
+    moneyNoteEl.textContent = totals.missingRates.length
+      ? `No exchange rate set for ${totals.missingRates.join(", ")} — add one under Settings; those countries are excluded from the figures above until then.`
+      : "";
     renderRefundWarning();
   }
 
@@ -136,49 +100,6 @@
       `so both numbers belong on its row.</span>`;
   }
 
-  const grossCurrency = document.getElementById("gross-currency");
-
-  function renderGrossField() {
-    const current = reload();
-    grossInput.value = current.grossIncome || "";
-    grossCurrency.innerHTML = currencyOptionsHtml(current.grossCurrency || "EUR");
-  }
-
-  renderGrossField();
-
-  grossInput.addEventListener("change", () => {
-    Store.updateTaxYear(yearId, { grossIncome: Number(grossInput.value) || 0 });
-    renderMoneyStats();
-    renderFlow();
-  });
-
-  // Same as a country row: switching currency converts, so the figure keeps
-  // meaning the same money rather than being relabelled.
-  grossCurrency.addEventListener("change", () => {
-    const current = reload();
-    const from = current.grossCurrency || "EUR";
-    const to = grossCurrency.value;
-    const rates = Store.getCurrencyRates();
-    const amount = Number(current.grossIncome) || 0;
-
-    if (amount) {
-      const asEur = toEur(amount, from, rates);
-      const converted = asEur === null ? null : fromEur(asEur, to, rates);
-      if (converted === null) {
-        notify(`No exchange rate set for ${asEur === null ? from : to} — add one under Settings.`);
-        renderGrossField();
-        return;
-      }
-      Store.updateTaxYear(yearId, { grossCurrency: to, grossIncome: Number(converted.toFixed(2)) });
-    } else {
-      Store.updateTaxYear(yearId, { grossCurrency: to });
-    }
-
-    renderGrossField();
-    renderMoneyStats();
-    renderFlow();
-  });
-
   // ---------- Where the money went ----------
 
   const flowEl = document.getElementById("flow-diagram");
@@ -196,26 +117,31 @@
     const record = reload();
     const totals = taxYearTotals(record);
 
-    // Gross tax paid, so the parts add back up to the bar they leave:
-    // gross = net income + the tax paid in every country. Refunds are
-    // reported under the diagram rather than drawn, since they flow the
-    // other way and would not balance here.
+    // Actual tax per country (paid less refunded), so the parts add back up
+    // to the bar they leave: gross = net income + the actual tax in every
+    // country. Since this is already net of refunds, there's no separate
+    // refund flow to reconcile — unlike gross tax paid, which would need one.
     const flows = (record.countries || [])
-      .map((c) => ({ label: `Tax ${c.country || "Unnamed"}`, value: countryEur(c, "tax") || 0, kind: "tax" }))
+      .map((c) => {
+        const paid = countryEur(c, "tax");
+        const refund = countryEur(c, "refunded");
+        const value = paid === null || refund === null ? 0 : paid - refund;
+        return { label: `Tax ${c.country || "Unnamed"}`, value, kind: "tax" };
+      })
       .filter((f) => f.value > 0)
       .sort((a, b) => b.value - a.value);
 
     if (totals.netIncome > 0) flows.unshift({ label: "Net income", value: totals.netIncome, kind: "kept" });
 
     if (!totals.gross || !flows.length) {
-      flowEl.innerHTML = `<p class="hint">Enter this year's gross income above, and the tax paid against at least one country below, and the split appears here.</p>`;
+      flowEl.innerHTML = `<p class="hint">Add a country below with income and tax paid, and the split appears here.</p>`;
       return;
     }
 
     // Tax can exceed gross in a bad year; scale to whatever is larger so the
     // ribbons still add up to the bar they leave.
     const scaleTotal = Math.max(totals.gross, flows.reduce((s, f) => s + f.value, 0));
-    const overspent = totals.taxPaid > totals.gross;
+    const overspent = totals.tax > totals.gross;
 
     const W = 800;
     const NODE = 14;
@@ -277,8 +203,7 @@
         <text x="${leftX - 12}" y="${PAD + grossHeight / 2 - 2}" class="flow-name" text-anchor="end">Gross income</text>
         <text x="${leftX - 12}" y="${PAD + grossHeight / 2 + 13}" class="flow-value" text-anchor="end">${escapeHtml(formatMoney(totals.gross, "\u20ac"))}</text>
       </svg>
-      ${totals.refunded ? `<p class="hint">${escapeHtml(formatMoney(totals.refunded, "\u20ac"))} of that came back as refunds${totals.netTax >= 0 ? `, so the year cost ${escapeHtml(formatMoney(totals.netTax, "\u20ac"))} in tax` : ""}.</p>` : ""}
-      ${overspent ? `<p class="hint">Tax paid is more than the gross income entered for this year — check the figures above.</p>` : ""}`;
+      ${overspent ? `<p class="hint">Tax is more than the gross income for this year — check the figures below.</p>` : ""}`;
   }
 
   // ---------- Where you were ----------
@@ -375,46 +300,20 @@
         <input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="${field}" value="${moneyCell(row[field])}" placeholder="0.00">
       </td>`;
 
-    const netIncome = countryNetIncome(row);
-    const rate = countryTaxRate(row);
+    const actualTax = countryNetTax(row);
     return `
       <tr>
         <td class="col-name"><input type="text" class="cell-input" list="country-list" data-row="${row.id}" data-field="country" value="${escapeHtml(row.country)}"></td>
         <td><select class="cell-input" data-row="${row.id}" data-field="currency" data-currency="${row.currency || "EUR"}">${currencyOptionsHtml(row.currency || "EUR")}</select></td>
         ${moneyCellHtml("income")}
         ${moneyCellHtml("tax")}
+        <td class="num net-cell">${actualTax ? escapeHtml(moneyCell(actualTax)) : "—"}</td>
         ${moneyCellHtml("refunded")}
-        <td class="num net-cell">${netIncome ? escapeHtml(moneyCell(netIncome)) : "—"}</td>
-        <td class="num net-cell">${rate === null ? "—" : escapeHtml(formatPercent(rate))}</td>
         ${checks}
         <td class="col-grow"><input type="text" class="cell-input" data-row="${row.id}" data-field="comment" value="${escapeHtml(row.comment || "")}" title="${escapeHtml(row.comment || "")}" placeholder="—"></td>
         <td><button type="button" class="icon-btn small" data-remove="${row.id}" title="Remove country">✕</button></td>
       </tr>
     `;
-  }
-
-  const allocationNote = document.getElementById("allocation-note");
-
-  /**
-   * How the income spread across countries compares with the year's gross.
-   * Equal means every euro is accounted for once; short means some income
-   * isn't taxed anywhere yet, or a country's slice is missing; over means
-   * the same salary is counted in more than one row, which is fine when a
-   * country taxes the whole amount and a warning sign when it isn't.
-   */
-  function renderAllocationNote(totals) {
-    if (!totals.gross || !totals.incomeAllocated) {
-      allocationNote.textContent = "";
-      return;
-    }
-    const difference = totals.incomeAllocated - totals.gross;
-    if (Math.abs(difference) < 1) {
-      allocationNote.textContent = "The income above adds up to the year's gross income exactly.";
-      return;
-    }
-    allocationNote.textContent = difference < 0
-      ? `${formatMoney(Math.abs(difference), "€")} of the year's gross income isn't allocated to any country above.`
-      : `The income above exceeds the year's gross by ${formatMoney(difference, "€")} — expected where a country taxes the whole salary rather than a slice of it.`;
   }
 
   function renderCountries() {
@@ -436,16 +335,13 @@
     countriesFoot.innerHTML = `
       <tr class="total-row">
         <td colspan="2"><strong>Total in EUR</strong></td>
-        <td class="num"><strong>${formatMoney(totals.incomeAllocated, "€")}</strong></td>
+        <td class="num"><strong>${formatMoney(totals.gross, "€")}</strong></td>
         <td class="num"><strong>${formatMoney(totals.taxPaid, "€")}</strong></td>
+        <td class="num"><strong>${formatMoney(totals.tax, "€")}</strong></td>
         <td class="num"><strong>${formatMoney(totals.refunded, "€")}</strong></td>
-        <td></td>
-        <td></td>
         <td colspan="6"></td>
       </tr>
     `;
-
-    renderAllocationNote(totals);
 
     countriesBody.querySelectorAll("input.cell-input").forEach((input) => {
       const isMoney = input.classList.contains("money");

@@ -33,19 +33,27 @@ function currentYear() {
 }
 
 /**
- * The whole money model for one tax year, in one place.
+ * The whole money model for one tax year, in one place — everything derived
+ * from the country rows below it, nothing entered separately.
  *
- *   gross     one salary for the year (Danish payroll) — NOT the sum of the
- *             country rows, since the same salary is taxed in several places
- *   taxPaid   tax handed over across every country, before any of it came back
- *   refunded  how much of that came back (Denmark refunds most of its own)
- *   netTax    taxPaid − refunded → what the year actually cost in tax
- *   netIncome gross − netTax → what you actually kept
- *   rate      netTax / gross
+ *   gross     sum of every country's taxable income, in EUR
+ *   taxPaid   sum of pre-paid tax across every country, before any came back
+ *   refunded  sum of tax returned across every country
+ *   tax       taxPaid − refunded → what the year actually, finally cost
+ *   netIncome gross − tax → what you actually kept
+ *   rate      tax / gross
  *
- * Paid and refunded are tracked per country rather than as one figure,
- * because Denmark withholds tax all year and returns most of it: a single
- * number there can only ever mean one of the two.
+ * Pre-paid tax and tax returned are tracked per country rather than as one
+ * figure, because Denmark withholds tax all year and returns most of it: a
+ * single number there can only ever mean one of the two.
+ *
+ * Summing taxable income across countries only tells the truth when each
+ * row holds a genuine SLICE of the year's income (work done in Denmark,
+ * Polish-source income, ...) — a row that repeats the WHOLE salary again
+ * inflates gross rather than reflecting it. incompleteRefunds() catches the
+ * other half of that same problem (a refund recorded with no matching
+ * pre-paid figure); there is no equivalent automatic check for a doubled
+ * income row; it shows up as a gross that looks too large for the year.
  */
 function taxYearTotals(record) {
   const countries = record.countries || [];
@@ -63,29 +71,17 @@ function taxYearTotals(record) {
     return value;
   };
 
-  const gross = eur(record.grossIncome, record.grossCurrency);
-
-  // The income allocated across countries. Whether it should equal gross
-  // depends on how the rows are filled: complementary slices (work done in
-  // Denmark, Polish-source income) add up; a country that taxes the whole
-  // salary again does not. Reported, never fed into net income or the rate.
-  const incomeAllocated = countries.reduce((sum, c) => sum + eur(c.income, c.currency), 0);
+  const gross = countries.reduce((sum, c) => sum + eur(c.income, c.currency), 0);
   const taxPaid = countries.reduce((sum, c) => sum + eur(c.tax, c.currency), 0);
   const refunded = countries.reduce((sum, c) => sum + eur(c.refunded, c.currency), 0);
-  const netTax = taxPaid - refunded;
+  const tax = taxPaid - refunded;
   return {
     gross,
-    incomeAllocated,
     taxPaid,
     refunded,
-    netTax,
-    // Net income and the rate stay on GROSS tax paid, matching the
-    // spreadsheet these figures come from. Netting the refund off them
-    // would be wrong wherever a country's refund is recorded but the tax
-    // paid there is not — Denmark, for most years — and would report a net
-    // income ABOVE the gross salary. incompleteRefunds flags exactly that.
-    netIncome: gross - taxPaid,
-    rate: gross ? taxPaid / gross : 0,
+    tax,
+    netIncome: gross - tax,
+    rate: gross ? tax / gross : 0,
     missingRates,
   };
 }
@@ -105,22 +101,6 @@ function incompleteRefunds(record) {
 /** What one country's row cost, in its own currency: paid less refunded. */
 function countryNetTax(row) {
   return (Number(row.tax) || 0) - (Number(row.refunded) || 0);
-}
-
-/** That country's income less the tax paid on it, in its own currency. */
-function countryNetIncome(row) {
-  return (Number(row.income) || 0) - (Number(row.tax) || 0);
-}
-
-/**
- * A country's effective rate: the tax it actually cost — paid less what
- * came back — over the income taxable there. Null when there's no income
- * to divide by, since a rate on nothing means nothing.
- */
-function countryTaxRate(row) {
-  const income = Number(row.income) || 0;
-  if (!income) return null;
-  return countryNetTax(row) / income;
 }
 
 /** A country row's figure in EUR, or null when its rate isn't set. */

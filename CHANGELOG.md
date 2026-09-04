@@ -3,6 +3,39 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.11.0 — 2026-09-04
+
+- **The year's headline is now fully calculated from the Countries table**:
+  **Gross income** (sum of every country's taxable income), **Net income**
+  (gross minus tax), **Tax** (pre-paid minus tax returned, across every
+  country), **Tax rate** (tax ÷ gross). The manual "Gross income" entry —
+  and its currency picker — is gone; there is nothing left to type at the
+  top of the page, only country rows to fill in below.
+- **Countries table columns are Taxable income / Pre-paid tax / Actual Tax /
+  Tax return.** Actual Tax (pre-paid less returned) is a new column, shown
+  per country the same way it already appeared for Denmark; the old
+  per-country Net income and Rate columns are gone (Net income and Tax
+  rate are now year-level headline figures instead). The per-country money
+  breakdown that used to sit above the table (Pre-paid tax in Denmark /
+  Actual tax in Denmark / Tax return from Denmark, ...) is removed — it's
+  the same numbers the Countries table now shows directly.
+- The flow diagram now draws each country's Actual Tax (net of what came
+  back) rather than its gross pre-paid tax, so the diagram and the
+  headline "Tax" figure tell the same story; the separate "some of that
+  came back as a refund" sentence under it is gone, since refunds are
+  already netted into the bands.
+- **Important trade-off, worth checking your own data against:** summing
+  taxable income across countries only gives the right gross when each
+  row holds a genuine slice of the year's income. A country whose row
+  repeats the WHOLE salary (rather than the portion taxable there)
+  inflates gross — checked against this app's own five imported years,
+  three come out overstated (by amounts matching another country's
+  income entered on top of Denmark's full-salary row) and one understated
+  (part of that year's income isn't yet on any country's row at all).
+  There is no automatic check for this the way `incompleteRefunds()`
+  catches a missing pre-paid-tax figure; a gross that looks too large or
+  small for the year is the sign to look at.
+
 ## v2.10.0 — 2026-09-04
 
 - **Payslips can be net pay only.** Until now every payslip needed a

@@ -33,7 +33,7 @@
             <a href="year.html?id=${encodeURIComponent(record.id)}"><strong>${record.taxYear}</strong></a>
           </td>
           <td class="num">${formatMoney(totals.gross, "€")}</td>
-          <td class="num">${formatMoney(totals.taxPaid, "€")}</td>
+          <td class="num">${formatMoney(totals.tax, "€")}</td>
           <td class="num">${formatMoney(totals.netIncome, "€")}</td>
           <td class="num">${totals.gross ? formatPercent(totals.rate) : "—"}</td>
           <td>${progressBadge(record)}</td>
@@ -44,14 +44,14 @@
 
     const sum = (key) => rows.reduce((s, r) => s + r.totals[key], 0);
     const totalGross = sum("gross");
-    const totalPaid = sum("taxPaid");
+    const totalTax = sum("tax");
     tfoot.innerHTML = `
       <tr class="total-row">
         <td><strong>Total</strong></td>
         <td class="num"><strong>${formatMoney(totalGross, "€")}</strong></td>
-        <td class="num"><strong>${formatMoney(totalPaid, "€")}</strong></td>
+        <td class="num"><strong>${formatMoney(totalTax, "€")}</strong></td>
         <td class="num"><strong>${formatMoney(sum("netIncome"), "€")}</strong></td>
-        <td class="num"><strong>${totalGross ? formatPercent(totalPaid / totalGross) : "—"}</strong></td>
+        <td class="num"><strong>${totalGross ? formatPercent(totalTax / totalGross) : "—"}</strong></td>
         <td></td><td></td>
       </tr>
     `;

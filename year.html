@@ -41,22 +41,9 @@
     <div class="section-stack">
 
     <!-- ============ THE MONEY ============ -->
-    <div class="card">
-      <div class="card-header"><h2>The money</h2></div>
-      <p class="hint">All figures in euro. Gross income is the one salary you earned that year (your Danish payroll) — not a per-country total; the same salary gets taxed in several countries, so adding those up would count it twice. The lines below it are read from the Countries table, one set per country you paid tax in.</p>
-      <dl class="money-lines" id="money-lines">
-        <div class="money-line">
-          <dt><label for="gross-income">Gross income</label></dt>
-          <dd>
-            <input type="number" id="gross-income" min="0" step="0.01" placeholder="0.00">
-            <select id="gross-currency" aria-label="Currency for gross income"></select>
-          </dd>
-        </div>
-      </dl>
-      <p class="hint" id="dk-note"></p>
-    </div>
-
+    <p class="hint">All figures in euro, calculated from the Countries table below: gross income is the sum of every country's taxable income, tax is what was pre-paid less what came back, and the rate is tax over gross.</p>
     <div class="stat-grid" id="money-stats"></div>
+    <p class="hint" id="money-note"></p>
     <div class="disclaimer" id="refund-warning" hidden></div>
 
     <!-- ============ WHERE THE MONEY WENT ============ -->
@@ -105,18 +92,17 @@
         <datalist id="country-list"></datalist>
         <button type="button" id="add-country-btn" class="small">+ Add</button>
       </div>
-      <p class="hint">Each row is in <strong>its own currency</strong> — kroner for Denmark, złoty for Poland — so the figures match the documents they come from. Switching a row's currency converts it at the rate under <a href="settings.html">Settings</a>. The totals underneath are in euro. <strong>Tax paid</strong> is everything handed over that year, before any of it came back; <strong>Refunded</strong> is how much came back; <strong>Net income</strong> is that country's income less the tax paid on it, and <strong>Rate</strong> is the actual tax — paid less refunded — as a share of that income.</p>
+      <p class="hint">Each row is in <strong>its own currency</strong> — kroner for Denmark, złoty for Poland — so the figures match the documents they come from. Switching a row's currency converts it at the rate under <a href="settings.html">Settings</a>. The totals underneath are in euro. <strong>Taxable income</strong> is the slice of income taxed in that country; <strong>Pre-paid tax</strong> is everything handed over that year, before any of it came back; <strong>Actual Tax</strong> is what it really cost — pre-paid less returned; <strong>Tax return</strong> is how much came back.</p>
       <div class="table-scroll">
         <table id="countries-table">
           <thead>
             <tr>
               <th>Country</th>
               <th>Currency</th>
-              <th class="num">Income</th>
-              <th class="num">Tax paid</th>
-              <th class="num">Refunded</th>
-              <th class="num">Net income</th>
-              <th class="num" title="Actual tax (paid − refunded) ÷ income">Rate</th>
+              <th class="num">Taxable income</th>
+              <th class="num">Pre-paid tax</th>
+              <th class="num">Actual Tax</th>
+              <th class="num">Tax return</th>
               <th>Questionnaire</th>
               <th>Return filed</th>
               <th>Payed / returned</th>
@@ -129,7 +115,6 @@
           <tfoot></tfoot>
         </table>
       </div>
-      <p class="hint" id="allocation-note"></p>
       <div class="empty-state" id="countries-empty-state">No countries yet. Add the ones you were tax liable in that year.</div>
     </div>
 
