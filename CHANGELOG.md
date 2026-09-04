@@ -3,6 +3,28 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.12.0 — 2026-09-04
+
+- **The money is one combined card** — the stat band, the missing-rate note
+  and the refund warning are wrapped together under a single "The money"
+  heading, instead of sitting as loose sections one after another.
+- **Five tiles, not four**: Gross income, **Tax paid**, Net income, Tax
+  rate, and **Tax return from Denmark**. Tax paid returns as its own
+  headline figure (the sum of pre-paid tax across every country); Denmark's
+  refund gets a tile of its own, read straight from Denmark's row, since
+  it's the one country here that withholds all year and pays part back.
+- **Net income and Tax rate changed definition**, back to matching the
+  source spreadsheet: Net income is gross minus tax **paid** (before
+  anything comes back), and Tax rate is tax paid over gross — not netted
+  against refunds. This is the same formula verified earlier against the
+  spreadsheet's own "Net income" and "tax rate" cells. The flow diagram's
+  ribbons revert to gross tax paid per country to match, so the diagram
+  and the headline tell the same story again; refunds are a separate,
+  later event, not netted into a ribbon.
+- The Tax years list picks up the same change: its middle column is
+  "Tax paid" again, and Net income / Rate use the same gross-based
+  formula, so the list and a year's own page never disagree.
+
 ## v2.11.0 — 2026-09-04
 
 - **The year's headline is now fully calculated from the Countries table**:

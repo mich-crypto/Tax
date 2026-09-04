@@ -35,9 +35,14 @@ plus the tax on each country row — see `taxYearTotals()` in `js/app.js`:
 | Gross income | sum of each country's `income`, converted to EUR |
 | Tax paid | sum of each country's `tax`, converted — everything handed over |
 | Refunded | sum of each country's `refunded`, converted — how much came back |
-| Tax | tax paid − refunded — what the year really, finally cost |
-| Net income | gross − tax |
-| Effective rate | tax ÷ gross |
+| Net income | gross − tax paid |
+| Effective rate | tax paid ÷ gross |
+
+Net income and the rate use **gross** tax paid, matching the source
+spreadsheet's own definitions exactly — not netted against refunds. Tax
+returned is reported on its own (Denmark's, specifically, as its own
+headline figure — that's the one country here that withholds all year and
+pays part back) rather than folded into a single "final cost" figure.
 
 There is no manual gross-income entry any more — every figure above comes
 from the Countries table. That makes gross only as reliable as the rows
@@ -71,11 +76,12 @@ the logo in the header, with a gear icon on the right for shared settings:
   entered and derived on the year's own page.
 - **One tax year** (`year.html?id=…`) — everything about a single year on
   one page, no tabs:
-  - **The money** — four figures, all calculated from the Countries table
-    below: **Gross income** (sum of taxable income, every country),
-    **Net income** (gross minus tax), **Tax** (pre-paid minus tax
-    returned, every country), **Tax rate** (tax ÷ gross). Nothing here is
-    entered directly.
+  - **The money** — one card, five figures, all calculated from the
+    Countries table below: **Gross income** (sum of taxable income, every
+    country), **Tax paid** (sum of pre-paid tax, every country), **Net
+    income** (gross minus tax paid), **Tax rate** (tax paid ÷ gross), and
+    **Tax return from Denmark** (read from Denmark's own row). Nothing
+    here is entered directly.
   - **Where the money went** — a flow diagram: the year's gross income on
     the left splitting into what you kept and the tax paid in each
     country on the right, sized to the real figures and redrawn as you

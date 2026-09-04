@@ -33,7 +33,7 @@
             <a href="year.html?id=${encodeURIComponent(record.id)}"><strong>${record.taxYear}</strong></a>
           </td>
           <td class="num">${formatMoney(totals.gross, "€")}</td>
-          <td class="num">${formatMoney(totals.tax, "€")}</td>
+          <td class="num">${formatMoney(totals.taxPaid, "€")}</td>
           <td class="num">${formatMoney(totals.netIncome, "€")}</td>
           <td class="num">${totals.gross ? formatPercent(totals.rate) : "—"}</td>
           <td>${progressBadge(record)}</td>
@@ -44,7 +44,7 @@
 
     const sum = (key) => rows.reduce((s, r) => s + r.totals[key], 0);
     const totalGross = sum("gross");
-    const totalTax = sum("tax");
+    const totalTax = sum("taxPaid");
     tfoot.innerHTML = `
       <tr class="total-row">
         <td><strong>Total</strong></td>

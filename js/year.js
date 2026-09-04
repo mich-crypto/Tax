@@ -54,20 +54,27 @@
 
   /**
    * The year's headline: everything derived from the Countries table below
-   * — nothing entered separately here.
+   * — nothing entered separately here. Denmark's tax return gets its own
+   * tile since it's the one country in this model that withholds all year
+   * and pays part of it back — other countries' refunds still count in the
+   * Actual Tax column below, they just aren't singled out up here.
    */
   function renderMoneyStats() {
-    const totals = taxYearTotals(reload());
+    const current = reload();
+    const totals = taxYearTotals(current);
+    const denmark = denmarkRow(current);
+    const dkRefund = denmark ? countryEur(denmark, "refunded") : null;
+
     const tiles = [
       { label: "Gross income", value: formatMoney(totals.gross, "€"), hint: "sum of taxable income, all countries" },
-      { label: "Net income", value: formatMoney(totals.netIncome, "€"), hint: "gross minus tax" },
+      { label: "Tax paid", value: formatMoney(totals.taxPaid, "€"), hint: "sum of pre-paid tax, all countries" },
+      { label: "Net income", value: formatMoney(totals.netIncome, "€"), hint: "gross minus tax paid" },
+      { label: "Tax rate", value: totals.gross ? formatPercent(totals.rate) : "—", hint: "tax paid ÷ gross income" },
       {
-        label: "Tax",
-        value: totals.tax < 0 ? formatSigned(totals.tax, "€") : formatMoney(totals.tax, "€"),
-        hint: "pre-paid minus tax returned",
-        tone: totals.tax > 0 ? "danger" : "ok",
+        label: "Tax return from Denmark",
+        value: dkRefund === null ? "—" : formatMoney(dkRefund, "€"),
+        hint: denmark ? "coming back to you" : "add a Denmark row below",
       },
-      { label: "Tax rate", value: totals.gross ? formatPercent(totals.rate) : "—", hint: "tax ÷ gross income" },
     ];
     moneyStatsEl.innerHTML = tiles
       .map((t) => `
@@ -117,17 +124,12 @@
     const record = reload();
     const totals = taxYearTotals(record);
 
-    // Actual tax per country (paid less refunded), so the parts add back up
-    // to the bar they leave: gross = net income + the actual tax in every
-    // country. Since this is already net of refunds, there's no separate
-    // refund flow to reconcile — unlike gross tax paid, which would need one.
+    // Gross tax paid per country, so the parts add back up to the bar they
+    // leave: gross = net income + the tax paid in every country. A refund
+    // is a separate, later event — Denmark's shows on its own tile above
+    // the diagram rather than being netted into a ribbon here.
     const flows = (record.countries || [])
-      .map((c) => {
-        const paid = countryEur(c, "tax");
-        const refund = countryEur(c, "refunded");
-        const value = paid === null || refund === null ? 0 : paid - refund;
-        return { label: `Tax ${c.country || "Unnamed"}`, value, kind: "tax" };
-      })
+      .map((c) => ({ label: `Tax ${c.country || "Unnamed"}`, value: countryEur(c, "tax") || 0, kind: "tax" }))
       .filter((f) => f.value > 0)
       .sort((a, b) => b.value - a.value);
 
@@ -141,7 +143,7 @@
     // Tax can exceed gross in a bad year; scale to whatever is larger so the
     // ribbons still add up to the bar they leave.
     const scaleTotal = Math.max(totals.gross, flows.reduce((s, f) => s + f.value, 0));
-    const overspent = totals.tax > totals.gross;
+    const overspent = totals.taxPaid > totals.gross;
 
     const W = 800;
     const NODE = 14;
@@ -203,7 +205,7 @@
         <text x="${leftX - 12}" y="${PAD + grossHeight / 2 - 2}" class="flow-name" text-anchor="end">Gross income</text>
         <text x="${leftX - 12}" y="${PAD + grossHeight / 2 + 13}" class="flow-value" text-anchor="end">${escapeHtml(formatMoney(totals.gross, "\u20ac"))}</text>
       </svg>
-      ${overspent ? `<p class="hint">Tax is more than the gross income for this year — check the figures below.</p>` : ""}`;
+      ${overspent ? `<p class="hint">Tax paid is more than the gross income for this year — check the figures below.</p>` : ""}`;
   }
 
   // ---------- Where you were ----------

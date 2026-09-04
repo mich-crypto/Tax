@@ -146,11 +146,12 @@ const CORRESPONDENCE_CATEGORIES = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "2.11.0";
+const APP_VERSION = "2.12.0";
 const APP_VERSION_DATE = "2026-09-04";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "2.12.0", summary: "The money section is one combined card: Gross income, Tax paid, Net income, Tax rate, and Tax return from Denmark — Net income and Tax rate now use gross pre-paid tax (matching the source spreadsheet's own definitions) rather than netting refunds off, with Denmark's refund shown as its own figure instead. The flow diagram reverts to gross tax paid per country to match." },
   { version: "2.11.0", summary: "The year's headline is now Gross income / Net income / Tax / Tax rate, all calculated from the Countries table — the manual gross-income entry is gone. Countries table columns are Taxable income / Pre-paid tax / Actual Tax / Tax return. Gross income summing per-country figures can double-count a salary taxed as a whole in one country and as a slice in another — check your country rows if a year's gross looks wrong." },
   { version: "2.10.0", summary: "Payslips can be net pay only — gross and tax withheld left unknown rather than shown as zero. A checkbox on the manual entry form marks one; Gross pay and Tax withheld tiles, and the monthly log, show a dash for what a net-only payslip doesn't record instead of a misleading €0.00." },
   { version: "2.9.0", summary: "The money card lists Pre-paid / Actual / Tax return per country instead of Denmark only. Gross income carries its own currency and converts like a country row. The countries footer totals income, with a note comparing it against the year's gross." },

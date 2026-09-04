@@ -36,12 +36,18 @@ function currentYear() {
  * The whole money model for one tax year, in one place — everything derived
  * from the country rows below it, nothing entered separately.
  *
- *   gross     sum of every country's taxable income, in EUR
- *   taxPaid   sum of pre-paid tax across every country, before any came back
- *   refunded  sum of tax returned across every country
- *   tax       taxPaid − refunded → what the year actually, finally cost
- *   netIncome gross − tax → what you actually kept
- *   rate      tax / gross
+ *   gross      sum of every country's taxable income, in EUR
+ *   taxPaid    sum of pre-paid tax across every country, before any came back
+ *   refunded   sum of tax returned across every country
+ *   tax        taxPaid − refunded → what the year actually, finally cost
+ *              (not the headline "Net income"/"Tax rate" driver — see below)
+ *   netIncome  gross − taxPaid → income after what was withheld, before any
+ *              of it comes back. Matches the source spreadsheet's own
+ *              definition (verified against its "Net income" column) and
+ *              what a payslip means by "net pay": withholding, not a later
+ *              refund, is what nets against gross here.
+ *   rate       taxPaid / gross, same reasoning — this is the figure the
+ *              spreadsheet's own "tax rate" cells reproduce exactly.
  *
  * Pre-paid tax and tax returned are tracked per country rather than as one
  * figure, because Denmark withholds tax all year and returns most of it: a
@@ -74,14 +80,13 @@ function taxYearTotals(record) {
   const gross = countries.reduce((sum, c) => sum + eur(c.income, c.currency), 0);
   const taxPaid = countries.reduce((sum, c) => sum + eur(c.tax, c.currency), 0);
   const refunded = countries.reduce((sum, c) => sum + eur(c.refunded, c.currency), 0);
-  const tax = taxPaid - refunded;
   return {
     gross,
     taxPaid,
     refunded,
-    tax,
-    netIncome: gross - tax,
-    rate: gross ? tax / gross : 0,
+    tax: taxPaid - refunded,
+    netIncome: gross - taxPaid,
+    rate: gross ? taxPaid / gross : 0,
     missingRates,
   };
 }
@@ -106,6 +111,13 @@ function countryNetTax(row) {
 /** A country row's figure in EUR, or null when its rate isn't set. */
 function countryEur(row, field) {
   return toEur(row[field], row.currency, Store.getCurrencyRates());
+}
+
+/** The Denmark row in a tax year, if one has been added — Denmark is the one country that withholds all year and refunds part of it back. */
+function denmarkRow(record) {
+  return (record.countries || []).find(
+    (c) => (c.country || "").trim().toLowerCase() === "denmark"
+  ) || null;
 }
 
 /**
