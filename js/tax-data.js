@@ -146,11 +146,12 @@ const CORRESPONDENCE_CATEGORIES = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "2.15.0";
+const APP_VERSION = "2.16.0";
 const APP_VERSION_DATE = "2026-09-04";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "2.16.0", summary: "The year page's Tax paid tile now sums Actual Tax (tax paid, net of what came back) instead of Pre-paid tax. New: Settings → Data → \"Export Excel backup\" writes a human-readable .xlsx with one sheet per tax year (the money, Countries, Payments, Correspondence) plus one Salary follow up sheet for the whole payslip history — a backup of last resort if the site's ever unreachable, not something Import can read back in." },
   { version: "2.15.0", summary: "New: a \"🤖 Analyze assessment\" button on the Countries table reads Taxable income and Actual Tax off a tax assessment letter (PDF or image) with AI, for you to check and assign to a country row — nothing is saved until you apply it. New: an optional client-side site password under Settings → Site lock (off by default) — a deterrent for a casually-shared link, not real security, since a static site has no server to enforce it." },
   { version: "2.14.0", summary: "Actual Tax in the Countries table is editable again. Type the figure straight off an assessment letter and Tax return works itself out backwards from it, holding Pre-paid tax fixed — instead of Actual Tax being a read-only value you couldn't correct." },
   { version: "2.13.0", summary: "A country row's currency picker now only offers EUR and that country's own currency (Denmark -> DKK, Poland -> PLN, ...) instead of the full ten-currency list — narrowing what could be picked by mistake." },

@@ -231,6 +231,7 @@
 
   // --- Data export / import / wipe ---
   const exportBtn = document.getElementById("export-data-btn");
+  const exportExcelBtn = document.getElementById("export-excel-btn");
   const importInput = document.getElementById("import-data-input");
   const wipeBtn = document.getElementById("wipe-data-btn");
 
@@ -245,6 +246,120 @@
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+  });
+
+  // --- Excel backup -------------------------------------------------------
+  // A human-readable backup, not a machine one: unlike the JSON export
+  // above (the real backup - Import reads it straight back in), this can't
+  // be re-imported. It exists for the day the site itself is unreachable
+  // and the JSON file is all that's left - one sheet per tax year (the
+  // money, the Countries table, payments, correspondence) plus one sheet
+  // for the whole payslip history, so the numbers are readable in Excel or
+  // Sheets with nothing else running.
+
+  /** Excel sheet names: 31 chars max, and none of : \ / ? * [ ] */
+  function safeSheetName(name) {
+    return String(name).replace(/[:\\/?*[\]]/g, "-").slice(0, 31);
+  }
+
+  function countryRowsForSheet(record) {
+    const header = [
+      "Country", "Currency", "Taxable income", "Pre-paid tax", "Actual Tax", "Tax return",
+      "Questionnaire", "Return filed", "Payed / returned", "Not tax liable", "Comment",
+    ];
+    const rows = (record.countries || []).map((c) => [
+      c.country || "",
+      c.currency || "",
+      Number(c.income) || 0,
+      Number(c.tax) || 0,
+      countryNetTax(c),
+      Number(c.refunded) || 0,
+      !!c.questionnaireDone,
+      !!c.returnFiled,
+      !!c.paidReturned,
+      !!c.notLiable,
+      c.comment || "",
+    ]);
+    const totals = taxYearTotals(record);
+    const totalRow = ["Total (EUR)", "", totals.gross, totals.taxPaid, totals.tax, totals.refunded, "", "", "", "", ""];
+    return [header, ...rows, totalRow];
+  }
+
+  function paymentRowsForSheet(record) {
+    const header = ["Action", "Date", "Amount", "Currency", "Country"];
+    const rows = (record.payments || []).map((p) => [
+      p.action || "", formatDate(p.date) || "", Number(p.amount) || 0, p.currency || "", p.country || "",
+    ]);
+    return [header, ...rows];
+  }
+
+  function correspondenceRowsForSheet(record) {
+    const header = ["Date", "Counterparty", "Channel", "Category", "Country", "Subject", "Notes", "Follow-up", "Status"];
+    const rows = (record.correspondence || []).map((e) => [
+      formatDate(e.date) || "", e.counterparty || "", e.channel || "", e.category || "", e.country || "",
+      e.subject || "", e.notes || "", formatDate(e.followUp) || "", e.status || "",
+    ]);
+    return [header, ...rows];
+  }
+
+  function taxYearSheetRows(record) {
+    const totals = taxYearTotals(record);
+    const status = taxYearStatus(record);
+    const denmark = denmarkRow(record);
+    const dkRefund = denmark ? countryEur(denmark, "refunded") : null;
+
+    return [
+      ["Tax year", record.taxYear],
+      ["Gross income (EUR)", totals.gross],
+      ["Tax paid — actual (EUR)", totals.tax],
+      ["Tax paid — pre-paid (EUR)", totals.taxPaid],
+      ["Net income (EUR)", totals.netIncome],
+      ["Tax rate", totals.gross ? formatPercent(totals.rate) : ""],
+      ["Tax return from Denmark (EUR)", dkRefund === null ? "" : dkRefund],
+      ["Year completed", status.yearCompleted],
+      ["Questionnaires done", status.questionnairesDone],
+      ["Returns filed", status.returnsFiled],
+      ["Paid & returned", status.paidAndReturned],
+      [],
+      ["Countries"],
+      ...countryRowsForSheet(record),
+      [],
+      ["Payments & refunds"],
+      ...paymentRowsForSheet(record),
+      [],
+      ["Correspondence"],
+      ...correspondenceRowsForSheet(record),
+    ];
+  }
+
+  function payslipSheetRows() {
+    const header = ["Year", "Month", "Type", "Currency", "Gross pay", "Net pay", "Tax withheld", "Net pay only", "Notes", "Read by AI"];
+    const entries = Store.getPayslips().slice().sort((a, b) => (a.year - b.year) || (a.month - b.month));
+    const rows = entries.map((p) => [
+      p.year, PAYSLIP_MONTHS[(p.month || 1) - 1] || p.month, p.type || "", p.currency || "",
+      p.netOnly ? "" : Number(p.grossPay) || 0,
+      Number(p.netPay) || 0,
+      p.netOnly ? "" : Number(p.taxWithheld) || 0,
+      !!p.netOnly, p.notes || "", !!p.analyzedByAI,
+    ]);
+    return [header, ...rows];
+  }
+
+  function buildExcelWorkbook() {
+    const wb = XLSX.utils.book_new();
+    const years = Store.sortTaxYears(Store.getTaxYears().slice());
+    years.forEach((record) => {
+      const ws = XLSX.utils.aoa_to_sheet(taxYearSheetRows(record));
+      XLSX.utils.book_append_sheet(wb, ws, safeSheetName(record.taxYear));
+    });
+    const payslipWs = XLSX.utils.aoa_to_sheet(payslipSheetRows());
+    XLSX.utils.book_append_sheet(wb, payslipWs, "Salary follow up");
+    return wb;
+  }
+
+  exportExcelBtn.addEventListener("click", () => {
+    const wb = buildExcelWorkbook();
+    XLSX.writeFile(wb, `tax-tracker-backup-${new Date().toISOString().slice(0, 10)}.xlsx`);
   });
 
   importInput.addEventListener("change", () => {

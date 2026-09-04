@@ -3,6 +3,23 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.16.0 — 2026-09-04
+
+- **Tax paid now means Actual Tax.** The year page's "Tax paid" tile
+  under The money used to sum Pre-paid tax across countries; it now sums
+  **Actual Tax** (Pre-paid tax minus Tax return — what it really cost)
+  instead, so it reads as the real cost of the year rather than what was
+  merely handed over before any of it came back. Net income and Tax rate
+  are unchanged (still gross Pre-paid tax basis, matching the source
+  spreadsheet).
+- **Export Excel backup**, under Settings → Data: writes a human-readable
+  `.xlsx` file — one sheet per tax year (the money, the Countries table,
+  Payments & refunds, Correspondence) plus one **Salary follow up** sheet
+  covering the whole payslip history. This is a backup of last resort for
+  if the site itself is ever unreachable and the JSON export is all
+  that's left to work from — unlike the JSON export, it can't be
+  re-imported here.
+
 ## v2.15.0 — 2026-09-04
 
 - **Analyze a tax assessment with AI.** A "🤖 Analyze assessment" button

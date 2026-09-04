@@ -150,8 +150,10 @@
   <div class="card">
     <div class="card-header"><h2>Data</h2></div>
     <p class="hint">Everything lives in this browser's local storage — clearing site data wipes it. Back it up as a JSON file, restore from one, or wipe everything and start over. API keys are never part of a backup.</p>
+    <p class="hint">The JSON backup is the one Import above can read back in — keep that as your real backup. The Excel backup below is a human-readable copy for if this site is ever unreachable and the JSON is all you have: one sheet per tax year (the money, the Countries table, payments, correspondence) plus one sheet for the whole payslip history. It can't be re-imported here.</p>
     <div class="toolbar" style="margin-bottom:0;">
       <button type="button" id="export-data-btn">Export data (JSON)</button>
+      <button type="button" id="export-excel-btn">Export Excel backup</button>
       <label class="btn" style="margin:0;">
         Import data
         <input type="file" id="import-data-input" accept="application/json" style="display:none;">

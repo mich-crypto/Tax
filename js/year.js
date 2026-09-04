@@ -74,7 +74,7 @@
 
     const tiles = [
       { label: "Gross income", value: formatMoney(totals.gross, "€"), hint: "sum of taxable income, all countries" },
-      { label: "Tax paid", value: formatMoney(totals.taxPaid, "€"), hint: "sum of pre-paid tax, all countries" },
+      { label: "Tax paid", value: formatMoney(totals.tax, "€"), hint: "sum of actual tax, all countries" },
       { label: "Net income", value: formatMoney(totals.netIncome, "€"), hint: "gross minus tax paid" },
       { label: "Tax rate", value: totals.gross ? formatPercent(totals.rate) : "—", hint: "tax paid ÷ gross income" },
       {

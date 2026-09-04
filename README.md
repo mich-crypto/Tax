@@ -33,16 +33,21 @@ plus the tax on each country row — see `taxYearTotals()` in `js/app.js`:
 | Figure | How it's derived |
 | --- | --- |
 | Gross income | sum of each country's `income`, converted to EUR |
-| Tax paid | sum of each country's `tax`, converted — everything handed over |
+| Tax paid (`taxPaid`) | sum of each country's `tax`, converted — everything handed over, before any of it came back |
 | Refunded | sum of each country's `refunded`, converted — how much came back |
-| Net income | gross − tax paid |
-| Effective rate | tax paid ÷ gross |
+| Actual tax (`tax`) | `taxPaid − refunded` — what the year really cost, summed per country |
+| Net income | gross − **`taxPaid`** (gross, not actual tax) |
+| Effective rate | **`taxPaid`** ÷ gross (gross, not actual tax) |
 
-Net income and the rate use **gross** tax paid, matching the source
-spreadsheet's own definitions exactly — not netted against refunds. Tax
-returned is reported on its own (Denmark's, specifically, as its own
-headline figure — that's the one country here that withholds all year and
-pays part back) rather than folded into a single "final cost" figure.
+Net income and the rate use **gross** tax paid (`taxPaid`), matching the
+source spreadsheet's own definitions exactly — not netted against
+refunds. The year page's own **"Tax paid" tile is the odd one out**: it
+shows `tax` (actual tax, net of refunds) rather than `taxPaid`, so it
+reads as what the year really cost — while Net income and the rate
+alongside it keep the gross-`taxPaid` basis above. Tax returned is
+reported on its own too (Denmark's, specifically, as its own headline
+figure — that's the one country here that withholds all year and pays
+part back) rather than folded into a single "final cost" figure.
 
 There is no manual gross-income entry any more — every figure above comes
 from the Countries table. That makes gross only as reliable as the rows
@@ -78,10 +83,11 @@ the logo in the header, with a gear icon on the right for shared settings:
   one page, no tabs:
   - **The money** — one card, five figures, all calculated from the
     Countries table below: **Gross income** (sum of taxable income, every
-    country), **Tax paid** (sum of pre-paid tax, every country), **Net
-    income** (gross minus tax paid), **Tax rate** (tax paid ÷ gross), and
-    **Tax return from Denmark** (read from Denmark's own row). Nothing
-    here is entered directly.
+    country), **Tax paid** (sum of **actual tax** — pre-paid tax minus
+    tax return — every country, what the year really cost), **Net
+    income** (gross minus gross pre-paid tax paid), **Tax rate** (gross
+    pre-paid tax paid ÷ gross), and **Tax return from Denmark** (read
+    from Denmark's own row). Nothing here is entered directly.
   - **Where the money went** — a flow diagram: the year's gross income on
     the left splitting into what you kept and the tax paid in each
     country on the right, sized to the real figures and redrawn as you
@@ -150,10 +156,11 @@ the logo in the header, with a gear icon on the right for shared settings:
   active, set once under Settings.
 - **Settings** (`settings.html`) — exchange rates (fetched from the ECB, or
   typed in), the **Travel Tracker** import, the AI provider and its API
-  key/model, **Site lock**, and Export/Import/Wipe. Shared across both
-  trackers, so it lives outside either one. **Exchange rates** are set
-  by hand ("1 EUR = ? DKK") — there's no live rate feed; a payslip in a
-  currency with no rate set is flagged and excluded from the EUR figures
+  key/model, **Site lock**, and Export/Import/Wipe (plus an Excel backup
+  — see [Data](#data) below). Shared across both trackers, so it lives
+  outside either one. **Exchange rates** are set by hand ("1 EUR = ? DKK")
+  — there's no live rate feed; a payslip in a currency with no rate set
+  is flagged and excluded from the EUR figures
   rather than silently counted as zero. **Site lock** generates a
   password's SHA-256 hash for pasting into `js/site-lock.js`'s
   `SITE_LOCK_HASH` constant (see below) — Settings only prepares the
@@ -203,6 +210,15 @@ to a visitor's browser.
   up from Settings). Countries, payments and correspondence all live
   inside their tax-year record — there are no separate top-level stores
   for them.
+- **Export Excel backup** (`buildExcelWorkbook()` in `js/settings.js`,
+  using [SheetJS](https://sheetjs.com)) writes a `.xlsx` with one sheet
+  per tax year — the money (gross, actual tax, pre-paid tax, net income,
+  rate, Denmark's tax return, the four completion checks), the Countries
+  table, Payments & refunds, and Correspondence — plus one **Salary
+  follow up** sheet for every payslip. This is a human-readable backup of
+  last resort for when the site itself is unreachable and the JSON
+  export (above) is all that's left; unlike that JSON file, it can't be
+  read back in through Import.
 - Tax years are stored under `taxtracker_taxyears_v3` and exports carry
   `schema: 3`. Data under the older `_v2` key is shifted down a year once,
   on first read, and an export from schema 2 or earlier is shifted on
