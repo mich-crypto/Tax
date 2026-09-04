@@ -100,6 +100,22 @@ function countryNetTax(row) {
   return (Number(row.tax) || 0) - (Number(row.refunded) || 0);
 }
 
+/** That country's income less the tax paid on it, in its own currency. */
+function countryNetIncome(row) {
+  return (Number(row.income) || 0) - (Number(row.tax) || 0);
+}
+
+/**
+ * A country's effective rate: the tax it actually cost — paid less what
+ * came back — over the income taxable there. Null when there's no income
+ * to divide by, since a rate on nothing means nothing.
+ */
+function countryTaxRate(row) {
+  const income = Number(row.income) || 0;
+  if (!income) return null;
+  return countryNetTax(row) / income;
+}
+
 /** A country row's figure in EUR, or null when its rate isn't set. */
 function countryEur(row, field) {
   return toEur(row[field], row.currency, Store.getCurrencyRates());

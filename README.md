@@ -82,7 +82,9 @@ the logo in the header, with a gear icon on the right for shared settings:
     done when every country in it is. A country marked **N/A** — listed
     for the record but not liable there — sits the year out.
   - **Countries** — one editable row per country: the income taxable
-    there, the **tax paid**, the amount **refunded**, a derived **net**,
+    there, the **tax paid**, the amount **refunded**,
+    a derived **net income** (that country's income less the tax paid on
+    it) and **rate** (actual tax, paid less refunded, over that income),
     its own Questionnaire / Return filed / Payed-returned flags, an
     **N/A** flag, and a free-text comment. Edited inline, with an
     "Amounts in" picker so the whole table can be typed in DKK. Country

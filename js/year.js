@@ -334,7 +334,8 @@
         <input type="text" inputmode="decimal" class="cell-input num money" data-row="${row.id}" data-field="${field}" value="${moneyCell(row[field])}" placeholder="0.00">
       </td>`;
 
-    const net = countryNetTax(row);
+    const netIncome = countryNetIncome(row);
+    const rate = countryTaxRate(row);
     return `
       <tr>
         <td class="col-name"><input type="text" class="cell-input" list="country-list" data-row="${row.id}" data-field="country" value="${escapeHtml(row.country)}"></td>
@@ -342,7 +343,8 @@
         ${moneyCellHtml("income")}
         ${moneyCellHtml("tax")}
         ${moneyCellHtml("refunded")}
-        <td class="num net-cell">${net ? escapeHtml(moneyCell(net)) : "—"}</td>
+        <td class="num net-cell">${netIncome ? escapeHtml(moneyCell(netIncome)) : "—"}</td>
+        <td class="num net-cell">${rate === null ? "—" : escapeHtml(formatPercent(rate))}</td>
         ${checks}
         <td class="col-grow"><input type="text" class="cell-input" data-row="${row.id}" data-field="comment" value="${escapeHtml(row.comment || "")}" title="${escapeHtml(row.comment || "")}" placeholder="—"></td>
         <td><button type="button" class="icon-btn small" data-remove="${row.id}" title="Remove country">✕</button></td>
@@ -371,7 +373,8 @@
         <td colspan="3"><strong>Total in EUR</strong></td>
         <td class="num"><strong>${formatMoney(totals.taxPaid, "€")}</strong></td>
         <td class="num"><strong>${formatMoney(totals.refunded, "€")}</strong></td>
-        <td class="num"><strong>${formatMoney(totals.netTax, "€")}</strong></td>
+        <td></td>
+        <td></td>
         <td colspan="6"></td>
       </tr>
     `;

@@ -146,11 +146,12 @@ const CORRESPONDENCE_CATEGORIES = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "2.7.1";
+const APP_VERSION = "2.8.0";
 const APP_VERSION_DATE = "2026-09-04";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "2.8.0", summary: "Countries table: Net is now Net income (that country's income less the tax paid on it), and a Rate column shows the actual tax — paid less refunded — as a share of that income." },
   { version: "2.7.1", summary: "A country row shows one figure, in its own currency, instead of the euro shadow underneath — and switching a row's currency now converts the figures instead of relabelling them. Fixed the currency picker being written straight to storage by the generic cell handler, which bypassed the conversion and left a failed switch half-applied." },
   { version: "2.7.0", summary: "Country figures are kept in the country's OWN currency with euro derived at the current rate, so correcting a rate restates the numbers. Rates can be fetched from the ECB — today's, or a calendar year's average. The money card is euro only and now reads Gross income / Already payed taxes in DK / Actual taxes in DK / Tax return from DK. Dates are DD-MM-YYYY everywhere, and the flow diagram labels tax destinations \"Tax <country>\"." },
   { version: "2.6.0", summary: "A tax year is now named by the year the income was EARNED, not the year the return is filed — what read as 2026 is the 2025 tax year. Existing data shifts itself once on first load, and older backups shift on import. Travel days line up with the same calendar year as a result." },

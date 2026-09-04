@@ -3,6 +3,21 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.8.0 — 2026-09-04
+
+- **Net income per country.** The countries table's `Net` column was the
+  tax the country cost (paid − refunded); it is now that country's income
+  less the tax paid on it. The cost figure is still on the money card as
+  *Actual taxes in DK*, and across all countries as *Net tax*.
+- **New Rate column**: the actual tax — paid less refunded — as a share of
+  that country's income. It uses the *actual* tax rather than the amount
+  paid, since a rate built on money that was refunded reads far above the
+  real one (Denmark 2025 would show 204% instead of 32.5%). Shows — where
+  there's no income to divide by.
+- The totals row no longer totals those two columns: per-country income
+  slices overlap, so adding them would count the same salary twice. The
+  year's own net tax and effective rate are in the summary figures above.
+
 ## v2.7.1 — 2026-09-04
 
 - **One figure per cell**, in the row's own currency — the small euro line
