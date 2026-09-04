@@ -82,7 +82,6 @@ const Store = {
         returnsFiled: false,
         paidAndReturned: false,
       },
-      forms: { a1: false, s1: false, blueCard: false },
       countries: [],
       payments: [],
       correspondence: [],
@@ -109,7 +108,7 @@ const Store = {
     this.saveTaxYears(this.getTaxYears().filter((y) => y.id !== id));
   },
 
-  /** Merges top-level fields (grossIncomeEur, refundedFromDkEur, status, forms...) into one record. */
+  /** Merges top-level fields (grossIncomeEur, refundedFromDkEur, status...) into one record. */
   updateTaxYear(id, fields) {
     const record = this.getTaxYearById(id);
     if (!record) return;

@@ -66,10 +66,8 @@ the logo in the header, with a gear icon on the right for shared settings:
     country on the right, sized to the real figures and redrawn as you
     edit them. Green is money kept, red is money out, matching the
     semantic colors used everywhere else.
-  - **Progress** — the four completion checks (year completed,
-    questionnaires done, returns prepared & filed, tax payed & returned)
-    plus the year's social-security and insurance paperwork: A1
-    certificate, S1 form, blue insurance card.
+  - **Progress** — the four completion checks: year completed,
+    questionnaires done, returns prepared & filed, tax payed & returned.
   - **Countries** — one editable row per country you were tax liable in:
     the income taxable there, the tax actually paid, its own
     Questionnaire / Return filed / Payed-returned flags, and a free-text

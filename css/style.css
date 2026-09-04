@@ -703,8 +703,6 @@ tfoot .total-row td.num { font-family: var(--font-mono); }
   border-radius: var(--radius-sm);
 }
 
-.rule { border: none; border-top: 1px solid var(--line); margin: 18px 0 0; }
-
 .select-year { min-width: 108px; }
 
 .month-strip {

@@ -483,7 +483,6 @@
     .map((c) => `<option value="${c}">${c}</option>`).join("");
 
   renderChecks("status-checks", TAX_YEAR_STATUS_FIELDS, "status");
-  renderChecks("forms-checks", TAX_YEAR_FORM_FIELDS, "forms");
   renderCountries();
   renderFlow();
   renderPayments();

@@ -3,6 +3,16 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.3.0 — 2026-09-04
+
+- **Removed the social-security and insurance paperwork checks** (A1
+  certificate, S1 form, blue insurance card) from a tax year. Progress is
+  now just the four tax completion checks: year completed, questionnaires
+  done, returns prepared & filed, tax payed & returned. `forms` is gone
+  from the stored record and `TAX_YEAR_FORM_FIELDS` from `tax-data.js`;
+  an older export carrying `forms` still imports, the field is just
+  ignored.
+
 ## v2.2.0 — 2026-09-04
 
 - **Income year removed.** A tax year is identified by its tax year alone —

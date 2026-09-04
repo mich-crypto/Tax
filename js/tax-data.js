@@ -105,13 +105,6 @@ const COUNTRY_STATUS_FIELDS = [
   { key: "paidReturned", label: "Payed / returned", short: "Payed" },
 ];
 
-/** Social-security and insurance paperwork tracked per year alongside the tax return. */
-const TAX_YEAR_FORM_FIELDS = [
-  { key: "a1", label: "A1 certificate" },
-  { key: "s1", label: "S1 form" },
-  { key: "blueCard", label: "Blue insurance card" },
-];
-
 /** Suggested counterparties for the Correspondence log (free text — pick or type your own). */
 const CORRESPONDENCE_COUNTERPARTIES = [
   "KPMG",
@@ -150,11 +143,12 @@ const CORRESPONDENCE_CATEGORIES = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "2.2.0";
+const APP_VERSION = "2.3.0";
 const APP_VERSION_DATE = "2026-09-04";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "2.3.0", summary: "Removed the A1 certificate / S1 form / blue insurance card checks from a tax year — no health-insurance paperwork tracking. Progress is now just the four tax completion checks." },
   { version: "2.2.0", summary: "Income year is gone — a year is named by its tax year alone. The Tax years list drops its headline figure bar and the Refunded from DK and Balance columns; both figures still live on each year's own page. New on that page: a flow diagram showing gross income splitting into what you kept and the tax paid in each country." },
   { version: "2.1.0", summary: "Visual rework. Figures are set in a monospace so money lines up on the digit, page titles in a serif, and summary numbers sit in one hairline-divided band instead of a row of cards — which is what made the leftmost figure sit higher than the rest. Fixed checkbox labels being shoved to the far edge of their box, unified the section-heading sizes, and rebuilt Correspondence as stacked entries so a real note no longer clips. Adding a payslip moved into a dialog behind a + button on the Monthly log, with a manual-entry tab." },
   { version: "2.0.0", summary: "Rebuilt around the real spreadsheet model. A tax year now has ONE gross income (the Danish salary) instead of summing per-country income — which double-counted the same salary taxed in several places — plus \"Refunded from Denmark\" as its own figure. Balance (refunded − tax paid), Net income and effective rate are derived from those, matching the spreadsheet's own numbers exactly. Countries carry their own Questionnaire/Filed/Payed flags and a comment. Income and Payslips merged into one page." },
