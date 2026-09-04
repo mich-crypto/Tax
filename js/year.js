@@ -42,12 +42,19 @@
   const moneyStatsEl = document.getElementById("money-stats");
   const moneyNoteEl = document.getElementById("money-note");
 
-  // Every country row keeps its figures in its own currency, so the picker
-  // lives per row.
-  const CURRENCY_OPTIONS = ["EUR"].concat(CURRENCIES.map((c) => c.code).filter((c) => c !== "EUR"));
-
-  function currencyOptionsHtml(selected) {
-    return CURRENCY_OPTIONS
+  /**
+   * Only two currencies ever make sense on a country row: euro, and that
+   * country's own currency (Denmark -> DKK, Poland -> PLN, ...) — never the
+   * full list, which just invited picking the wrong one. A row whose
+   * currency doesn't match either (older data, an unusual country) keeps
+   * showing its actual value rather than being silently reset.
+   */
+  function currencyOptionsForCountry(countryName, selected) {
+    const hint = COUNTRY_CURRENCY_HINTS[(countryName || "").trim().toLowerCase()];
+    const codes = ["EUR"];
+    if (hint && hint !== "EUR") codes.push(hint);
+    if (selected && !codes.includes(selected)) codes.push(selected);
+    return codes
       .map((code) => `<option value="${code}"${code === selected ? " selected" : ""}>${code}</option>`)
       .join("");
   }
@@ -306,7 +313,7 @@
     return `
       <tr>
         <td class="col-name"><input type="text" class="cell-input" list="country-list" data-row="${row.id}" data-field="country" value="${escapeHtml(row.country)}"></td>
-        <td><select class="cell-input" data-row="${row.id}" data-field="currency" data-currency="${row.currency || "EUR"}">${currencyOptionsHtml(row.currency || "EUR")}</select></td>
+        <td><select class="cell-input" data-row="${row.id}" data-field="currency" data-currency="${row.currency || "EUR"}">${currencyOptionsForCountry(row.country, row.currency || "EUR")}</select></td>
         ${moneyCellHtml("income")}
         ${moneyCellHtml("tax")}
         <td class="num net-cell">${actualTax ? escapeHtml(moneyCell(actualTax)) : "—"}</td>

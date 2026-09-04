@@ -3,6 +3,15 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.13.0 — 2026-09-04
+
+- **A country row's currency picker only offers two options now**: EUR,
+  and that specific country's own currency (Denmark → DKK, Poland → PLN,
+  Belgium → EUR, ...) — not the full ten-currency list every row showed
+  before, most of which could never be right for that country. A row
+  already holding some other currency (older data, an unusual country
+  name) keeps its real value as an extra option rather than being reset.
+
 ## v2.12.0 — 2026-09-04
 
 - **The money is one combined card** — the stat band, the missing-rate note
