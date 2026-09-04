@@ -104,7 +104,12 @@ the logo in the header, with a gear icon on the right for shared settings:
     channel, category, subject, country, notes, an optional follow-up
     date, and an open/resolved toggle. The open count sits in the
     section header.
-- **Payslips** (`payslips.html`) — the Income Tracker, a single page.
+- **Payslips** (`payslips.html`) — the Income Tracker, a single page. A
+  payslip can be marked **net pay only** (a checkbox on the manual entry
+  form) when gross and tax withheld aren't known — those two show as
+  **—** rather than `€0.00`, in the monthly log and in the Gross pay /
+  Tax withheld tiles, so "not recorded" is never mistaken for "no tax was
+  withheld". Net pay from a net-only entry still counts normally.
   Gross pay, net pay and tax withheld for the selected year in EUR,
   pulled from the payslips themselves and compared against the year
   before with a change badge. **Bulk upload**: pick one or more payslip

@@ -3,6 +3,19 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.10.0 — 2026-09-04
+
+- **Payslips can be net pay only.** Until now every payslip needed a
+  gross, net and tax figure, so a net-only source (an old spreadsheet, a
+  payslip that just states take-home pay) had nowhere to go except a
+  misleading `€0.00` for gross and tax — read as "no tax was withheld"
+  rather than "not recorded". A **"net pay only"** checkbox on the manual
+  entry form disables and clears those two fields; the monthly log and the
+  Gross pay / Tax withheld tiles show **—** for what a net-only entry
+  doesn't record, and the summary note says how many of a year's payslips
+  are net-only. Net pay itself is never affected and rolls into the
+  totals as normal.
+
 ## v2.9.0 — 2026-09-04
 
 - **The money card is per country, not Denmark-only.** Every country that

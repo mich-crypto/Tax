@@ -27,27 +27,45 @@
     return COUNTRY_CURRENCY_HINTS[(countryName || "").trim().toLowerCase()] || "";
   }
 
-  /** Gross/net/tax for a year, converted to EUR. Flags anything it couldn't convert. */
+  /**
+   * Gross/net/tax for a year, converted to EUR. Flags anything it couldn't
+   * convert, and separately anything that never HAD a gross/tax figure —
+   * a payslip logged as "net only" (some old payslips, or a spreadsheet
+   * that only tracked take-home pay). Net-only entries are excluded from
+   * gross/tax rather than counted as zero, which would read as "no tax was
+   * withheld" instead of "not recorded".
+   */
   function yearTotals(year, rates) {
-    const totals = { gross: 0, net: 0, tax: 0, count: 0, holidayGross: 0, missingRate: false, native: {} };
+    const totals = {
+      gross: 0, net: 0, tax: 0, count: 0, holidayGross: 0,
+      missingRate: false, netOnlyCount: 0, native: {},
+    };
     Store.getPayslips()
       .filter((p) => p.year === year)
       .forEach((p) => {
         totals.count += 1;
-        const gross = toEur(p.grossPay, p.currency, rates);
         const net = toEur(p.netPay, p.currency, rates);
-        const tax = toEur(p.taxWithheld, p.currency, rates);
         const code = p.currency || "EUR";
         if (!totals.native[code]) totals.native[code] = { gross: 0, net: 0, tax: 0 };
-        totals.native[code].gross += Number(p.grossPay) || 0;
         totals.native[code].net += Number(p.netPay) || 0;
+
+        if (net === null) totals.missingRate = true;
+        else totals.net += net;
+
+        if (p.netOnly) {
+          totals.netOnlyCount += 1;
+          return;
+        }
+
+        const gross = toEur(p.grossPay, p.currency, rates);
+        const tax = toEur(p.taxWithheld, p.currency, rates);
+        totals.native[code].gross += Number(p.grossPay) || 0;
         totals.native[code].tax += Number(p.taxWithheld) || 0;
-        if (gross === null || net === null || tax === null) {
+        if (gross === null || tax === null) {
           totals.missingRate = true;
           return;
         }
         totals.gross += gross;
-        totals.net += net;
         totals.tax += tax;
         if (p.type === "Holiday pay") totals.holidayGross += gross;
       });
@@ -73,13 +91,16 @@
       return;
     }
 
-    // With no exchange rate set, every payslip is excluded from the EUR
-    // figures — show a dash rather than a confident-looking €0.00.
+    // With no exchange rate set, or nothing net-only excluded, every payslip
+    // is missing from the EUR figures — show a dash rather than a
+    // confident-looking €0.00.
     const eur = (value) => (now.missingRate && !value ? "—" : formatMoney(value, "€"));
+    const knownGrossTax = now.count - now.netOnlyCount;
+    const grossTax = (value) => (!knownGrossTax ? "—" : eur(value));
     const tiles = [
-      { label: "Gross pay", value: eur(now.gross), badge: changeBadge(now.gross, before.gross) },
+      { label: "Gross pay", value: grossTax(now.gross), badge: changeBadge(now.gross, before.gross) },
       { label: "Net pay", value: eur(now.net), badge: changeBadge(now.net, before.net) },
-      { label: "Tax withheld", value: eur(now.tax), badge: changeBadge(now.tax, before.tax) },
+      { label: "Tax withheld", value: grossTax(now.tax), badge: changeBadge(now.tax, before.tax) },
     ];
     statsEl.innerHTML = tiles
       .map((t) => `
@@ -98,6 +119,7 @@
       .join(" · ");
     if (native) bits.push(native);
     if (now.holidayGross) bits.push(`includes ${formatMoney(now.holidayGross, "€")} holiday pay (gross)`);
+    if (now.netOnlyCount) bits.push(`${now.netOnlyCount} of those ${now.netOnlyCount === 1 ? "is" : "are"} net pay only — gross and tax withheld aren't available for ${now.netOnlyCount === 1 ? "it" : "them"}`);
     if (now.missingRate) bits.push("⚠ some payslips use a currency with no exchange rate set — excluded from the € figures (set it under Settings)");
     summaryNote.textContent = bits.join(" — ");
   }
@@ -138,12 +160,12 @@
             <tr>
               <td>${PAYSLIP_MONTHS[p.month - 1] || p.month}</td>
               <td>${p.type === "Holiday pay" ? '<span class="badge ok">Holiday</span>' : "Salary"}</td>
-              <td class="num">${formatMoney(p.grossPay, symbol)}</td>
+              <td class="num">${p.netOnly ? "—" : formatMoney(p.grossPay, symbol)}</td>
               <td class="num">${formatMoney(p.netPay, symbol)}</td>
-              <td class="num">${formatMoney(p.taxWithheld, symbol)}</td>
+              <td class="num">${p.netOnly ? "—" : formatMoney(p.taxWithheld, symbol)}</td>
               <td class="num">${netEur === null ? '<span class="badge warn">no rate</span>' : formatMoney(netEur, "€")}</td>
               <td class="notes-cell">${escapeHtml(p.notes || "")}</td>
-              <td>${p.analyzedByAI ? '<span class="badge neutral">AI</span>' : ""}</td>
+              <td>${p.netOnly ? '<span class="badge neutral" title="Gross and tax withheld weren\'t recorded">net only</span>' : p.analyzedByAI ? '<span class="badge neutral">AI</span>' : ""}</td>
               <td><button class="icon-btn small" data-delete="${p.id}" title="Delete">✕</button></td>
             </tr>
           `;
@@ -322,6 +344,19 @@
   manualCurrency.innerHTML = CURRENCIES.map((c) => `<option value="${c.code}">${c.code}</option>`).join("");
   manualCurrency.value = "DKK";
 
+  const manualGross = document.getElementById("manual-gross");
+  const manualTax = document.getElementById("manual-tax");
+  const manualNetOnly = document.getElementById("manual-net-only");
+
+  manualNetOnly.addEventListener("change", () => {
+    manualGross.disabled = manualNetOnly.checked;
+    manualTax.disabled = manualNetOnly.checked;
+    if (manualNetOnly.checked) {
+      manualGross.value = "";
+      manualTax.value = "";
+    }
+  });
+
   manualForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const year = Number(manualYear.value);
@@ -329,20 +364,24 @@
       manualStatus.textContent = "Enter a year.";
       return;
     }
+    const netOnly = manualNetOnly.checked;
     Store.addPayslip({
       year,
       month: Number(manualMonth.value),
       type: manualType.value,
       currency: manualCurrency.value,
-      grossPay: Number(document.getElementById("manual-gross").value) || 0,
+      grossPay: netOnly ? 0 : Number(manualGross.value) || 0,
       netPay: Number(document.getElementById("manual-net").value) || 0,
-      taxWithheld: Number(document.getElementById("manual-tax").value) || 0,
+      taxWithheld: netOnly ? 0 : Number(manualTax.value) || 0,
+      netOnly,
       notes: document.getElementById("manual-notes").value.trim(),
       analyzedByAI: false,
     });
 
     manualForm.reset();
     manualCurrency.value = "DKK";
+    manualGross.disabled = false;
+    manualTax.disabled = false;
     populateYearFilter();
     yearFilter.value = String(year);
     renderTable();
