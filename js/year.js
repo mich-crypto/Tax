@@ -372,17 +372,24 @@
       input.addEventListener("change", () => {
         const field = input.dataset.field;
 
-        // Actual Tax isn't stored on its own — it's Pre-paid tax minus Tax
-        // return. Typing a new Actual Tax (the figure a tax authority's own
-        // assessment letter states directly) holds Pre-paid tax fixed and
-        // works Tax return backwards from it, rather than making the user
-        // do that subtraction by hand.
+        // Actual Tax isn't stored on its own - what it means when edited
+        // depends on the country. Denmark genuinely pre-pays through the
+        // year and settles up later, so its Actual Tax holds Pre-paid tax
+        // fixed and works Tax return backwards from it. Everywhere else,
+        // there's normally no separate pre-paid phase - what's assessed is
+        // what's paid - so Actual Tax there just sets Pre-paid tax to
+        // match, leaving Tax return alone (typically zero, but still
+        // yours to edit directly if something really was refunded).
         if (field === "actualTax") {
           const row = (reload().countries || []).find((c) => c.id === input.dataset.row);
           if (!row) return;
-          const paid = Number(row.tax) || 0;
           const newActual = parseMoney(input.value);
-          Store.updateCountryRow(yearId, input.dataset.row, { refunded: paid - newActual });
+          if (isDenmarkRow(row)) {
+            const paid = Number(row.tax) || 0;
+            Store.updateCountryRow(yearId, input.dataset.row, { refunded: paid - newActual });
+          } else {
+            Store.updateCountryRow(yearId, input.dataset.row, { tax: newActual });
+          }
           renderMoneyStats();
           renderCountries();
           renderFlow();
@@ -586,8 +593,14 @@
       }
       const taxableIncome = Number(wrap.querySelector(".result-income").value) || 0;
       const actualTax = Number(wrap.querySelector(".result-actual-tax").value) || 0;
-      const prePaidTax = Number(row.tax) || 0;
-      Store.updateCountryRow(yearId, rowId, { income: taxableIncome, refunded: prePaidTax - actualTax });
+      // Same country-dependent Actual Tax meaning as the inline edit in the
+      // Countries table above: Denmark solves Tax return backwards, holding
+      // Pre-paid tax fixed; everywhere else, Actual Tax just sets Pre-paid
+      // tax to match, since there's normally no separate pre-paid phase.
+      const changes = isDenmarkRow(row)
+        ? { income: taxableIncome, refunded: (Number(row.tax) || 0) - actualTax }
+        : { income: taxableIncome, tax: actualTax };
+      Store.updateCountryRow(yearId, rowId, changes);
       renderMoneyStats();
       renderCountries();
       renderFlow();

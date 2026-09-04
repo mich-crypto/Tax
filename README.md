@@ -103,11 +103,14 @@ the logo in the header, with a gear icon on the right for shared settings:
     match the documents they come from: **Taxable income**, **Pre-paid
     tax** (everything handed over that year, before any of it came back),
     **Actual Tax** (what it really cost, editable straight off an
-    assessment letter), and **Tax return** (how much came back). Actual
-    Tax and Tax return are two views of the same fact — typing one solves
-    the other backwards, holding Pre-paid tax fixed
-    (`Tax return = Pre-paid tax − Actual Tax`); nothing is stored twice.
-    Also its own Questionnaire / Return filed / Payed-returned flags, an
+    assessment letter), and **Tax return** (how much came back). Editing
+    Actual Tax means something different by country: **Denmark**
+    genuinely pre-pays through the year and settles up afterwards, so
+    there it solves Tax return backwards, holding Pre-paid tax fixed
+    (`Tax return = Pre-paid tax − Actual Tax`). **Every other country**
+    normally has no separate pre-paid phase — what's assessed is what's
+    paid — so there Actual Tax just sets Pre-paid tax to match instead,
+    leaving Tax return alone. Also its own Questionnaire / Return filed / Payed-returned flags, an
     **N/A** flag, and a free-text comment. A row's currency picker only
     offers EUR and that country's own currency, converted to EUR for the
     totals row at the rate under Settings. Country names are free text
@@ -118,7 +121,9 @@ the logo in the header, with a gear icon on the right for shared settings:
     Actual Tax, shown for review with a Country row picker (including
     "+ New country…") before anything is applied — nothing is guessed at
     or saved automatically, since these are the two hard facts real
-    assessment letters state. Needs an API key for whichever AI provider
+    assessment letters state. Applying follows the same per-country
+    Actual Tax rule as above (Denmark vs. everywhere else). Needs an API
+    key for whichever AI provider
     is active, set once under Settings, same as payslip analysis.
   - **Where you were** — days of presence and days worked per country for
     the calendar year this return covers, from the Travel Tracker report

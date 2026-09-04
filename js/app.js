@@ -113,11 +113,22 @@ function countryEur(row, field) {
   return toEur(row[field], row.currency, Store.getCurrencyRates());
 }
 
+/**
+ * Denmark withholds tax all year through the employer and settles up with a
+ * refund afterwards — a genuine "pre-paid, then partly returned" cycle.
+ * Everywhere else in this model, what's assessed is simply what's paid: one
+ * number, no separate advance-withholding phase. So Pre-paid tax and Actual
+ * Tax mean the same thing for any other country, and only Denmark's row
+ * treats them as independently meaningful (see the Actual Tax edit handler
+ * in js/year.js).
+ */
+function isDenmarkRow(row) {
+  return (row && row.country || "").trim().toLowerCase() === "denmark";
+}
+
 /** The Denmark row in a tax year, if one has been added — Denmark is the one country that withholds all year and refunds part of it back. */
 function denmarkRow(record) {
-  return (record.countries || []).find(
-    (c) => (c.country || "").trim().toLowerCase() === "denmark"
-  ) || null;
+  return (record.countries || []).find(isDenmarkRow) || null;
 }
 
 /**

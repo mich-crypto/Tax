@@ -3,6 +3,19 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.17.0 — 2026-09-04
+
+- **Actual Tax means something different by country now.** Denmark
+  genuinely pre-pays through the year and settles up afterwards, so
+  editing its Actual Tax still solves Tax return backwards from it,
+  holding Pre-paid tax fixed. Every other country normally has no
+  separate pre-paid phase at all — what's assessed is what's paid — so
+  editing Actual Tax there now sets **Pre-paid tax** to match instead,
+  leaving Tax return alone (typically zero, still directly editable if
+  something really was refunded). Applies both to typing Actual Tax
+  directly in the Countries table and to applying a result from
+  🤖 Analyze assessment.
+
 ## v2.16.0 — 2026-09-04
 
 - **Tax paid now means Actual Tax.** The year page's "Tax paid" tile

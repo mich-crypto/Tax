@@ -97,7 +97,7 @@
         <button type="button" id="add-country-btn" class="small">+ Add</button>
         <button type="button" id="open-assessment-dialog" class="small">🤖 Analyze assessment</button>
       </div>
-      <p class="hint">Each row is in <strong>its own currency</strong> — kroner for Denmark, złoty for Poland — so the figures match the documents they come from. Switching a row's currency converts it at the rate under <a href="settings.html">Settings</a>. The totals underneath are in euro. <strong>Taxable income</strong> is the slice of income taxed in that country; <strong>Pre-paid tax</strong> is everything handed over that year, before any of it came back; <strong>Tax return</strong> is how much came back. <strong>Actual Tax</strong> — what it really cost — is editable too: type the figure straight off an assessment letter and Tax return works itself out from it, holding Pre-paid tax fixed.</p>
+      <p class="hint">Each row is in <strong>its own currency</strong> — kroner for Denmark, złoty for Poland — so the figures match the documents they come from. Switching a row's currency converts it at the rate under <a href="settings.html">Settings</a>. The totals underneath are in euro. <strong>Taxable income</strong> is the slice of income taxed in that country; <strong>Pre-paid tax</strong> is everything handed over that year, before any of it came back; <strong>Tax return</strong> is how much came back. <strong>Actual Tax</strong> — what it really cost — is editable too, but means something different depending on the country: <strong>Denmark</strong> genuinely withholds all year and settles up later, so typing its Actual Tax works Tax return out backwards from it, holding Pre-paid tax fixed. <strong>Every other country</strong> normally has no separate pre-paid phase — what's assessed is what's paid — so typing its Actual Tax there just sets Pre-paid tax to match, leaving Tax return alone (typically zero, still yours to edit directly if something really was refunded).</p>
       <div class="table-scroll">
         <table id="countries-table">
           <thead>
@@ -224,7 +224,7 @@
     <button class="icon-btn" value="cancel" aria-label="Close">✕</button>
   </form>
   <section class="sheet-panel" data-panel="ai">
-    <p class="hint" style="margin-top:0;">Pick one or more assessment letters (the final-numbers document from a tax authority or accountant — not a payslip). Each is read by AI, then shown below for you to check and assign to a country row before anything is saved. Figures are read in whatever currency is printed on the document — verify them against that country's own currency below.</p>
+    <p class="hint" style="margin-top:0;">Pick one or more assessment letters (the final-numbers document from a tax authority or accountant — not a payslip). Each is read by AI, then shown below for you to check and assign to a country row before anything is saved. Figures are read in whatever currency is printed on the document — verify them against that country's own currency below. Applying to Denmark's row works Tax return out backwards from Actual Tax; applying anywhere else sets Pre-paid tax to match Actual Tax instead, since only Denmark normally has a separate pre-paid phase.</p>
     <div class="field-row">
       <div class="field">
         <label for="assessment-files">Files (image or PDF)</label>
