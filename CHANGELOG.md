@@ -3,6 +3,14 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.8.1 — 2026-09-04
+
+- Summary figures renamed **Tax prepaid** and **Tax refunded**, with hints
+  saying they cover *every* country. They sit directly under the money
+  card's Denmark-only lines and were easy to read as the same thing: for
+  2025 the year's prepaid tax is €106,396.30 across Denmark and Poland,
+  while Denmark alone is €76,996.76.
+
 ## v2.8.0 — 2026-09-04
 
 - **Net income per country.** The countries table's `Net` column was the

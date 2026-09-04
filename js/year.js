@@ -90,8 +90,8 @@
   function renderMoneyStats() {
     const totals = taxYearTotals(reload());
     const tiles = [
-      { label: "Tax paid", value: formatMoney(totals.taxPaid, "€"), hint: "all countries, before refunds" },
-      { label: "Refunded", value: formatMoney(totals.refunded, "€"), hint: "coming back to you" },
+      { label: "Tax prepaid", value: formatMoney(totals.taxPaid, "€"), hint: "every country, before refunds" },
+      { label: "Tax refunded", value: formatMoney(totals.refunded, "€"), hint: "coming back to you" },
       {
         label: "Net tax",
         value: totals.netTax < 0 ? formatSigned(totals.netTax, "€") : formatMoney(totals.netTax, "€"),
