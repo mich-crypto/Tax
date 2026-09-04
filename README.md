@@ -21,8 +21,9 @@ country rows: the same salary is taxable in Belgium, the UK and the
 Netherlands as well as Denmark, so adding those up counts it two or three
 times over.
 
-A year is identified by its **tax year** alone — there is no separate
-income year to enter.
+A year is identified by the year the income was **earned** — the 2025 tax
+year is the money you earned in 2025, whenever the return for it is
+actually filed. There is no separate income year to enter.
 
 **Denmark withholds tax all year and refunds part of it back.** That
 refund is the year's other headline figure, and it's what pays the tax
@@ -148,8 +149,11 @@ lives only in `localStorage`, excluded from Export/Import.
   up from Settings). Countries, payments and correspondence all live
   inside their tax-year record — there are no separate top-level stores
   for them.
-- Tax years are stored under `taxtracker_taxyears_v2` and exports carry
-  `schema: 2`. A v1 export will not import into this build.
+- Tax years are stored under `taxtracker_taxyears_v3` and exports carry
+  `schema: 3`. Data under the older `_v2` key is shifted down a year once,
+  on first read, and an export from schema 2 or earlier is shifted on
+  import — both because a year used to be numbered by when its return was
+  filed. A v1 export will not import into this build.
 - `js/tax-data.js` holds shared reference data: suggested country names,
   a country → likely-currency hint map (convenience only, not a managed
   list), currencies, and the payslip/status/correspondence constants.
@@ -182,8 +186,8 @@ stored, and the file is never uploaded anywhere.
 
 A day spent crossing a border appears twice, once per country, so transit
 days are excluded from days-of-presence exactly as the report's own
-summary does it. A tax year shows the calendar year before it: the 2025
-return covers where you were in 2024.
+summary does it. A tax year shows that same calendar year, since a year is
+named for when the income was earned.
 
 ## Script load order
 

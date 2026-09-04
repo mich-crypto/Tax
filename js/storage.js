@@ -4,6 +4,9 @@
  * own script.
  *
  * The tax-year shape mirrors the spreadsheet this app replaces:
+ * A year is named by the year the income was EARNED — the 2025 tax year is
+ * the money you earned in 2025, whenever the return for it gets filed.
+ *
  *   - ONE gross income for the year (the Danish payroll salary). Countries
  *     don't each add income — the same salary is taxed in several places,
  *     so summing per-country income would double-count it.
@@ -17,8 +20,10 @@
  */
 
 const STORAGE_KEYS = {
-  // v2: reshaped around gross income + refund + per-country tax (see above).
-  taxYears: "taxtracker_taxyears_v2",
+  // v3: years are labelled by the year the income was EARNED, not the year
+  // the return was filed — see migrateTaxYears() below.
+  taxYears: "taxtracker_taxyears_v3",
+  taxYearsV2: "taxtracker_taxyears_v2",
   payslips: "taxtracker_payslips_v1",
   currencyRates: "taxtracker_currency_rates_v1",
   travel: "taxtracker_travel_v1",
@@ -52,10 +57,29 @@ function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
+/**
+ * Tax years used to be labelled by the year the return is FILED, so the
+ * income earned in 2025 sat under "2026". They are labelled by the year the
+ * income was earned now, which is how the returns are actually referred to.
+ *
+ * Runs once: it only reads v2 when v3 does not exist yet, and leaves v2
+ * untouched as a fallback. A record already under v3 is never shifted again.
+ */
+function migrateTaxYears() {
+  if (localStorage.getItem(STORAGE_KEYS.taxYears) !== null) return;
+  const old = readJSON(STORAGE_KEYS.taxYearsV2, null);
+  if (!old || !old.length) return;
+  writeJSON(
+    STORAGE_KEYS.taxYears,
+    old.map((year) => ({ ...year, taxYear: Number(year.taxYear) - 1 }))
+  );
+}
+
 const Store = {
   // ---------- Tax years ----------
 
   getTaxYears() {
+    migrateTaxYears();
     return readJSON(STORAGE_KEYS.taxYears, []);
   },
 
@@ -286,7 +310,7 @@ const Store = {
   exportAll() {
     return {
       exportedAt: new Date().toISOString(),
-      schema: 2,
+      schema: 3,
       taxYears: this.getTaxYears(),
       payslips: this.getPayslips(),
       currencyRates: this.getCurrencyRates(),
@@ -295,7 +319,16 @@ const Store = {
   },
 
   importAll(data) {
-    if (data.taxYears) this.saveTaxYears(data.taxYears);
+    if (data.taxYears) {
+      // Exports before schema 3 numbered a year by when the return was
+      // filed, one ahead of when the income was earned.
+      const shift = (Number(data.schema) || 0) < 3 ? -1 : 0;
+      this.saveTaxYears(
+        shift
+          ? data.taxYears.map((y) => ({ ...y, taxYear: Number(y.taxYear) + shift }))
+          : data.taxYears
+      );
+    }
     if (data.payslips) this.savePayslips(data.payslips);
     if (data.currencyRates) this.saveCurrencyRates(data.currencyRates);
     if (data.travel) this.saveTravel(data.travel);

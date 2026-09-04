@@ -258,12 +258,9 @@
   const travelBody = document.querySelector("#travel-table tbody");
   const travelFoot = document.querySelector("#travel-table tfoot");
 
-  /**
-   * A tax year reports on the calendar year before it — the 2025 return
-   * covers what you earned and where you were in 2024.
-   */
+  /** A tax year is the year the income was earned, so travel is the same year. */
   function travelCalendarYear() {
-    return reload().taxYear - 1;
+    return reload().taxYear;
   }
 
   function renderTravel() {
@@ -273,7 +270,6 @@
       return;
     }
     travelCard.hidden = false;
-    document.getElementById("travel-year").textContent = summary.year;
 
     const cell = (n) => (n ? String(n) : "—");
     travelBody.innerHTML = summary.countries

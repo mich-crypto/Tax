@@ -3,6 +3,19 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.6.0 — 2026-09-04
+
+- **A tax year is named by the year the income was earned**, not the year
+  the return is filed. What was showing as 2026 is the 2025 tax year.
+  Every year shifts down by one.
+- Existing data corrects itself: records under the old key are shifted
+  once on first load and written to a new one, so it cannot run twice, and
+  the old key is left in place as a fallback. A backup exported before
+  this (schema 2 or earlier) is shifted on import; a new one is not.
+- **Travel days now line up with the same year.** "Where you were" was
+  reading the calendar year *before* the tax year to compensate for the
+  old numbering; it reads the same year now.
+
 ## v2.5.0 — 2026-09-04
 
 - **Travel Tracker import.** Settings takes your Travel Tracker report

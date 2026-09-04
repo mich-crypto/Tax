@@ -146,11 +146,12 @@ const CORRESPONDENCE_CATEGORIES = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "2.5.0";
+const APP_VERSION = "2.6.0";
 const APP_VERSION_DATE = "2026-09-04";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
+  { version: "2.6.0", summary: "A tax year is now named by the year the income was EARNED, not the year the return is filed — what read as 2026 is the 2025 tax year. Existing data shifts itself once on first load, and older backups shift on import. Travel days line up with the same calendar year as a result." },
   { version: "2.5.0", summary: "Upload your Travel Tracker report under Settings and each tax year shows where you actually were — days of presence and days worked per country for the calendar year that return covers. Transit days are excluded from presence, matching the report's own summary. Only the totals are stored, not the daily rows." },
   { version: "2.4.0", summary: "A country now records the tax paid there AND how much came back, so Denmark's \"pay all year, get most of it back\" is two numbers instead of one ambiguous figure — with Tax paid / Refunded / Net tax on the year, and a warning when a refund is recorded without the tax paid alongside it. Progress is read off the country rows rather than ticked separately, with a Not-liable flag for countries listed but not owed. Amounts can be typed in DKK and are stored in EUR." },
   { version: "2.3.0", summary: "Removed the A1 certificate / S1 form / blue insurance card checks from a tax year — no health-insurance paperwork tracking. Progress is now just the four tax completion checks." },
