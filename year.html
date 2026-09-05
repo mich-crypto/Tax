@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="js/site-lock.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tax year — Multi-Country Tax Tracker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext y=%2224%27 font-size=%2224%27%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="year">
+
+<header class="app-header">
+  <div class="brand-switcher">
+    <button type="button" class="app-brand" id="tracker-switch-btn"><span class="mark">₮</span> Tax Tracker <span class="caret">▾</span></button>
+    <div class="switch-menu" id="tracker-switch-menu" hidden>
+      <a class="switch-item active" href="index.html"><span class="mark">₮</span> Tax Tracker</a>
+      <a class="switch-item" href="payslips.html"><span class="mark">€</span> Income Tracker</a>
+    </div>
+  </div>
+  <span style="flex:1"></span>
+  <a class="header-icon-btn" href="settings.html" title="Settings">⚙</a>
+</header>
+
+<main class="app-main">
+  <a class="back-link" href="index.html">← All tax years</a>
+
+  <div id="year-missing" class="empty-state" hidden>That tax year doesn't exist. <a href="index.html">Back to all years</a>.</div>
+
+  <div id="year-body" hidden>
+    <div class="page-title">
+      <div>
+        <h1 id="year-heading"></h1>
+        <p id="year-subheading"></p>
+      </div>
+      <button type="button" id="delete-year-btn" class="danger-outline small">Delete this year</button>
+    </div>
+
+    <div class="section-stack">
+
+    <!-- ============ THE MONEY ============ -->
+    <div class="card">
+      <div class="card-header"><h2>The money <span class="info-icon" title="All figures in euro, calculated from the Countries table below. Tax return from Denmark is read from Denmark's own row, since it's the one country here that withholds all year and pays part of it back.">i</span></h2></div>
+      <div class="stat-grid" id="money-stats" style="margin-top:14px;"></div>
+      <p class="hint" id="money-note"></p>
+      <div class="disclaimer" id="refund-warning" hidden></div>
+    </div>
+
+    <!-- ============ WHERE THE MONEY WENT ============ -->
+    <div class="card">
+      <div class="card-header"><h2>Where the money went <span class="info-icon" title="Your gross income for the year, splitting into what you kept and the actual tax paid in each country.">i</span></h2></div>
+      <div id="flow-diagram"></div>
+    </div>
+
+    <!-- ============ WHERE YOU WERE ============ -->
+    <div class="card" id="travel-card" hidden>
+      <div class="card-header"><h2>Where you were <span class="info-icon" title="Days spent in each country during this tax year, from your Travel Tracker report. Transit days aren't counted as presence, matching the report's own summary.">i</span></h2></div>
+      <div class="table-scroll">
+        <table id="travel-table">
+          <thead>
+            <tr>
+              <th>Country</th>
+              <th class="num">Days present</th>
+              <th class="num">Working</th>
+              <th class="num">Not working</th>
+              <th class="num">Vacation</th>
+              <th class="num">Sick</th>
+              <th class="num">In transit</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ PROGRESS ============ -->
+    <div class="card">
+      <div class="card-header"><h2>Progress <span class="info-icon" title="Read off the country rows below — a year is done when every country in it is.">i</span></h2></div>
+      <div class="check-grid" id="status-checks"></div>
+    </div>
+
+    <!-- ============ COUNTRIES ============ -->
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0;">Countries <span class="info-icon" title="Each row is in its own currency — kroner for Denmark, złoty for Poland — so the figures match the documents they come from. Switching a row's currency converts it at the rate under Settings. The totals underneath are in euro. Taxable income is the slice of income taxed in that country; Pre-paid tax is everything handed over that year, before any of it came back; Tax return is how much came back. Actual Tax — what it really cost — is editable too, but means something different by country: Denmark genuinely withholds all year and settles up later, so typing its Actual Tax works Tax return out backwards from it, holding Pre-paid tax fixed. Every other country normally has no separate pre-paid phase — what's assessed is what's paid — so typing its Actual Tax there just sets Pre-paid tax to match, leaving Tax return alone (typically zero, still yours to edit directly if something really was refunded).">i</span></h2>
+        <span class="spacer"></span>
+        <input type="text" id="new-country" list="country-list" placeholder="Add a country…" style="max-width:180px;">
+        <datalist id="country-list"></datalist>
+        <button type="button" id="add-country-btn" class="small">+ Add</button>
+        <button type="button" id="open-assessment-dialog" class="small">🤖 Analyze assessment</button>
+      </div>
+      <div class="table-scroll">
+        <table id="countries-table">
+          <thead>
+            <tr>
+              <th>Country</th>
+              <th>Currency</th>
+              <th class="num">Taxable income</th>
+              <th class="num">Pre-paid tax</th>
+              <th class="num">Actual Tax</th>
+              <th class="num">Tax return</th>
+              <th>Questionnaire</th>
+              <th>Return filed</th>
+              <th>Payed / returned</th>
+              <th class="center" title="Not tax liable in this country">N/A</th>
+              <th>Comment</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+      <div class="empty-state" id="countries-empty-state">No countries yet. Add the ones you were tax liable in that year.</div>
+    </div>
+
+    <!-- ============ PAYMENTS ============ -->
+    <div class="card">
+      <div class="card-header"><h2>Payments &amp; refunds <span class="info-icon" title="A dated log of what actually moved — separate from the totals above, which are the year's final position.">i</span></h2></div>
+      <form id="payment-form" style="margin-top:14px;">
+        <div class="field-row">
+          <div class="field">
+            <label>Action</label>
+            <input type="text" id="payment-action" list="payment-action-list" placeholder="e.g. Tax payed" required>
+            <datalist id="payment-action-list"></datalist>
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="text" id="payment-date" inputmode="numeric" placeholder="DD-MM-YYYY" maxlength="10">
+          </div>
+          <div class="field">
+            <label>Amount</label>
+            <input type="number" id="payment-amount" min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div class="field">
+            <label>Currency</label>
+            <select id="payment-currency"></select>
+          </div>
+          <div class="field">
+            <label>Country</label>
+            <input type="text" id="payment-country" list="country-list" placeholder="e.g. Belgium">
+          </div>
+        </div>
+        <button type="submit" class="primary small">Add payment</button>
+      </form>
+      <div class="table-scroll" style="margin-top:16px;">
+        <table id="payments-table">
+          <thead><tr><th>Action</th><th>Date</th><th class="num">Amount</th><th>Country</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="payments-empty-state">Nothing logged yet.</div>
+    </div>
+
+    <!-- ============ CORRESPONDENCE ============ -->
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0;">Correspondence</h2>
+        <span class="badge warn" style="margin:0;"><span id="open-count">0</span> open</span>
+        <span class="spacer"></span>
+        <button type="button" id="toggle-corr-form" class="small">+ Log a message</button>
+      </div>
+      <form id="correspondence-form" hidden>
+        <div class="field-row">
+          <div class="field">
+            <label>Date</label>
+            <input type="text" id="corr-date" inputmode="numeric" placeholder="DD-MM-YYYY" maxlength="10">
+          </div>
+          <div class="field">
+            <label>Counterparty</label>
+            <input type="text" id="corr-counterparty" list="counterparty-list" placeholder="e.g. KPMG" required>
+            <datalist id="counterparty-list"></datalist>
+          </div>
+          <div class="field">
+            <label>Channel</label>
+            <select id="corr-channel"></select>
+          </div>
+          <div class="field">
+            <label>Category</label>
+            <select id="corr-category"></select>
+          </div>
+          <div class="field">
+            <label>Country</label>
+            <input type="text" id="corr-country" list="country-list" placeholder="e.g. Denmark">
+          </div>
+        </div>
+        <div class="field">
+          <label>Subject</label>
+          <input type="text" id="corr-subject" placeholder="e.g. 2023 residency questionnaire">
+        </div>
+        <div class="field">
+          <label>Notes</label>
+          <textarea id="corr-notes" rows="2" placeholder="What was said, what happens next…"></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Follow-up due (optional)</label>
+            <input type="text" id="corr-followup" inputmode="numeric" placeholder="DD-MM-YYYY" maxlength="10">
+          </div>
+        </div>
+        <button type="submit" class="primary small">Add entry</button>
+      </form>
+      <div class="entry-list" id="correspondence-list"></div>
+      <div class="empty-state" id="correspondence-empty-state">Nothing logged yet.</div>
+    </div>
+
+    </div>
+  </div>
+</main>
+
+<dialog id="assessment-dialog" class="sheet">
+  <form method="dialog" class="sheet-head">
+    <h2>Analyze a tax assessment</h2>
+    <button class="icon-btn" value="cancel" aria-label="Close">✕</button>
+  </form>
+  <section class="sheet-panel" data-panel="ai">
+    <p class="hint" style="margin-top:0;">Pick one or more assessment letters (the final-numbers document from a tax authority or accountant — not a payslip). Each is read by AI, then shown below for you to check and assign to a country row before anything is saved. Figures are read in whatever currency is printed on the document — verify them against that country's own currency below. Applying to Denmark's row works Tax return out backwards from Actual Tax; applying anywhere else sets Pre-paid tax to match Actual Tax instead, since only Denmark normally has a separate pre-paid phase.</p>
+    <div class="field-row">
+      <div class="field">
+        <label for="assessment-files">Files (image or PDF)</label>
+        <input type="file" id="assessment-files" accept="image/*,.pdf" multiple>
+      </div>
+    </div>
+    <div class="actions-row" style="margin-top:16px;">
+      <button type="button" id="assessment-analyze-btn" class="primary small">Read with AI</button>
+      <span class="hint" id="assessment-status" style="margin:0;"></span>
+    </div>
+    <div id="assessment-results"></div>
+  </section>
+</dialog>
+
+<footer class="app-footer">All data stays in this browser's local storage. Nothing is uploaded anywhere — except an assessment letter you choose to analyze, which goes straight to your selected AI provider. · <span id="app-version"></span></footer>
+
+<script src="js/tax-data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/app.js"></script>
+<script src="js/travel.js"></script>
+<script src="js/gemini.js"></script>
+<script src="js/claude-vision.js"></script>
+<script src="js/year.js"></script>
+</body>
+</html>

@@ -1,18 +1,37 @@
 /**
  * Thin localStorage-backed data layer. Everything lives entirely in the
- * browser — nothing is sent anywhere. Each tax tracker page includes this
- * before its own script.
+ * browser — nothing is sent anywhere. Every page includes this before its
+ * own script.
+ *
+ * The tax-year shape mirrors the spreadsheet this app replaces:
+ * A year is named by the year the income was EARNED — the 2025 tax year is
+ * the money you earned in 2025, whenever the return for it gets filed.
+ *
+ *   - ONE gross income for the year (the Danish payroll salary). Countries
+ *     don't each add income — the same salary is taxed in several places,
+ *     so summing per-country income would double-count it.
+ *   - Each country row carries the tax paid there AND how much of it came
+ *     back, so "paid 43,119 in Denmark, 28,637 of it refunded" is one row
+ *     rather than a single figure that can only mean one of the two.
+ *   - That country's own progress flags live on the same row.
+ * Everything else — the year's refund total, net tax, net income, rate and
+ * its overall status — is derived from those rows. See taxYearTotals() and
+ * taxYearStatus() in app.js.
  */
 
 const STORAGE_KEYS = {
-  income: "taxtracker_income_v1",
-  residency: "taxtracker_residency_v1",
-  taxYears: "taxtracker_taxyears_v1",
+  // v3: years are labelled by the year the income was EARNED, not the year
+  // the return was filed — see migrateTaxYears() below.
+  taxYears: "taxtracker_taxyears_v3",
+  taxYearsV2: "taxtracker_taxyears_v2",
   payslips: "taxtracker_payslips_v1",
   currencyRates: "taxtracker_currency_rates_v1",
-  // Deliberately separate from the rest: never touched by exportAll/importAll,
-  // so a Gemini API key can never end up inside a shared/exported JSON backup.
+  travel: "taxtracker_travel_v1",
+  // Deliberately separate: never touched by exportAll/importAll, so an API
+  // key can never end up inside a shared/exported JSON backup.
   geminiSettings: "taxtracker_gemini_settings_v1",
+  claudeSettings: "taxtracker_claude_settings_v1",
+  aiProvider: "taxtracker_ai_provider_v1",
 };
 
 function readJSON(key, fallback) {
@@ -34,105 +53,106 @@ function writeJSON(key, value) {
   }
 }
 
+/**
+ * Tells js/sync.js (if loaded — see SYNC_COLLECTIONS there) that one of the
+ * four synced collections changed locally, so it can push the new value to
+ * the database in the background. A plain optional hook rather than a hard
+ * dependency: storage.js works exactly as before, offline-only, on any page
+ * that doesn't load sync.js (or on the deployed-without-a-backend setup).
+ */
+function notifySynced(collection) {
+  if (typeof scheduleSync === "function") scheduleSync(collection);
+}
+
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
+/**
+ * Tax years used to be labelled by the year the return is FILED, so the
+ * income earned in 2025 sat under "2026". They are labelled by the year the
+ * income was earned now, which is how the returns are actually referred to.
+ *
+ * Runs once: it only reads v2 when v3 does not exist yet, and leaves v2
+ * untouched as a fallback. A record already under v3 is never shifted again.
+ */
+function migrateTaxYears() {
+  if (localStorage.getItem(STORAGE_KEYS.taxYears) !== null) return;
+  const old = readJSON(STORAGE_KEYS.taxYearsV2, null);
+  if (!old || !old.length) return;
+  writeJSON(
+    STORAGE_KEYS.taxYears,
+    old.map((year) => ({ ...year, taxYear: Number(year.taxYear) - 1 }))
+  );
+}
+
+/**
+ * The year's gross income and every country figure used to be stored
+ * already converted to EUR. They are kept
+ * in the country's own currency now, so a corrected exchange rate restates
+ * them. An older record is read forward here rather than rewritten, so an
+ * export taken before the change still imports.
+ */
+function normalizeCountryRow(row) {
+  if (row.currency !== undefined) return row;
+  return {
+    ...row,
+    currency: "EUR",
+    income: Number(row.incomeEur) || 0,
+    tax: Number(row.taxEur) || 0,
+    refunded: Number(row.refundedEur) || 0,
+  };
+}
+
+function normalizeTaxYear(year) {
+  const normalized = year.grossCurrency !== undefined
+    ? year
+    : { ...year, grossCurrency: "EUR", grossIncome: Number(year.grossIncomeEur) || 0 };
+  if (!normalized.countries || !normalized.countries.length) return normalized;
+  return { ...normalized, countries: normalized.countries.map(normalizeCountryRow) };
+}
+
 const Store = {
-  getIncome() {
-    return readJSON(STORAGE_KEYS.income, []);
-  },
-
-  saveIncome(entries) {
-    writeJSON(STORAGE_KEYS.income, entries);
-  },
-
-  addIncome(entry) {
-    const entries = this.getIncome();
-    entries.push({ id: uid(), ...entry });
-    this.saveIncome(entries);
-  },
-
-  deleteIncome(id) {
-    const entries = this.getIncome().filter((e) => e.id !== id);
-    this.saveIncome(entries);
-  },
-
-  // Exchange rates for converting logged income to EUR, keyed by currency
-  // code, stored as "1 EUR = ? [code]" (e.g. { DKK: 7.46 }). You set these;
-  // there's no live rate feed.
-  getCurrencyRates() {
-    return readJSON(STORAGE_KEYS.currencyRates, {});
-  },
-
-  saveCurrencyRates(rates) {
-    writeJSON(STORAGE_KEYS.currencyRates, rates);
-  },
-
-  getResidency() {
-    return readJSON(STORAGE_KEYS.residency, []);
-  },
-
-  saveResidency(entries) {
-    writeJSON(STORAGE_KEYS.residency, entries);
-  },
-
-  addResidency(entry) {
-    const entries = this.getResidency();
-    entries.push({ id: uid(), ...entry });
-    this.saveResidency(entries);
-  },
-
-  deleteResidency(id) {
-    const entries = this.getResidency().filter((e) => e.id !== id);
-    this.saveResidency(entries);
-  },
-
-  // ---------- Tax years (mirrors the income-year/tax-year spreadsheet workflow:
-  // a status checklist, per-country income/tax, a payment-activity ledger, and
-  // a correspondence log — all scoped to one income-year/tax-year pair, e.g.
-  // "income 2025 / tax year 2026") ----------
+  // ---------- Tax years ----------
 
   getTaxYears() {
-    return readJSON(STORAGE_KEYS.taxYears, []);
+    migrateTaxYears();
+    return readJSON(STORAGE_KEYS.taxYears, []).map(normalizeTaxYear);
   },
 
   saveTaxYears(years) {
     writeJSON(STORAGE_KEYS.taxYears, years);
+    notifySynced("tax_years");
+  },
+
+  /** Newest tax year first. */
+  sortTaxYears(years) {
+    years.sort((a, b) => b.taxYear - a.taxYear);
+    return years;
   },
 
   getTaxYearById(id) {
     return this.getTaxYears().find((y) => y.id === id) || null;
   },
 
-  findTaxYear(incomeYear, taxYear) {
-    return this.getTaxYears().find((y) => y.incomeYear === incomeYear && y.taxYear === taxYear) || null;
+  blankTaxYear(taxYear) {
+    return {
+      id: uid(),
+      taxYear,
+      grossCurrency: "DKK",
+      grossIncome: 0,
+      countries: [],
+      payments: [],
+      correspondence: [],
+    };
   },
 
-  sortTaxYears(years) {
-    years.sort((a, b) => b.taxYear - a.taxYear || b.incomeYear - a.incomeYear);
-    return years;
-  },
-
-  /** Finds the record for this income-year/tax-year pair, creating a blank one if it doesn't exist yet. */
-  ensureTaxYear(incomeYear, taxYear) {
+  /** Finds the record for this tax year, creating a blank one if it doesn't exist. */
+  ensureTaxYear(taxYear) {
     const years = this.getTaxYears();
-    let record = years.find((y) => y.incomeYear === incomeYear && y.taxYear === taxYear);
+    let record = years.find((y) => y.taxYear === taxYear);
     if (!record) {
-      record = {
-        id: uid(),
-        incomeYear,
-        taxYear,
-        status: {
-          yearCompleted: false,
-          questionnairesDone: false,
-          returnsFiled: false,
-          paidAndReturned: false,
-        },
-        countries: [],
-        activities: [],
-        correspondence: [],
-      };
+      record = this.blankTaxYear(taxYear);
       years.push(record);
       this.saveTaxYears(this.sortTaxYears(years));
     }
@@ -147,17 +167,41 @@ const Store = {
     this.saveTaxYears(this.getTaxYears().filter((y) => y.id !== id));
   },
 
-  updateTaxYearMeta(id, fields) {
+  /** Merges top-level fields (grossIncome, grossCurrency...) into one record. */
+  updateTaxYear(id, fields) {
     const record = this.getTaxYearById(id);
     if (!record) return;
     Object.assign(record, fields);
     this.saveTaxYearRecord(record);
   },
 
+  // ---------- Countries within a tax year ----------
+
+  blankCountryRow(country) {
+    return {
+      id: uid(),
+      country,
+      // Figures are stored in the country's OWN currency, with EUR derived
+      // at the current rate — so correcting a rate restates the numbers
+      // instead of leaving a stale conversion behind.
+      currency: COUNTRY_CURRENCY_HINTS[(country || "").trim().toLowerCase()] || "EUR",
+      income: 0,
+      tax: 0,
+      refunded: 0,
+      questionnaireDone: false,
+      returnFiled: false,
+      paidReturned: false,
+      // Listed for the record but nothing is owed there (Taiwan, here), so
+      // it never gates the year's status.
+      notLiable: false,
+      comment: "",
+    };
+  },
+
   addCountryRow(taxYearId, row) {
     const record = this.getTaxYearById(taxYearId);
     if (!record) return;
-    record.countries.push({ id: uid(), ...row });
+    record.countries.push({ ...this.blankCountryRow(""), ...row });
     this.saveTaxYearRecord(record);
   },
 
@@ -177,21 +221,26 @@ const Store = {
     this.saveTaxYearRecord(record);
   },
 
-  addTaxYearActivity(taxYearId, activity) {
+  // ---------- Payments ledger within a tax year ----------
+
+  addPayment(taxYearId, payment) {
     const record = this.getTaxYearById(taxYearId);
     if (!record) return;
-    record.activities.push({ id: uid(), ...activity });
+    if (!record.payments) record.payments = [];
+    record.payments.push({ id: uid(), ...payment });
     this.saveTaxYearRecord(record);
   },
 
-  deleteTaxYearActivity(taxYearId, activityId) {
+  deletePayment(taxYearId, paymentId) {
     const record = this.getTaxYearById(taxYearId);
     if (!record) return;
-    record.activities = record.activities.filter((a) => a.id !== activityId);
+    record.payments = (record.payments || []).filter((p) => p.id !== paymentId);
     this.saveTaxYearRecord(record);
   },
 
-  addTaxYearCorrespondence(taxYearId, entry) {
+  // ---------- Correspondence within a tax year ----------
+
+  addCorrespondence(taxYearId, entry) {
     const record = this.getTaxYearById(taxYearId);
     if (!record) return;
     if (!record.correspondence) record.correspondence = [];
@@ -199,7 +248,7 @@ const Store = {
     this.saveTaxYearRecord(record);
   },
 
-  updateTaxYearCorrespondence(taxYearId, entryId, changes) {
+  updateCorrespondence(taxYearId, entryId, changes) {
     const record = this.getTaxYearById(taxYearId);
     if (!record) return;
     const entry = (record.correspondence || []).find((e) => e.id === entryId);
@@ -208,14 +257,14 @@ const Store = {
     this.saveTaxYearRecord(record);
   },
 
-  deleteTaxYearCorrespondence(taxYearId, entryId) {
+  deleteCorrespondence(taxYearId, entryId) {
     const record = this.getTaxYearById(taxYearId);
     if (!record) return;
     record.correspondence = (record.correspondence || []).filter((e) => e.id !== entryId);
     this.saveTaxYearRecord(record);
   },
 
-  // ---------- Monthly payslips ----------
+  // ---------- Payslips ----------
 
   getPayslips() {
     return readJSON(STORAGE_KEYS.payslips, []);
@@ -223,6 +272,7 @@ const Store = {
 
   savePayslips(entries) {
     writeJSON(STORAGE_KEYS.payslips, entries);
+    notifySynced("payslips");
   },
 
   addPayslip(entry) {
@@ -236,7 +286,34 @@ const Store = {
     this.savePayslips(entries);
   },
 
-  // ---------- Gemini API settings (never exported/imported/backed up) ----------
+  // ---------- Exchange rates ("1 EUR = ? [code]", e.g. { DKK: 7.4756 }) ----------
+
+  getCurrencyRates() {
+    return readJSON(STORAGE_KEYS.currencyRates, {});
+  },
+
+  saveCurrencyRates(rates) {
+    writeJSON(STORAGE_KEYS.currencyRates, rates);
+    notifySynced("currency_rates");
+  },
+
+  // ---------- Travel Tracker (year -> country -> activity -> days) ----------
+
+  getTravel() {
+    return readJSON(STORAGE_KEYS.travel, null);
+  },
+
+  saveTravel(travel) {
+    writeJSON(STORAGE_KEYS.travel, travel);
+    notifySynced("travel");
+  },
+
+  clearTravel() {
+    localStorage.removeItem(STORAGE_KEYS.travel);
+    notifySynced("travel");
+  },
+
+  // ---------- AI settings (never exported/imported/backed up) ----------
 
   getGeminiSettings() {
     return readJSON(STORAGE_KEYS.geminiSettings, { apiKey: "", model: GEMINI_DEFAULT_MODEL });
@@ -252,31 +329,60 @@ const Store = {
     this.saveGeminiSettings(settings);
   },
 
+  getClaudeSettings() {
+    return readJSON(STORAGE_KEYS.claudeSettings, { apiKey: "", model: CLAUDE_DEFAULT_MODEL });
+  },
+
+  saveClaudeSettings(settings) {
+    writeJSON(STORAGE_KEYS.claudeSettings, settings);
+  },
+
+  clearClaudeApiKey() {
+    const settings = this.getClaudeSettings();
+    settings.apiKey = "";
+    this.saveClaudeSettings(settings);
+  },
+
+  /** TEMPORARY (testing): "gemini" or "claude". Ships on Gemini — see js/claude-vision.js. */
+  getAIProvider() {
+    return readJSON(STORAGE_KEYS.aiProvider, "claude");
+  },
+
+  saveAIProvider(provider) {
+    writeJSON(STORAGE_KEYS.aiProvider, provider);
+  },
+
+  // ---------- Backup ----------
+
   exportAll() {
     return {
       exportedAt: new Date().toISOString(),
-      income: this.getIncome(),
-      residency: this.getResidency(),
+      schema: 3,
       taxYears: this.getTaxYears(),
       payslips: this.getPayslips(),
       currencyRates: this.getCurrencyRates(),
+      travel: this.getTravel(),
     };
   },
 
   importAll(data) {
-    if (data.income) this.saveIncome(data.income);
-    if (data.residency) this.saveResidency(data.residency);
-    if (data.taxYears) this.saveTaxYears(data.taxYears);
+    if (data.taxYears) {
+      // Exports before schema 3 numbered a year by when the return was
+      // filed, one ahead of when the income was earned.
+      const shift = (Number(data.schema) || 0) < 3 ? -1 : 0;
+      this.saveTaxYears(
+        shift
+          ? data.taxYears.map((y) => ({ ...y, taxYear: Number(y.taxYear) + shift }))
+          : data.taxYears
+      );
+    }
     if (data.payslips) this.savePayslips(data.payslips);
     if (data.currencyRates) this.saveCurrencyRates(data.currencyRates);
+    if (data.travel) this.saveTravel(data.travel);
   },
 
   wipeAll() {
-    localStorage.removeItem(STORAGE_KEYS.income);
-    localStorage.removeItem(STORAGE_KEYS.residency);
-    localStorage.removeItem(STORAGE_KEYS.taxYears);
-    localStorage.removeItem(STORAGE_KEYS.payslips);
-    localStorage.removeItem(STORAGE_KEYS.geminiSettings);
-    localStorage.removeItem(STORAGE_KEYS.currencyRates);
+    Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+    ["tax_years", "payslips", "currency_rates", "travel"].forEach(notifySynced);
   },
 };

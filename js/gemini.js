@@ -46,6 +46,33 @@ Field-by-field rules:
 - Numbers are plain numbers only — no currency symbols, letters, or thousands separators. Many European payslips (Danish ones included) print numbers with a period as the thousands separator and a comma as the decimal point — a figure printed "39.371,08" is 39371.08 in your answer, not 39371 or 3937108.
 - If a field truly cannot be determined, use null. Never guess a number you didn't actually find on the document.`;
 
+/**
+ * Extraction prompt for an official tax assessment (a "final numbers" letter
+ * from a tax authority or accountant — e.g. a Danish årsopgørelse, a Belgian
+ * aanslagbiljet, a Polish PIT-36 decision), as opposed to a monthly payslip.
+ * Deliberately narrow: just the two figures a country row's Actual Tax edit
+ * needs (see js/year.js) — Tax return is derived from these, not read off
+ * the document. Country and currency are NOT asked for here: the person
+ * reviewing the result already knows which country row a given letter
+ * belongs to, and figures are expected in that row's own currency.
+ */
+const ASSESSMENT_EXTRACTION_PROMPT = `You are extracting figures from an official tax assessment for ONE TAX YEAR — a final-numbers document from a tax authority or accountant (e.g. a Danish "årsopgørelse", a Belgian "aanslagbiljet"/"avertissement-extrait de rôle", a Polish PIT-36 decision, or similar), NOT a monthly payslip.
+
+Respond with ONLY a JSON object — no markdown fences, no commentary — matching exactly this shape:
+
+{
+  "taxableIncome": number or null,
+  "actualTax": number or null,
+  "notes": string or null
+}
+
+Field-by-field rules:
+- "taxableIncome": the total income subject to tax for the year, as stated on the assessment (terms like "taxable income", "skattepligtig indkomst", "podstawa opodatkowania", "revenu imposable").
+- "actualTax": the final tax liability actually assessed for the year — not a monthly or provisional withholding figure, and not a balance-due or refund amount (which is the difference between this and what was already paid, not this figure itself).
+- "notes": anything worth a human's attention — which tax year this covers, if you had to choose between two candidate numbers, or anything unclear.
+- Numbers are plain numbers only — no currency symbols or thousands separators. Documents may use a period as thousands separator and comma as decimal (e.g. "575.597,00" is 575597.00), or the reverse — infer from context.
+- If a field truly cannot be determined, use null. Never guess a number you didn't actually find on the document.`;
+
 /** Reads a File/Blob and resolves to its base64-encoded content (no data: URL prefix). */
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -98,7 +125,7 @@ function downscaleImageIfNeeded(file, maxDimension = 1280) {
  * Throws with a human-readable message on any failure (network, API error,
  * or an unparseable response).
  */
-async function analyzePayslipWithGemini({ apiKey, model, file }) {
+async function analyzePayslipWithGemini({ apiKey, model, file, prompt }) {
   if (!apiKey) throw new Error("No Gemini API key set. Add one under Payslip settings.");
   if (!file) throw new Error("No file selected.");
 
@@ -112,7 +139,7 @@ async function analyzePayslipWithGemini({ apiKey, model, file }) {
     contents: [
       {
         parts: [
-          { text: GEMINI_EXTRACTION_PROMPT },
+          { text: prompt || GEMINI_EXTRACTION_PROMPT },
           { inline_data: { mime_type: uploadFile.type || file.type || "application/octet-stream", data: base64Data } },
         ],
       },
