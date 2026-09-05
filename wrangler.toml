@@ -1,0 +1,6 @@
+name = "tax-tracker"
+compatibility_date = "2024-09-01"
+
+# Static, no-build site — everything Cloudflare Pages needs to serve is
+# already in the repo root.
+pages_build_output_dir = "."

@@ -128,3 +128,34 @@ before relying on them.
 
 Everything is plain HTML/CSS/JS — no dependencies, no build step. Edit the
 files directly and refresh the page.
+
+## Deploying on Cloudflare Pages
+
+There's no build step, so the whole repo root is the publish directory
+(`.`), with no build command. Two ways to deploy:
+
+- **Dashboard Git integration (simplest)** — in the Cloudflare dashboard,
+  Workers & Pages → Create → Pages → Connect to Git, pick this repo, leave
+  the build command empty, set the output directory to `/`, and deploy.
+  Every push to the connected branch redeploys automatically; no secrets
+  needed.
+- **GitHub Actions** (`.github/workflows/deploy.yml`) — deploys on every
+  push to `main` using
+  [`cloudflare/pages-action`](https://github.com/cloudflare/pages-action).
+  Create a Cloudflare Pages project named `tax-tracker` (or edit
+  `projectName` in the workflow to match), then add these repo secrets:
+  - `CLOUDFLARE_API_TOKEN` — a token with the "Cloudflare Pages — Edit"
+    permission.
+  - `CLOUDFLARE_ACCOUNT_ID` — found on the right sidebar of any page in the
+    Cloudflare dashboard.
+
+- **`wrangler` CLI**, if you'd rather deploy from your own machine:
+  ```sh
+  npx wrangler pages deploy .
+  ```
+  (`wrangler.toml` already points it at the repo root; it'll prompt to
+  create the `tax-tracker` project on first run.)
+
+Since this app only reads/writes `localStorage` and calls the Gemini API
+directly from the browser, no environment variables or server-side secrets
+are needed for the deploy itself.
