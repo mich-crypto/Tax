@@ -1,0 +1,12 @@
+name = "tax-tracker"
+compatibility_date = "2024-09-01"
+pages_build_output_dir = "."
+
+# Created by `wrangler d1 create tax-tracker-db` (see DEPLOY.md) — paste the
+# database_id that command prints back here. binding = "DB" is the name
+# functions/api/sync.js expects on `env`; don't rename it without updating
+# that file too.
+[[d1_databases]]
+binding = "DB"
+database_name = "tax-tracker-db"
+database_id = "REPLACE_WITH_YOUR_DATABASE_ID"

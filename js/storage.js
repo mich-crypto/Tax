@@ -53,6 +53,17 @@ function writeJSON(key, value) {
   }
 }
 
+/**
+ * Tells js/sync.js (if loaded — see SYNC_COLLECTIONS there) that one of the
+ * four synced collections changed locally, so it can push the new value to
+ * the database in the background. A plain optional hook rather than a hard
+ * dependency: storage.js works exactly as before, offline-only, on any page
+ * that doesn't load sync.js (or on the deployed-without-a-backend setup).
+ */
+function notifySynced(collection) {
+  if (typeof scheduleSync === "function") scheduleSync(collection);
+}
+
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
@@ -111,6 +122,7 @@ const Store = {
 
   saveTaxYears(years) {
     writeJSON(STORAGE_KEYS.taxYears, years);
+    notifySynced("tax_years");
   },
 
   /** Newest tax year first. */
@@ -260,6 +272,7 @@ const Store = {
 
   savePayslips(entries) {
     writeJSON(STORAGE_KEYS.payslips, entries);
+    notifySynced("payslips");
   },
 
   addPayslip(entry) {
@@ -281,6 +294,7 @@ const Store = {
 
   saveCurrencyRates(rates) {
     writeJSON(STORAGE_KEYS.currencyRates, rates);
+    notifySynced("currency_rates");
   },
 
   // ---------- Travel Tracker (year -> country -> activity -> days) ----------
@@ -291,10 +305,12 @@ const Store = {
 
   saveTravel(travel) {
     writeJSON(STORAGE_KEYS.travel, travel);
+    notifySynced("travel");
   },
 
   clearTravel() {
     localStorage.removeItem(STORAGE_KEYS.travel);
+    notifySynced("travel");
   },
 
   // ---------- AI settings (never exported/imported/backed up) ----------
@@ -367,5 +383,6 @@ const Store = {
 
   wipeAll() {
     Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+    ["tax_years", "payslips", "currency_rates", "travel"].forEach(notifySynced);
   },
 };

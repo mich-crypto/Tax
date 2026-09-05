@@ -3,6 +3,41 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
+## v2.19.0-cloudflare-sync — 2026-09-05
+
+- **Optional: host this on Cloudflare with real data sync.** This site
+  still works exactly as before — everything in this browser's local
+  storage, nothing uploaded, no account. But if you'd rather have the
+  same data show up on a second device (or survive this browser's
+  storage being cleared), you can now deploy it to Cloudflare Pages with
+  a small D1 database behind it. See **DEPLOY.md** for the full,
+  step-by-step walkthrough (you'll need your own free Cloudflare
+  account — none of this can be turned on from here).
+- **How it works, if you deploy it:** `js/sync.js` pulls all your data
+  from the database on every page load, and pushes a collection (tax
+  years, payslips, exchange rates, or travel) back a couple of seconds
+  after you change it — debounced, and still sent via
+  `navigator.sendBeacon` if you navigate away before the debounce fires
+  (e.g. right after adding a tax year), so a quick edit followed by a
+  page change doesn't get lost.
+- **The trade-off, stated plainly:** sync is *whole-collection*,
+  *last-write-wins* — not per-record. Editing the same collection (say,
+  tax years) on two open tabs or two devices within a few seconds of
+  each other can silently lose one side's changes. Fine for how this app
+  is actually used (one person, rarely editing two devices at once);
+  give a sync a few seconds to finish before switching devices.
+- **Locked down with Cloudflare Access, not app code.** There's no
+  password screen added to the app itself for this — DEPLOY.md walks
+  through Cloudflare Access instead, which gates the whole site
+  (including the sync endpoint) behind your own email before any
+  request reaches it. Skipping that step means anyone with the URL can
+  read and overwrite the database.
+- **Your AI API keys are never synced**, same as they were never part of
+  the JSON Export/Import backup — they stay in that one browser's local
+  storage, sent only straight from your browser to Google/Anthropic.
+- Not deploying this way? Nothing changes — `js/sync.js` quietly does
+  nothing when there's no backend at `/api/sync` to talk to.
+
 ## v2.18.0 — 2026-09-04
 
 - **The flow diagram now shows Actual Tax, not Pre-paid tax.** Each

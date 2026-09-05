@@ -219,6 +219,46 @@ own gate instead (e.g. Netlify's site-wide password, under Site settings
 → Visitor access), which is enforced before any of this code is even sent
 to a visitor's browser.
 
+## Cloudflare sync (optional)
+
+Everything above describes the app as it runs by default: static files,
+`localStorage`, no server, no account. **You can also deploy this to
+Cloudflare Pages with a D1 database behind it**, so the same data shows
+up on a second device instead of staying in one browser. See
+[`DEPLOY.md`](DEPLOY.md) for the full walkthrough — it needs your own
+free Cloudflare account, so none of it can be turned on from inside this
+repo alone.
+
+If you deploy it that way:
+
+- `js/sync.js` (loaded right after `js/storage.js`) pulls all four
+  collections — tax years, payslips, exchange rates, travel — from
+  `GET /api/sync` on every page load, and pushes whichever one just
+  changed to `POST /api/sync`, debounced ~1.5s. `functions/api/sync.js`
+  is the Cloudflare Pages Function backing that endpoint, reading and
+  writing the single `sync_state` table described in `schema.sql`.
+- **Sync is whole-collection, last-write-wins** — the unit is "all tax
+  years" as one blob, not one tax year at a time, compared by a
+  client-stamped timestamp. That's a real trade-off: editing the same
+  collection on two open tabs or devices within a few seconds of each
+  other can silently lose one side's edit. It's not built for
+  simultaneous multi-device editing — give a sync a few seconds to
+  finish before switching devices.
+- A save immediately followed by navigating away (e.g. adding a tax year
+  jumps straight to that year's page) would normally cancel the pending
+  debounced push; `js/sync.js` flushes it via `navigator.sendBeacon` on
+  `pagehide`/`visibilitychange` instead, so it still goes out.
+- **Your AI API keys are never synced**, for the same reason they're
+  never in the JSON Export/Import backup (see below) — they stay in that
+  one browser's `localStorage`, sent only straight from your browser to
+  Google/Anthropic.
+- Real access control is Cloudflare Access, not app code — DEPLOY.md
+  walks through gating the whole domain (the site and `/api/sync` both)
+  behind your own email, before any request reaches this app or its
+  database. This app has no server-side login of its own on purpose.
+- Not deployed this way? Nothing changes — `js/sync.js`'s pulls/pushes
+  fail silently with no backend to reach, same as the app always worked.
+
 ## Data
 
 - `js/storage.js` is the only place that touches `localStorage`, and the
@@ -307,9 +347,10 @@ named for when the income was earned.
 it needs to hide the page before it paints, if a site password is set (see
 [Site lock](#site-lock) above). After that, every page loads, in this
 order: `js/tax-data.js` (constants) → `js/storage.js` (the `Store`) →
-`js/app.js` (shared helpers and the money model) → any AI scripts → that
-page's own script. Nothing is a module and nothing is bundled, so the
-order is what wires it together.
+`js/sync.js` (optional Cloudflare sync — see above; a no-op with no
+backend) → `js/app.js` (shared helpers and the money model) → any AI
+scripts → that page's own script. Nothing is a module and nothing is
+bundled, so the order is what wires it together.
 
 ## Disclaimer
 
