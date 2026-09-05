@@ -284,12 +284,16 @@ a:hover { text-decoration: underline; }
 }
 
 /* A section's explanation, on hover rather than sitting on the page as its
-   own paragraph — the native title attribute carries the text, so this
-   needs no script and works the same inside a sandboxed preview. */
+   own paragraph. The native title attribute still carries the text (screen
+   readers, and hover on anything with a mouse), but title never shows on a
+   tap — there's no hover state to trigger it — so js/app.js also opens an
+   .info-icon-bubble with the same text on click/tap, which is what actually
+   works on iPhone and other touch devices. */
 .info-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 15px;
   height: 15px;
   margin-left: 2px;
@@ -308,6 +312,27 @@ a:hover { text-decoration: underline; }
 .info-icon:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* Positioned by js/app.js's toggleInfoBubble() — fixed positioning so it
+   isn't clipped by a card's own overflow:hidden or a scrolling table. */
+.info-icon-bubble {
+  position: fixed;
+  z-index: 80;
+  max-width: min(280px, calc(100vw - 24px));
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  cursor: default;
 }
 
 /* Every section heading is the same size, whether it sits in a
@@ -859,7 +884,14 @@ dialog.sheet::backdrop { background: rgba(12, 20, 20, 0.45); }
 
 #flow-diagram { margin-top: 14px; overflow-x: auto; }
 
-#flow-diagram svg { display: block; min-width: 560px; }
+/* height:auto (not a fixed px height) is what actually makes this scale on
+   a narrow screen: the SVG carries a viewBox, so width:100% + height:auto
+   together shrink both dimensions in lockstep, keeping the whole diagram
+   proportional instead of clipping it to a fixed pixel height while only
+   the width shrinks. A min-width here would defeat that by forcing a
+   horizontal scrollbar instead of letting it shrink to fit — which is
+   exactly the "doesn't auto size on iPhone" bug this replaces. */
+#flow-diagram svg { display: block; width: 100%; height: auto; }
 
 .flow-name {
   font-family: var(--font-sans);

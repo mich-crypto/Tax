@@ -342,7 +342,68 @@ function wireTrackerSwitcher() {
   });
 }
 
+/**
+ * .info-icon's `title` attribute only shows on hover, and a tap has no
+ * hover state to trigger — so on a phone, pressing the (i) icon does
+ * nothing. This opens the same text in a small fixed-position bubble on
+ * click/tap instead. Delegated on document, so it covers every .info-icon
+ * on the page including ones a page script re-renders later — no need to
+ * re-wire after every render().
+ */
+function wireInfoIcons() {
+  let bubble = null;
+  let openIcon = null;
+
+  function closeBubble() {
+    if (bubble) bubble.remove();
+    bubble = null;
+    openIcon = null;
+  }
+
+  function openBubbleFor(icon) {
+    closeBubble();
+    const text = icon.getAttribute("title");
+    if (!text) return;
+    bubble = document.createElement("div");
+    bubble.className = "info-icon-bubble";
+    bubble.textContent = text;
+    document.body.appendChild(bubble);
+
+    const iconRect = icon.getBoundingClientRect();
+    const bubbleRect = bubble.getBoundingClientRect();
+    let left = iconRect.left + iconRect.width / 2 - bubbleRect.width / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - bubbleRect.width - 8));
+    let top = iconRect.bottom + 6;
+    if (top + bubbleRect.height > window.innerHeight - 8) top = iconRect.top - bubbleRect.height - 6;
+    bubble.style.left = `${left}px`;
+    bubble.style.top = `${top}px`;
+    openIcon = icon;
+  }
+
+  document.addEventListener("click", (e) => {
+    const icon = e.target.closest(".info-icon");
+    if (icon) {
+      e.preventDefault();
+      if (icon === openIcon) closeBubble();
+      else openBubbleFor(icon);
+      return;
+    }
+    if (bubble && !e.target.closest(".info-icon-bubble")) closeBubble();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeBubble();
+  });
+
+  // The bubble is positioned in fixed coordinates from a snapshot at open
+  // time — if the page scrolls or the viewport changes, close it rather
+  // than leave it pointing at empty space.
+  window.addEventListener("scroll", closeBubble, true);
+  window.addEventListener("resize", closeBubble);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   wireTrackerSwitcher();
   renderVersionFooter();
+  wireInfoIcons();
 });

@@ -3,7 +3,9 @@
 All notable changes to this site. Versions shown here match the footer
 version tag on every page (hover it for the last few entries inline).
 
-## v2.19.0-cloudflare-sync — 2026-09-05
+## v2.20.0-cloudflare-sync — 2026-09-05
+
+Rebased on top of v2.19.0's two iPhone fixes below.
 
 - **Optional: host this on Cloudflare with real data sync.** This site
   still works exactly as before — everything in this browser's local
@@ -37,6 +39,21 @@ version tag on every page (hover it for the last few entries inline).
   storage, sent only straight from your browser to Google/Anthropic.
 - Not deploying this way? Nothing changes — `js/sync.js` quietly does
   nothing when there's no backend at `/api/sync` to talk to.
+
+## v2.19.0 — 2026-09-05
+
+- **Info (i) icons now work on a phone.** They relied on the browser's
+  native `title` tooltip, which only ever shows on hover — a tap on a
+  touchscreen has no hover state, so pressing one did nothing on iPhone.
+  Tapping one now opens the same text in a small popover next to it;
+  tap it again, tap elsewhere, press Escape, or scroll/resize to close
+  it. Hovering with a mouse is unchanged.
+- **The flow diagram ("Where the money went") now actually fits a narrow
+  screen.** It was pinned to a 560px minimum width, so on an iPhone it
+  didn't shrink to fit — it just stayed full-size and forced a
+  horizontal scrollbar inside its own card. It now scales down properly
+  (both width and height together, so nothing gets stretched or
+  clipped) to whatever width is available.
 
 ## v2.18.0 — 2026-09-04
 

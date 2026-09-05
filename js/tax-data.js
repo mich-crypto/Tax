@@ -146,12 +146,13 @@ const CORRESPONDENCE_CATEGORIES = [
  * stamp a version automatically. Bump both on any user-visible change;
  * full history lives in CHANGELOG.md at the repo root.
  */
-const APP_VERSION = "2.19.0-cloudflare-sync";
+const APP_VERSION = "2.20.0-cloudflare-sync";
 const APP_VERSION_DATE = "2026-09-05";
 
 /** Most recent entries only (newest first) — shown as the footer's version tooltip. Full history: CHANGELOG.md. */
 const APP_CHANGELOG = [
-  { version: "2.19.0-cloudflare-sync", summary: "Optional: host this on Cloudflare Pages with a D1 database behind it, so the same data shows up on another device instead of staying in one browser's local storage. See DEPLOY.md to set it up — this branch just adds the capability, nothing changes if you don't deploy it that way. Sync is whole-collection, last-write-wins, and never includes your AI API keys." },
+  { version: "2.20.0-cloudflare-sync", summary: "Optional: host this on Cloudflare Pages with a D1 database behind it, so the same data shows up on another device instead of staying in one browser's local storage. See DEPLOY.md to set it up — this branch just adds the capability, nothing changes if you don't deploy it that way. Sync is whole-collection, last-write-wins, and never includes your AI API keys. Rebased on the v2.19.0 iPhone fixes below." },
+  { version: "2.19.0", summary: "Two iPhone fixes: tapping an info (i) icon now opens the same text in a small popover, since the browser only ever showed it on hover before — which a touch screen has no equivalent of. The flow diagram (\"Where the money went\") now shrinks to fit a narrow screen properly instead of staying a fixed size and forcing you to scroll it sideways." },
   { version: "2.18.0", summary: "The flow diagram's per-country ribbons now show Actual Tax (net of refund) instead of gross Pre-paid tax, matching the Tax paid tile — Net income in the diagram is recalculated to match, so it still balances against gross income. Every card's explanatory paragraph is now a small (i) icon next to its heading, hover for the text, instead of sitting on the page as its own line." },
   { version: "2.17.0", summary: "Actual Tax now means something different by country: Denmark still solves Tax return backwards from it (a genuine pre-paid-then-refunded cycle), but every other country just sets Pre-paid tax to match Actual Tax instead, since normally there's no separate pre-paid phase outside Denmark — what's assessed is what's paid." },
   { version: "2.16.0", summary: "The year page's Tax paid tile now sums Actual Tax (tax paid, net of what came back) instead of Pre-paid tax. New: Settings → Data → \"Export Excel backup\" writes a human-readable .xlsx with one sheet per tax year (the money, Countries, Payments, Correspondence) plus one Salary follow up sheet for the whole payslip history — a backup of last resort if the site's ever unreachable, not something Import can read back in." },
